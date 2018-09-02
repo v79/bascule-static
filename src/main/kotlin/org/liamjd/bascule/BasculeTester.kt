@@ -10,7 +10,6 @@ import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.options.MutableDataSet
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.util.*
 import kotlin.system.measureTimeMillis
 
 
@@ -151,6 +150,3 @@ class BasculeTester() {
 		val SEPARATOR = "~~~~~"
 	}
 }
-
-fun ClosedRange<Int>.random() =
-		Random().nextInt((endInclusive + 1) - start) + start

@@ -1,9 +1,11 @@
 package org.liamjd.bascule.generator
 
 import org.liamjd.bascule.Constants
+import org.liamjd.bascule.random
 import org.liamjd.bascule.scanner.FolderWalker
 import org.yaml.snakeyaml.Yaml
 import picocli.CommandLine
+import println.info
 import java.io.File
 import java.nio.file.FileSystems
 
@@ -17,14 +19,14 @@ class Generator : Runnable {
 	val parentFolder: File
 
 	init  {
-		println("Time to generate...")
 		parentFolder = File(currentDirectory)
 		yamlConfig = "${parentFolder.name}.yaml"
 	}
 
 	override fun run() {
-		println("Generating your website")
-		println("Reading yaml configuration file $yamlConfig")
+		info(Constants.logos[(0..Constants.logos.size-1).random()])
+		info("Generating your website")
+		info("Reading yaml configuration file $yamlConfig")
 
 		val yaml = Yaml()
 		val configStream = File(parentFolder.absolutePath,yamlConfig).inputStream()

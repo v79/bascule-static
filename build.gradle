@@ -33,6 +33,7 @@ dependencies {
 
 	// command line parsing
 	compile 'info.picocli:picocli:3.5.2'
+	compile 'org.fusesource.jansi:jansi:1.17.1'
 }
 
 compileKotlin {

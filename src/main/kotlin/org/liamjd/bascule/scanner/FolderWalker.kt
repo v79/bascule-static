@@ -9,6 +9,8 @@ import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.options.MutableDataSet
+import org.liamjd.bascule.assets.AssetsProcessor
+import println.info
 import java.io.File
 import java.io.InputStream
 import kotlin.system.measureTimeMillis
@@ -20,6 +22,8 @@ class FolderWalker(val parent: File, val sources: String, val templates: String,
 	private val templatesDir: File
 	private val outputDir: File
 	private val assetsDir: File
+
+	private val assetsProcessor: AssetsProcessor
 
 	val mdOptions = MutableDataSet()
 	val mdParser: Parser
@@ -33,13 +37,20 @@ class FolderWalker(val parent: File, val sources: String, val templates: String,
 
 		mdOptions.set(Parser.EXTENSIONS, arrayListOf(AttributesExtension.create(), YamlFrontMatterExtension.create()))
 		mdParser = Parser.builder(mdOptions).build()
+
+		assetsProcessor = AssetsProcessor(parent,assets,output)
 	}
 
 	// I wonder if coroutines can help with this?
 	fun generate() {
+
+		// TODO: be less agressive with this :)
+		emptyFolder(outputDir)
+		assetsProcessor.copyStatics()
+
 		var numFiles = 0;
 
-		println("Scanning ${sourcesDir.absolutePath} for markdown files")
+		info("Scanning ${sourcesDir.absolutePath} for markdown files")
 
 		val timeTaken = measureTimeMillis {
 
@@ -48,7 +59,7 @@ class FolderWalker(val parent: File, val sources: String, val templates: String,
 					// do something with directories?
 				} else {
 					numFiles++
-					println("Scanning file ${it.name}")
+					info("Scanning file ${it.name}")
 					val model = mutableMapOf<String, Any>()
 					val inputStream = it.inputStream()
 					val inputFileName = it.nameWithoutExtension
@@ -75,10 +86,22 @@ class FolderWalker(val parent: File, val sources: String, val templates: String,
 
 					val renderedContent = render(model, getTemplate(templateFromYaml))
 					println(renderedContent)
+
+					var url = it.nameWithoutExtension
+					val slug = yamlVisitor.data["slug"]
+					if(slug != null && slug.size == 1) {
+						url = slug.get(0)
+					}
+					url = url + ".html"
+
+					info("Generating html file $url")
+					File(outputDir.absolutePath,url).bufferedWriter().use { out ->
+						out.write(renderedContent)
+					}
 				}
 			}
 		}
-		println("${timeTaken}ms to generate ${numFiles} files")
+		info("${timeTaken}ms to generate ${numFiles} files")
 	}
 
 	private fun parseMarkdown(inputStream: InputStream): Document {
@@ -87,23 +110,21 @@ class FolderWalker(val parent: File, val sources: String, val templates: String,
 	}
 
 	private fun renderMarkdown(document: Document): String {
-		val options = MutableDataSet()
-		options.set(Parser.EXTENSIONS, arrayListOf(AttributesExtension.create(), YamlFrontMatterExtension.create()))
-		val mdRender = HtmlRenderer.builder(options).build()
+		val mdRender = HtmlRenderer.builder(mdOptions).build()
 
 		return mdRender.render(document)
 	}
 
 	private fun getTemplate(templateName: String): String {
 
-		println("Searching $templatesDir for template named ${templateName}.html")
+		info("Searching $templatesDir for template named ${templateName}.html")
 		val matches = templatesDir.listFiles({ dir, name -> name.equals(templateName + ".html") })
 
 		if (matches.isNotEmpty() && matches.size == 1) {
 			val found = matches[0]
 			return found.readText()
 		}
-		println("ERROR - file $templateName not found!!!!!")
+		println.error("ERROR - file $templateName not found!!!!!")
 		return ""
 	}
 
@@ -113,5 +134,14 @@ class FolderWalker(val parent: File, val sources: String, val templates: String,
 		val template = hbRenderer.compileInline(templateString)
 
 		return template.apply(hbContext)
+	}
+
+	private fun emptyFolder(folder: File) {
+		folder.walk().forEach {
+			if(it != folder) {
+				info("Deleting $it")
+				it.deleteRecursively()
+			}
+		}
 	}
 }
