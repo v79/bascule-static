@@ -1,14 +1,18 @@
 package org.liamjd.bascule.scanner
 
+import com.github.jknack.handlebars.Context
+import com.github.jknack.handlebars.Handlebars
 import com.vladsch.flexmark.ast.Document
 import com.vladsch.flexmark.ext.attributes.AttributesExtension
 import com.vladsch.flexmark.ext.yaml.front.matter.AbstractYamlFrontMatterVisitor
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
+import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.options.MutableDataSet
 import java.io.File
 import java.io.InputStream
 import kotlin.system.measureTimeMillis
+
 
 class FolderWalker(val parent: File, val sources: String, val templates: String, val output: String, val assets: String) {
 
@@ -22,9 +26,9 @@ class FolderWalker(val parent: File, val sources: String, val templates: String,
 
 	init {
 		println("FolderWalker initialised")
-		sourcesDir = File(parent,sources)
-		templatesDir = File(parent,templates)
-		outputDir = File(parent,output)
+		sourcesDir = File(parent, sources)
+		templatesDir = File(parent, templates)
+		outputDir = File(parent, output)
 		assetsDir = File(parent, assets)
 
 		mdOptions.set(Parser.EXTENSIONS, arrayListOf(AttributesExtension.create(), YamlFrontMatterExtension.create()))
@@ -40,12 +44,12 @@ class FolderWalker(val parent: File, val sources: String, val templates: String,
 		val timeTaken = measureTimeMillis {
 
 			sourcesDir.walk().forEach {
-				if(it.isDirectory) {
+				if (it.isDirectory) {
 					// do something with directories?
 				} else {
 					numFiles++
 					println("Scanning file ${it.name}")
-					val model = mutableMapOf<String,Any>()
+					val model = mutableMapOf<String, Any>()
 					val inputStream = it.inputStream()
 					val inputFileName = it.nameWithoutExtension
 					val inputExtension = it.extension
@@ -57,8 +61,20 @@ class FolderWalker(val parent: File, val sources: String, val templates: String,
 					yamlVisitor.data.forEach {
 						model.put(it.key, it.value[0])
 					}
-					println("\t model is $model")
+					println("\t model (sans content) is $model")
 
+
+					val renderedMarkdown = renderMarkdown(document)
+					model.put("content",renderedMarkdown)
+
+
+					var templateFromYaml: String = ""
+					yamlVisitor.data["layout"]?.let {
+						templateFromYaml = it.get(0)
+					}
+
+					val renderedContent = render(model, getTemplate(templateFromYaml))
+					println(renderedContent)
 				}
 			}
 		}
@@ -70,4 +86,32 @@ class FolderWalker(val parent: File, val sources: String, val templates: String,
 		return mdParser.parse(text)
 	}
 
+	private fun renderMarkdown(document: Document): String {
+		val options = MutableDataSet()
+		options.set(Parser.EXTENSIONS, arrayListOf(AttributesExtension.create(), YamlFrontMatterExtension.create()))
+		val mdRender = HtmlRenderer.builder(options).build()
+
+		return mdRender.render(document)
+	}
+
+	private fun getTemplate(templateName: String): String {
+
+		println("Searching $templatesDir for template named ${templateName}.html")
+		val matches = templatesDir.listFiles({ dir, name -> name.equals(templateName + ".html") })
+
+		if (matches.isNotEmpty() && matches.size == 1) {
+			val found = matches[0]
+			return found.readText()
+		}
+		println("ERROR - file $templateName not found!!!!!")
+		return ""
+	}
+
+	private fun render(model: Map<String, Any>, templateString: String): String {
+		val hbRenderer = Handlebars()
+		val hbContext = Context.newBuilder(model).build()
+		val template = hbRenderer.compileInline(templateString)
+
+		return template.apply(hbContext)
+	}
 }
