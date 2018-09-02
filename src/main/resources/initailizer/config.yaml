@@ -1,0 +1,9 @@
+dateFormat: dd/MM/yyyy
+dateTimeFormat: HH:mm:ss dd/MM/yyyy
+author: bascule
+
+directories:
+  source: sources
+  output: site
+  assets: assets
+  templates: templates
