@@ -9,7 +9,6 @@ import println.info
 import java.io.File
 import java.nio.file.FileSystems
 
-
 @CommandLine.Command(name = "generate", description = ["Generate your static website"])
 class Generator : Runnable {
 
@@ -24,7 +23,7 @@ class Generator : Runnable {
 	}
 
 	override fun run() {
-		info(Constants.logos[(0..Constants.logos.size-1).random()])
+		info(Constants.logos[(0 until Constants.logos.size).random()])
 		info("Generating your website")
 		info("Reading yaml configuration file $yamlConfig")
 

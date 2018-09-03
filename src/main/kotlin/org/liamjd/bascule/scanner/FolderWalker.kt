@@ -74,10 +74,8 @@ class FolderWalker(val parent: File, val sources: String, val templates: String,
 					}
 					println("\t model (sans content) is $model")
 
-
 					val renderedMarkdown = renderMarkdown(document)
 					model.put("content",renderedMarkdown)
-
 
 					var templateFromYaml: String = ""
 					yamlVisitor.data["layout"]?.let {
@@ -85,14 +83,14 @@ class FolderWalker(val parent: File, val sources: String, val templates: String,
 					}
 
 					val renderedContent = render(model, getTemplate(templateFromYaml))
-					println(renderedContent)
+//					println(renderedContent)
 
 					var url = it.nameWithoutExtension
 					val slug = yamlVisitor.data["slug"]
 					if(slug != null && slug.size == 1) {
 						url = slug.get(0)
 					}
-					url = url + ".html"
+					url += ".html"
 
 					info("Generating html file $url")
 					File(outputDir.absolutePath,url).bufferedWriter().use { out ->
@@ -116,7 +114,6 @@ class FolderWalker(val parent: File, val sources: String, val templates: String,
 	}
 
 	private fun getTemplate(templateName: String): String {
-
 		info("Searching $templatesDir for template named ${templateName}.html")
 		val matches = templatesDir.listFiles({ dir, name -> name.equals(templateName + ".html") })
 

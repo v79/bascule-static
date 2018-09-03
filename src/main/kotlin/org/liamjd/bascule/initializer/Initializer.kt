@@ -23,7 +23,6 @@ class Initializer(val siteName: String) {
 			exitProcess(-1)
 		}
 
-
 		// copy configuration yaml file from resources
 		println("Writing $siteName.yaml configuration file")
 		val yamlConfigString = this.javaClass.getResource(CONFIG_YAML).readText()

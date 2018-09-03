@@ -24,7 +24,7 @@ class Bascule : Runnable {
 	}
 
 	override fun run() {
-		info(Constants.logos[(0..Constants.logos.size-1).random()])
+		info(Constants.logos[(0 until Constants.logos.size).random()])
 
 		if(siteName.isNotBlank()) {
 			Initializer(siteName)

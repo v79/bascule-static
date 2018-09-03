@@ -1,7 +1,13 @@
 buildscript {
+	ext.kotlin_version = '1.2.60'
 	ext.handlebars_version = '4.1.0'
 	ext.slf4j_version = '1.6.2'
 	ext.flexmark_version = '0.34.22'
+	ext.spek_version = '1.1.5'
+	ext.mockk_version = '1.8.7'
+	ext.picocli_version = '3.5.2'
+	ext.jansi_version = '1.17.1'
+	ext.snakeyaml_version = '1.23'
 }
 
 plugins {
@@ -26,14 +32,28 @@ dependencies {
 	compile group: 'com.vladsch.flexmark', name:'flexmark-all', version: "$flexmark_version"
 
 	// snakeyaml
-	compile 'org.yaml:snakeyaml:1.23'
+	compile group: 'org.yaml', name: 'snakeyaml', version: "$snakeyaml_version"
 
 	// sl4j logging
 	compile group: 'org.slf4j', name: 'slf4j-simple', version: "$slf4j_version"
 
 	// command line parsing
-	compile 'info.picocli:picocli:3.5.2'
-	compile 'org.fusesource.jansi:jansi:1.17.1'
+	compile group: 'info.picocli', name: 'picocli', version: "$picocli_version"
+	compile group: 'org.fusesource.jansi', name: 'jansi', version: "$jansi_version"
+
+	// testing
+	testCompile group: "org.jetbrains.kotlin", name: "kotlin-test", version: "$kotlin_version"
+	testCompile(group: "org.jetbrains.spek", name: "spek-api", version: "$spek_version") {
+		// exclude kotlin from spek, so that we can use the newest version
+		exclude group: 'org.jetbrains.kotlin'
+	}
+	testCompile group: "io.mockk", name: "mockk", version: "${mockk_version}"
+	testRuntime("org.jetbrains.spek:spek-junit-platform-engine:${spek_version}") {
+		// exclude junit and kotlin from the engine, so we can use our own versions
+		exclude group: 'org.junit.platform'
+		exclude group: 'org.jetbrains.kotlin'
+	}
+
 }
 
 compileKotlin {
