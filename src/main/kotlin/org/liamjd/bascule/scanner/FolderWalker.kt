@@ -10,18 +10,19 @@ import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.options.MutableDataSet
 import org.liamjd.bascule.assets.AssetsProcessor
+import org.liamjd.bascule.assets.ProjectStructure
 import println.info
 import java.io.File
 import java.io.InputStream
 import kotlin.system.measureTimeMillis
 
 
-class FolderWalker(val parent: File, val sources: String, val templates: String, val output: String, val assets: String) {
+class FolderWalker(val project: ProjectStructure) {
 
-	private val sourcesDir: File
-	private val templatesDir: File
-	private val outputDir: File
-	private val assetsDir: File
+//	private val sourcesDir: File
+//	private val templatesDir: File
+//	private val outputDir: File
+//	private val assetsDir: File
 
 	private val assetsProcessor: AssetsProcessor
 
@@ -30,31 +31,31 @@ class FolderWalker(val parent: File, val sources: String, val templates: String,
 
 	init {
 		println("FolderWalker initialised")
-		sourcesDir = File(parent, sources)
-		templatesDir = File(parent, templates)
-		outputDir = File(parent, output)
-		assetsDir = File(parent, assets)
+//		sourcesDir = File(parent, sources)
+//		templatesDir = File(parent, templates)
+//		outputDir = File(parent, output)
+//		assetsDir = File(parent, assets)
 
 		mdOptions.set(Parser.EXTENSIONS, arrayListOf(AttributesExtension.create(), YamlFrontMatterExtension.create()))
 		mdParser = Parser.builder(mdOptions).build()
 
-		assetsProcessor = AssetsProcessor(parent,assets,output)
+		assetsProcessor = AssetsProcessor(project.root,project.assetsDir,project.outputDir)
 	}
 
 	// I wonder if coroutines can help with this?
 	fun generate() {
 
 		// TODO: be less agressive with this :)
-		emptyFolder(outputDir)
+		emptyFolder(project.outputDir)
 		assetsProcessor.copyStatics()
 
 		var numFiles = 0;
 
-		info("Scanning ${sourcesDir.absolutePath} for markdown files")
+		info("Scanning ${project.sourceDir.absolutePath} for markdown files")
 
 		val timeTaken = measureTimeMillis {
 
-			sourcesDir.walk().forEach {
+			project.sourceDir.walk().forEach {
 				if (it.isDirectory) {
 					// do something with directories?
 				} else {
@@ -93,7 +94,7 @@ class FolderWalker(val parent: File, val sources: String, val templates: String,
 					url += ".html"
 
 					info("Generating html file $url")
-					File(outputDir.absolutePath,url).bufferedWriter().use { out ->
+					File(project.outputDir.absolutePath,url).bufferedWriter().use { out ->
 						out.write(renderedContent)
 					}
 				}
@@ -114,8 +115,8 @@ class FolderWalker(val parent: File, val sources: String, val templates: String,
 	}
 
 	private fun getTemplate(templateName: String): String {
-		info("Searching $templatesDir for template named ${templateName}.html")
-		val matches = templatesDir.listFiles({ dir, name -> name.equals(templateName + ".html") })
+		info("Searching ${project.templatesDir} for template named ${templateName}.html")
+		val matches = project.templatesDir.listFiles({ dir, name -> name.equals(templateName + ".html") })
 
 		if (matches.isNotEmpty() && matches.size == 1) {
 			val found = matches[0]

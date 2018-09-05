@@ -1,6 +1,7 @@
 package org.liamjd.bascule.generator
 
 import org.liamjd.bascule.Constants
+import org.liamjd.bascule.assets.ProjectStructure
 import org.liamjd.bascule.random
 import org.liamjd.bascule.scanner.FolderWalker
 import org.yaml.snakeyaml.Yaml
@@ -32,10 +33,20 @@ class Generator : Runnable {
 		val configMap: Map<String,Any> = yaml.load(configStream)
 		println(configMap)
 
+		val projectStructure = buildProjectFromYamlConfig(yamlConfig, configMap)
+		val walker = FolderWalker(projectStructure)
+
+		walker.generate()
+
+	}
+
+	private fun buildProjectFromYamlConfig(yaml: String, configMap: Map<String,Any>): ProjectStructure {
 		val sourceDir: String
 		val assetsDir: String
 		val outputDir: String
 		val templatesDir: String
+
+		val theme = if(configMap["theme"] == null) Constants.DEFAULT_THEME else configMap["theme"] as String
 
 		if(configMap["directories"]!= null) {
 			val directories = configMap["directories"] as Map<String,String?>
@@ -50,9 +61,14 @@ class Generator : Runnable {
 			templatesDir =  Constants.TEMPLATES_DIR
 		}
 
-		val walker = FolderWalker(parentFolder, sources = sourceDir, assets = assetsDir, templates = templatesDir, output = outputDir)
-
-		walker.generate()
+		return ProjectStructure(name = parentFolder.name,
+				root = parentFolder,
+				source = sourceDir,
+				output = outputDir,
+				assets = assetsDir,
+				templates = templatesDir,
+				yaml = yamlConfig,
+				themeName = theme)
 
 	}
 }

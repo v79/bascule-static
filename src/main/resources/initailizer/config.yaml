@@ -1,6 +1,7 @@
 dateFormat: dd/MM/yyyy
 dateTimeFormat: HH:mm:ss dd/MM/yyyy
 author: bascule
+theme: unthemed
 
 directories:
   source: sources

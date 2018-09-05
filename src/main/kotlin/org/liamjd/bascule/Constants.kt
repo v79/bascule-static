@@ -15,8 +15,10 @@ object Constants {
 	val ASSETS_DIR = "assets"
 	val PAGES_DIR = "pages"
 	val TEMPLATES_DIR = "templates"
+	val DEFAULT_THEME = "unthemed"
 
-	val CONFIG_YAML = "/initailizer/config.yaml"
+	val CONFIG_YAML  = "/initailizer/config.yaml"
+	val THEME_FOLDER = "/initailizer/themes/"
 
 
 	val basculeLogo = """

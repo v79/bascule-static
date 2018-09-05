@@ -13,10 +13,10 @@ import println.info
 		subcommands = arrayOf(Generator::class))
 class Bascule : Runnable {
 
-	@CommandLine.Option(names = ["-n", "-new"], description = ["name of static site"])
+	@CommandLine.Option(names = ["-n", "--new"], description = ["name of static site"])
 	var siteName: String = ""
 
-	@CommandLine.Option(names = ["-deleteSite"], description = ["destroy your entire website!"])
+	@CommandLine.Option(names = ["--deleteSite"], description = ["destroy your entire website!"])
 	var deleteAllName: String = ""
 
 	init {
