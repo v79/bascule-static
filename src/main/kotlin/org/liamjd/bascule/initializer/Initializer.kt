@@ -1,5 +1,7 @@
 package org.liamjd.bascule.initializer
 
+import com.github.jknack.handlebars.Context
+import com.github.jknack.handlebars.Handlebars
 import org.liamjd.bascule.Constants
 import org.liamjd.bascule.Constants.ASSETS_DIR
 import org.liamjd.bascule.Constants.CONFIG_YAML
@@ -13,7 +15,7 @@ import java.io.File
 import java.nio.file.FileSystems
 import kotlin.system.exitProcess
 
-class Initializer(val siteName: String) {
+class Initializer(val siteName: String, val themeName: Theme?) {
 
 	val currentDirectory = System.getProperty("user.dir")
 	val pathSeparator = FileSystems.getDefault().getSeparator()
@@ -22,17 +24,18 @@ class Initializer(val siteName: String) {
 		info("Initializing new site $currentDirectory$pathSeparator$siteName")
 
 		val siteRoot = File("$currentDirectory$pathSeparator$siteName")
+		val theme = themeName ?: Constants.DEFAULT_THEME
 		if (siteRoot.mkdirs() == false) {
 			println.error("Could not create folder $siteRoot")
 			exitProcess(-1)
 		}
 
 		// copy configuration yaml file from resources
+		val yamlConfigString = buildConfiguration(theme, siteRoot)
 		info("Building directory structure")
 
-		val yamlConfigString = "${siteName}.yaml"
-		info("Writing $siteName.yaml configuration file")
-		copyFileFromResources(fileName = CONFIG_YAML, destination = siteRoot, destFileName = yamlConfigString)
+
+//		copyFileFromResources(fileName = CONFIG_YAML, destination = siteRoot, destFileName = yamlConfigString)
 		val sourceDir = File(siteRoot.absolutePath + "/${SOURCE_DIR}")
 		val outputDir = File(siteRoot.absolutePath + "/${OUTPUT_DIR}")
 		val assetsDir = File(siteRoot.absolutePath + "/${ASSETS_DIR}")
@@ -43,8 +46,8 @@ class Initializer(val siteName: String) {
 		// TODO: allow theme to be set during creation? List of themes?
 		templatesDir.mkdir()
 
-		info("Copying theme '${Constants.DEFAULT_THEME}' templates")
-		copyThemeToTemplates(Constants.DEFAULT_THEME, templatesDir)
+		info("Copying theme '${theme}' templates")
+		copyThemeToTemplates(theme, templatesDir)
 
 		val projectStructure = ProjectStructure(name = siteName,
 				root = siteRoot,
@@ -53,36 +56,77 @@ class Initializer(val siteName: String) {
 				assetsDir = assetsDir,
 				templatesDir = templatesDir,
 				yamlConfigString = yamlConfigString,
-				theme = Constants.DEFAULT_THEME)
+				theme = theme)
 
 		info("Site generated. Start writing your pages and posts inside the ${sourceDir.absolutePath} folder. Store images and CSS files in ${assetsDir.absolutePath} and Handlebars templates in ${templatesDir.absolutePath}.")
 
+	}
+
+	// TODO: this will get much more complicated in the future
+	private fun buildConfiguration(themeName: Theme, root: File): String {
+		val yamlConfigString = "${siteName}.yaml"
+		info("Writing $siteName.yaml configuration file")
+		val yamlTemplate = FileHandler.readFileFromResources("", CONFIG_YAML)
+		val model = mutableMapOf<String, String>()
+		model.put("themeName", themeName)
+		val projectConfig = render(model, yamlTemplate)
+
+		FileHandler.writeFile(root, yamlConfigString, projectConfig)
+
+		return yamlConfigString
+
+	}
+
+	private fun render(model: Map<String, Any>, templateString: String): String {
+		val hbRenderer = Handlebars()
+		val hbContext = Context.newBuilder(model).build()
+		val template = hbRenderer.compileInline(templateString)
+
+		return template.apply(hbContext)
 	}
 
 	private fun copyThemeToTemplates(themeName: Theme, templatesDir: File) {
 		val themeTemplateDirName = "${Constants.THEME_FOLDER}${themeName}/templates"
 		val filesToCopy = arrayOf("post.html")
 		for (f in filesToCopy) {
-			copyFileFromResources(fileName = f, destination = templatesDir, sourceDir = themeTemplateDirName + "/")
+			FileHandler.copyFileFromResources(fileName = f, destination = templatesDir, sourceDir = themeTemplateDirName + "/")
 		}
 	}
 
-	/**
-	 * Reads a file from /src/main/resources/_sourceDir_ and writes it to _destination_.
-	 * You can override the filename by supplying a value for _destFileName_
-	 * @param[fileName] Name of the file to copy
-	 * @param[destination] Folder the file is to be copied to
-	 * @param[destFileName] The final name of the file once copied. If left out, the destination file will have the same name as the source
-	 * @param[sourceDir] the folder within /src/main/resources to copy from. Optional.
-	 */
-	private fun copyFileFromResources(fileName: String, destination: File, destFileName: String? = null, sourceDir: String = "") {
-		val data = this.javaClass.getResource(sourceDir + fileName).readText()
-		val finalFileName = if (destFileName == null) fileName else destFileName
+	object FileHandler {
+		/**
+		 * Reads a file from /src/main/resources/_sourceDir_ and writes it to _destination_.
+		 * You can override the filename by supplying a value for _destFileName_
+		 * @param[fileName] Name of the file to copy
+		 * @param[destination] Folder the file is to be copied to
+		 * @param[destFileName] The final name of the file once copied. If left out, the destination file will have the same name as the source
+		 * @param[sourceDir] the folder within /src/main/resources to copy from. Optional.
+		 */
+		internal fun copyFileFromResources(fileName: String, destination: File, destFileName: String? = null, sourceDir: String = "") {
+			val data = readFileFromResources(sourceDir, fileName)
+			val finalFileName = if (destFileName == null) fileName else destFileName
 
-		File(destination, finalFileName).bufferedWriter().use { out ->
-			out.write(data)
+			writeFile(destination, finalFileName, data)
+		}
+
+		/**
+		 * Write the specified data to the file finalFileName in the directory destination
+		 * @param[data] The string to write
+		 * @param[finalFileName] The file name
+		 * @param[destination] The destination directory
+		 */
+		internal fun writeFile(destination: File, finalFileName: String, data: String) {
+			File(destination, finalFileName).bufferedWriter().use { out ->
+				out.write(data)
+			}
+		}
+
+		internal fun readFileFromResources(sourceDir: String, fileName: String): String {
+			val data = this.javaClass.getResource(sourceDir + fileName).readText()
+			return data
 		}
 	}
+
 }
 
 

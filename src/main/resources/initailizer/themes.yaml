@@ -1,0 +1,8 @@
+themes:
+- theme: unthemed
+  folder: themes/unthemed
+  description: Barebones HTML with no included CSS
+
+- theme: bulma
+  folder: themes/bulma
+  description: A simple theme using the Bulma framework https://bulma.io/

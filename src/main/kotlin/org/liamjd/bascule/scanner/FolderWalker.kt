@@ -39,7 +39,7 @@ class FolderWalker(val project: ProjectStructure) {
 		mdOptions.set(Parser.EXTENSIONS, arrayListOf(AttributesExtension.create(), YamlFrontMatterExtension.create()))
 		mdParser = Parser.builder(mdOptions).build()
 
-		assetsProcessor = AssetsProcessor(project.root,project.assetsDir,project.outputDir)
+		assetsProcessor = AssetsProcessor(project.root, project.assetsDir, project.outputDir)
 	}
 
 	// I wonder if coroutines can help with this?
@@ -70,13 +70,23 @@ class FolderWalker(val project: ProjectStructure) {
 
 					val yamlVisitor = AbstractYamlFrontMatterVisitor()
 					yamlVisitor.visit(document)
+
+					// TODO: make this better
 					yamlVisitor.data.forEach {
-						model.put(it.key, it.value[0])
+						val value = it.value.get(0)
+						if (value.startsWith("[") && value.endsWith("]")) {
+							println("Splitting into an array")
+							// split into an array
+							val array = value.drop(1).dropLast(1).split(",")
+							model[it.key] = array
+						} else {
+							model[it.key] = value
+						}
 					}
 					println("\t model (sans content) is $model")
 
 					val renderedMarkdown = renderMarkdown(document)
-					model.put("content",renderedMarkdown)
+					model.put("content", renderedMarkdown)
 
 					var templateFromYaml: String = ""
 					yamlVisitor.data["layout"]?.let {
@@ -88,13 +98,13 @@ class FolderWalker(val project: ProjectStructure) {
 
 					var url = it.nameWithoutExtension
 					val slug = yamlVisitor.data["slug"]
-					if(slug != null && slug.size == 1) {
+					if (slug != null && slug.size == 1) {
 						url = slug.get(0)
 					}
 					url += ".html"
 
 					info("Generating html file $url")
-					File(project.outputDir.absolutePath,url).bufferedWriter().use { out ->
+					File(project.outputDir.absolutePath, url).bufferedWriter().use { out ->
 						out.write(renderedContent)
 					}
 				}
@@ -136,7 +146,7 @@ class FolderWalker(val project: ProjectStructure) {
 
 	private fun emptyFolder(folder: File) {
 		folder.walk().forEach {
-			if(it != folder) {
+			if (it != folder) {
 				info("Deleting $it")
 				it.deleteRecursively()
 			}

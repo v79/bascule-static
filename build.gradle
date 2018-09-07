@@ -15,7 +15,7 @@ plugins {
 }
 
 group 'org.liamjd'
-version '1.0-SNAPSHOT'
+version '0.0.2'
 
 repositories {
     mavenCentral()
@@ -71,7 +71,7 @@ sourceSets {
 jar{
 	// required for building JAR files
 	baseName = 'bascule'
-	version = '0.0.1'
+//	version = ext.version
 	manifest {
 		attributes(
 				'Main-Class': 'org.liamjd.bascule.MainKt'

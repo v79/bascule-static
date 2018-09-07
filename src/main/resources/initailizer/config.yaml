@@ -1,7 +1,8 @@
 dateFormat: dd/MM/yyyy
 dateTimeFormat: HH:mm:ss dd/MM/yyyy
 author: bascule
-theme: unthemed
+theme: {{themeName}}
+tagskey: tags
 
 directories:
   source: sources
