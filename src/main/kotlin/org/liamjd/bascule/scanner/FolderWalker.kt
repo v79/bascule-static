@@ -13,8 +13,12 @@ import org.liamjd.bascule.assets.ProjectStructure
 import println.info
 import java.io.File
 import java.io.InputStream
+import java.io.Serializable
 import kotlin.system.measureTimeMillis
 
+
+// TODO: this is a sort of cache. What should it contain?
+class GeneratedContent(val url: String, val content: String) : Serializable
 
 class FolderWalker(val project: ProjectStructure) {
 
@@ -30,19 +34,20 @@ class FolderWalker(val project: ProjectStructure) {
 		mdParser = Parser.builder(mdOptions).build()
 
 		assetsProcessor = AssetsProcessor(project.root, project.assetsDir, project.outputDir)
-
 	}
 
 	// I wonder if coroutines can help with this?
 	fun generate() {
 
-		// TODO: be less agressive with this :)
+		// TODO: be less agressive with this, use some sort of caching :)
 		emptyFolder(project.outputDir)
 		assetsProcessor.copyStatics()
 
 		var numFiles = 0;
 
 		info("Scanning ${project.sourceDir.absolutePath} for markdown files")
+
+		val docCache = mutableMapOf<String,GeneratedContent>()
 
 		val timeTaken = measureTimeMillis {
 
@@ -71,16 +76,24 @@ class FolderWalker(val project: ProjectStructure) {
 
 					var url = it.nameWithoutExtension
 					val slug = yamlBuilder.getAttribute("slug")
+					if(docCache.containsKey(slug)) {
+						println.error("Duplicate slug '$slug' found!")
+					}
 					url += ".html"
 
 					info("Generating html file $url")
 					File(project.outputDir.absolutePath, url).bufferedWriter().use { out ->
 						out.write(renderedContent)
 					}
+
+					val gc = GeneratedContent(slug,renderedContent)
+					docCache.put(url, gc)
 				}
 			}
 		}
 		info("${timeTaken}ms to generate ${numFiles} files")
+
+//		info("Writing document cache")
 	}
 
 	private fun parseMarkdown(inputStream: InputStream): Document {
@@ -95,7 +108,6 @@ class FolderWalker(val project: ProjectStructure) {
 	}
 
 	private fun getTemplate(templateName: String): String {
-		info("Searching ${project.templatesDir} for template named ${templateName}.html")
 		val matches = project.templatesDir.listFiles({ dir, name -> name.equals(templateName + ".html") })
 
 		if (matches.isNotEmpty() && matches.size == 1) {
@@ -122,4 +134,5 @@ class FolderWalker(val project: ProjectStructure) {
 			}
 		}
 	}
+
 }
