@@ -3,7 +3,7 @@ title: On Pylons
 author: Liam Davison
 layout: post
 date: 23/05/2011
-tags: ["infrastructure", "nav"]
+tags: [infrastructure, power]
 slug: on-pylons
 ---
 #####

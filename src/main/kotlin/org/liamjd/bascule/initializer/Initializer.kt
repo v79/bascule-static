@@ -43,7 +43,6 @@ class Initializer(val siteName: String, val themeName: Theme?) {
 		outputDir.mkdir()
 		assetsDir.mkdir()
 		val templatesDir = File(siteRoot.absolutePath + "/${TEMPLATES_DIR}")
-		// TODO: allow theme to be set during creation? List of themes?
 		templatesDir.mkdir()
 
 		info("Copying theme '${theme}' templates")

@@ -2,6 +2,10 @@ package org.liamjd.bascule
 
 import java.util.*
 
+/**
+ * Return a random integer in the given range
+ * Call by (1..10).random()
+ */
 fun ClosedRange<Int>.random() =
 		Random().nextInt((endInclusive + 1) - start) + start
 

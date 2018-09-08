@@ -37,7 +37,6 @@ class Generator : Runnable {
 		val walker = FolderWalker(projectStructure)
 
 		walker.generate()
-
 	}
 
 	private fun buildProjectFromYamlConfig(yaml: String, configMap: Map<String,Any>): ProjectStructure {
@@ -69,6 +68,5 @@ class Generator : Runnable {
 				templates = templatesDir,
 				yaml = yamlConfig,
 				themeName = theme)
-
 	}
 }

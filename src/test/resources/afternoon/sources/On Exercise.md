@@ -3,7 +3,7 @@ title: On Exercise
 author: Liam Davison
 layout: post
 date: 12/05/2011
-tags: ["code","life", "nav"]
+tags: [health, exercise]
 slug: on-exercise
 ---
 #####

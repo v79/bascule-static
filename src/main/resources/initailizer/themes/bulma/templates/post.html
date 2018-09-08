@@ -14,7 +14,7 @@
 			{{ title }}
 		</h1>
 		<p class="subtitle">
-			by {{ author }} <span class="date"> {{ date }}</span> - <span class="tags">{{ tags }}</span>
+			by {{ author }} <span class="date"> {{ date }}</span> - {{#each tags }}<span class="tag is-primary">{{ this }}</span> {{/each}}
 		</p>
 		<div class="content">
 			{{{ content }}}

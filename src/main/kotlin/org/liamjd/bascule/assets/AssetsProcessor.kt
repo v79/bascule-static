@@ -14,6 +14,5 @@ class AssetsProcessor(val parent: File, val assetsDir: File, val outputDir: File
 
 	fun copyTheme() {
 		info("Copying theme template files")
-
 	}
 }

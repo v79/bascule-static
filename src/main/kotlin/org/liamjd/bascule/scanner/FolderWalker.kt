@@ -4,7 +4,6 @@ import com.github.jknack.handlebars.Context
 import com.github.jknack.handlebars.Handlebars
 import com.vladsch.flexmark.ast.Document
 import com.vladsch.flexmark.ext.attributes.AttributesExtension
-import com.vladsch.flexmark.ext.yaml.front.matter.AbstractYamlFrontMatterVisitor
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
@@ -19,27 +18,19 @@ import kotlin.system.measureTimeMillis
 
 class FolderWalker(val project: ProjectStructure) {
 
-//	private val sourcesDir: File
-//	private val templatesDir: File
-//	private val outputDir: File
-//	private val assetsDir: File
-
 	private val assetsProcessor: AssetsProcessor
+	private lateinit var yamlBuilder: ModelBuilder
 
 	val mdOptions = MutableDataSet()
 	val mdParser: Parser
 
 	init {
 		println("FolderWalker initialised")
-//		sourcesDir = File(parent, sources)
-//		templatesDir = File(parent, templates)
-//		outputDir = File(parent, output)
-//		assetsDir = File(parent, assets)
-
 		mdOptions.set(Parser.EXTENSIONS, arrayListOf(AttributesExtension.create(), YamlFrontMatterExtension.create()))
 		mdParser = Parser.builder(mdOptions).build()
 
 		assetsProcessor = AssetsProcessor(project.root, project.assetsDir, project.outputDir)
+
 	}
 
 	// I wonder if coroutines can help with this?
@@ -67,40 +58,19 @@ class FolderWalker(val project: ProjectStructure) {
 					val inputExtension = it.extension
 
 					val document = parseMarkdown(inputStream)
+					yamlBuilder = ModelBuilder(document)
 
-					val yamlVisitor = AbstractYamlFrontMatterVisitor()
-					yamlVisitor.visit(document)
-
-					// TODO: make this better
-					yamlVisitor.data.forEach {
-						val value = it.value.get(0)
-						if (value.startsWith("[") && value.endsWith("]")) {
-							println("Splitting into an array")
-							// split into an array
-							val array = value.drop(1).dropLast(1).split(",")
-							model[it.key] = array
-						} else {
-							model[it.key] = value
-						}
-					}
-					println("\t model (sans content) is $model")
+					model.putAll(yamlBuilder.getModel())
 
 					val renderedMarkdown = renderMarkdown(document)
 					model.put("content", renderedMarkdown)
 
-					var templateFromYaml: String = ""
-					yamlVisitor.data["layout"]?.let {
-						templateFromYaml = it.get(0)
-					}
-
+					val templateFromYaml: String = yamlBuilder.getAttribute("layout")
 					val renderedContent = render(model, getTemplate(templateFromYaml))
 //					println(renderedContent)
 
 					var url = it.nameWithoutExtension
-					val slug = yamlVisitor.data["slug"]
-					if (slug != null && slug.size == 1) {
-						url = slug.get(0)
-					}
+					val slug = yamlBuilder.getAttribute("slug")
 					url += ".html"
 
 					info("Generating html file $url")
