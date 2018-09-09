@@ -2,7 +2,7 @@
 title: On Alcohol
 author: Liam Davison
 layout: post
-date: 271/06/2012
+date: 27/06/2012
 tags: [health]
 slug: on-alcohol
 ---

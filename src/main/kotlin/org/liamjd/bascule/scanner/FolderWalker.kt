@@ -8,8 +8,10 @@ import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.options.MutableDataSet
+import org.liamjd.bascule.FileHandler
 import org.liamjd.bascule.assets.AssetsProcessor
 import org.liamjd.bascule.assets.ProjectStructure
+import org.liamjd.bascule.generator.Post
 import println.info
 import java.io.File
 import java.io.InputStream
@@ -18,12 +20,13 @@ import kotlin.system.measureTimeMillis
 
 
 // TODO: this is a sort of cache. What should it contain?
-class GeneratedContent(val url: String, val content: String) : Serializable
+class GeneratedContent(val lastUpdated: Long, val url: String, val content: String) : Serializable
 
 class FolderWalker(val project: ProjectStructure) {
 
 	private val assetsProcessor: AssetsProcessor
-	private lateinit var yamlBuilder: ModelBuilder
+
+	val fileHandler: FileHandler = FileHandler()
 
 	val mdOptions = MutableDataSet()
 	val mdParser: Parser
@@ -43,13 +46,13 @@ class FolderWalker(val project: ProjectStructure) {
 		emptyFolder(project.outputDir)
 		assetsProcessor.copyStatics()
 
-		println(project)
-
-		var numFiles = 0
+		var numPosts = 0
 
 		info("Scanning ${project.sourceDir.absolutePath} for markdown files")
 
 		val docCache = mutableMapOf<String,GeneratedContent>()
+		val siteModel = project.model
+		val postList = mutableListOf<Post>()
 
 		val timeTaken = measureTimeMillis {
 
@@ -57,46 +60,67 @@ class FolderWalker(val project: ProjectStructure) {
 				if (it.isDirectory) {
 					// do something with directories?
 				} else {
-					numFiles++
+					numPosts++
 					info("Scanning file ${it.name}")
 					val model = mutableMapOf<String, Any>()
+					model.putAll(siteModel)
+
+
 					val inputStream = it.inputStream()
-					val inputFileName = it.nameWithoutExtension
 					val inputExtension = it.extension
+					val lastModifiedTime = it.lastModified()
 
 					val document = parseMarkdown(inputStream)
-					yamlBuilder = ModelBuilder(document)
 
-					model.putAll(yamlBuilder.getModel())
+					val post: Post = Post.Builder.createPostFromYaml(document, project)
+					model.putAll(post.toModel())
 
 					val renderedMarkdown = renderMarkdown(document)
 					model.put("content", renderedMarkdown)
 
-					val templateFromYaml: String = yamlBuilder.getAttribute("layout")
+					val templateFromYaml: String = post.layout
 					val renderedContent = render(model, getTemplate(templateFromYaml))
-//					println(renderedContent)
 
 					var url = it.nameWithoutExtension
-					val slug = yamlBuilder.getAttribute("slug")
+					val slug = post.slug
 					if(docCache.containsKey(slug)) {
 						println.error("Duplicate slug '$slug' found!")
 					}
-					url += ".html"
+					url = slug + ".html"
 
 					info("Generating html file $url")
 					File(project.outputDir.absolutePath, url).bufferedWriter().use { out ->
 						out.write(renderedContent)
 					}
+					val gc = GeneratedContent(lastModifiedTime,slug,renderedContent)
+					docCache.put(post.sourceFileName, gc)
 
-					val gc = GeneratedContent(slug,renderedContent)
-					docCache.put(url, gc)
+					postList.add(post)
 				}
 			}
 		}
-		info("${timeTaken}ms to generate ${numFiles} files")
+		info("${timeTaken}ms to generate ${numPosts} files")
+
+		buildIndex(postList,numPosts)
 
 //		info("Writing document cache")
 	}
+
+	fun buildIndex(posts: List<Post>, numPosts: Int = 0) {
+		info("Building index file")
+		val model = mutableMapOf<String,Any>()
+		model.putAll(project.model)
+		model.put("posts",posts)
+		model.put("postCount",numPosts)
+		val renderedContent = render(model, getTemplate("index"))
+
+		println("index -> $renderedContent")
+
+		File(project.outputDir.absolutePath, "index.html").bufferedWriter().use { out ->
+			out.write(renderedContent)
+		}
+	}
+
 
 	private fun parseMarkdown(inputStream: InputStream): Document {
 		val text = inputStream.bufferedReader().readText()

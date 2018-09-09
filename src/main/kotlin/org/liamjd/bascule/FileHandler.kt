@@ -1,6 +1,7 @@
 package org.liamjd.bascule
 
 import java.io.File
+import java.io.InputStream
 import java.nio.file.FileSystems
 
 class FileHandler {
@@ -30,6 +31,11 @@ class FileHandler {
 			return folder
 		}
 		throw Exception("Could not create directories $parentPath/$folderName")
+	}
+
+	fun getFileStream(folder: File, fileName: String): InputStream {
+		val file = File(folder,fileName)
+		return file.inputStream()
 	}
 
 	/**

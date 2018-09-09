@@ -9,7 +9,6 @@ import org.liamjd.bascule.Constants.OUTPUT_DIR
 import org.liamjd.bascule.Constants.SOURCE_DIR
 import org.liamjd.bascule.Constants.TEMPLATES_DIR
 import org.liamjd.bascule.FileHandler
-import org.liamjd.bascule.assets.ProjectStructure
 import org.liamjd.bascule.assets.Theme
 import println.info
 import java.io.File
@@ -44,14 +43,7 @@ class Initializer(val siteName: String, val themeName: Theme?, val fileHandler: 
 		info("Copying theme '${theme}' templates")
 		copyThemeToTemplates(theme, templatesDir)
 
-		val projectStructure = ProjectStructure(name = siteName,
-				root = siteRoot,
-				sourceDir = sourceDir,
-				outputDir = outputDir,
-				assetsDir = assetsDir,
-				templatesDir = templatesDir,
-				yamlConfigString = yamlConfigString,
-				theme = theme)
+	/*	val projectStructure = ProjectStructure.Configurator.buildProjectFromYamlConfig(yamlConfigString)*/
 
 		info("Site generated. Start writing your pages and posts inside the ${sourceDir.absolutePath} folder. Store images and CSS files in ${assetsDir.absolutePath} and Handlebars templates in ${templatesDir.absolutePath}.")
 
@@ -84,7 +76,7 @@ class Initializer(val siteName: String, val themeName: Theme?, val fileHandler: 
 
 	private fun copyThemeToTemplates(themeName: Theme, templatesDir: File) {
 		val themeTemplateDirName = "${Constants.THEME_FOLDER}/${themeName}/templates"
-		val filesToCopy = arrayOf("post.html")
+		val filesToCopy = arrayOf("post.html","index.html")
 		for (f in filesToCopy) {
 			fileHandler.copyFileFromResources(fileName = f, destination = templatesDir, sourceDir = themeTemplateDirName + "/")
 		}
