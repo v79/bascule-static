@@ -20,6 +20,8 @@ class Post {
 	var slug: String = ""
 	var attributes: MutableMap<String, Any> = mutableMapOf()
 
+	var content: String = ""
+
 	fun toModel(): Map<String, Any> {
 		val modelMap = mutableMapOf<String, Any>()
 		modelMap.put("sourceFileName", sourceFileName)
@@ -33,6 +35,10 @@ class Post {
 		modelMap.put("attributes", attributes)
 
 		return modelMap
+	}
+
+	fun getSummary(): String {
+		return content.take(100) + "..."
 	}
 
 	object Builder {

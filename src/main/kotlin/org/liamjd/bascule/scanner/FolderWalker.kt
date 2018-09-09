@@ -2,6 +2,10 @@ package org.liamjd.bascule.scanner
 
 import com.github.jknack.handlebars.Context
 import com.github.jknack.handlebars.Handlebars
+import com.github.jknack.handlebars.context.FieldValueResolver
+import com.github.jknack.handlebars.context.JavaBeanValueResolver
+import com.github.jknack.handlebars.context.MapValueResolver
+import com.github.jknack.handlebars.context.MethodValueResolver
 import com.vladsch.flexmark.ast.Document
 import com.vladsch.flexmark.ext.attributes.AttributesExtension
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
@@ -12,6 +16,7 @@ import org.liamjd.bascule.FileHandler
 import org.liamjd.bascule.assets.AssetsProcessor
 import org.liamjd.bascule.assets.ProjectStructure
 import org.liamjd.bascule.generator.Post
+import org.liamjd.bascule.render.ForEachHelper
 import println.info
 import java.io.File
 import java.io.InputStream
@@ -65,7 +70,6 @@ class FolderWalker(val project: ProjectStructure) {
 					val model = mutableMapOf<String, Any>()
 					model.putAll(siteModel)
 
-
 					val inputStream = it.inputStream()
 					val inputExtension = it.extension
 					val lastModifiedTime = it.lastModified()
@@ -80,6 +84,7 @@ class FolderWalker(val project: ProjectStructure) {
 
 					val templateFromYaml: String = post.layout
 					val renderedContent = render(model, getTemplate(templateFromYaml))
+					post.content = renderedMarkdown
 
 					var url = it.nameWithoutExtension
 					val slug = post.slug
@@ -87,6 +92,7 @@ class FolderWalker(val project: ProjectStructure) {
 						println.error("Duplicate slug '$slug' found!")
 					}
 					url = slug + ".html"
+					post.url = url
 
 					info("Generating html file $url")
 					File(project.outputDir.absolutePath, url).bufferedWriter().use { out ->
@@ -109,8 +115,9 @@ class FolderWalker(val project: ProjectStructure) {
 	fun buildIndex(posts: List<Post>, numPosts: Int = 0) {
 		info("Building index file")
 		val model = mutableMapOf<String,Any>()
+		val postsPerPage = project.postsPerPage
 		model.putAll(project.model)
-		model.put("posts",posts)
+		model.put("posts",posts.sortedByDescending { it.date }.take(postsPerPage))
 		model.put("postCount",numPosts)
 		val renderedContent = render(model, getTemplate("index"))
 
@@ -144,9 +151,12 @@ class FolderWalker(val project: ProjectStructure) {
 		return ""
 	}
 
+	// TODO: move this to it's own class!
 	private fun render(model: Map<String, Any>, templateString: String): String {
 		val hbRenderer = Handlebars()
-		val hbContext = Context.newBuilder(model).build()
+		hbRenderer.registerHelper("forEach", ForEachHelper())
+
+		val hbContext = Context.newBuilder(model).resolver(MethodValueResolver.INSTANCE, JavaBeanValueResolver.INSTANCE, MapValueResolver.INSTANCE, FieldValueResolver.INSTANCE).build()
 		val template = hbRenderer.compileInline(templateString)
 
 		return template.apply(hbContext)

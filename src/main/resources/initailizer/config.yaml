@@ -4,6 +4,7 @@ dateTimeFormat: HH:mm:ss dd/MM/yyyy
 author: bascule
 theme: {{themeName}}
 tagskey: tags
+postsPerPage: 2
 
 directories:
   source: sources

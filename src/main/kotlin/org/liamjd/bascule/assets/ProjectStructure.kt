@@ -7,7 +7,10 @@ import java.io.InputStream
 
 typealias Theme = String
 
+// TODO: probably too much in this constructor... allow some vars!
 class ProjectStructure(val name: String, val root: File, val sourceDir: File, val outputDir: File, val assetsDir: File, val templatesDir: File, val yamlConfigString: String, val theme: Theme, val model: Map<String, Any>) {
+
+	var postsPerPage = 5
 
 	constructor(name: String, root: File, source: String, output: String, assets: String, templates: String, yaml: String, themeName: String, configMap: Map<String, Any>) : this(name = name,
 			root = root,
@@ -70,7 +73,7 @@ class ProjectStructure(val name: String, val root: File, val sourceDir: File, va
 				templatesDir = "$theme/" + Constants.TEMPLATES_DIR
 			}
 
-			return ProjectStructure(
+			val project =  ProjectStructure(
 					name = parentFolder.name,
 					root = parentFolder,
 					source = sourceDir,
@@ -81,6 +84,12 @@ class ProjectStructure(val name: String, val root: File, val sourceDir: File, va
 					themeName = theme,
 					configMap = configMap
 			)
+
+			if(configMap["postsPerPage"] != null) {
+				project.postsPerPage = configMap["postsPerPage"] as Int
+			}
+
+			return project
 		}
 	}
 
