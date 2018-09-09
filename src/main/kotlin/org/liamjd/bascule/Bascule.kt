@@ -24,14 +24,15 @@ class Bascule : Runnable {
 	var deleteAllName: String = ""
 
 	init {
-		AnsiConsole.systemInstall();
+		AnsiConsole.systemInstall()
 	}
 
 	override fun run() {
 		info(Constants.logos[(0 until Constants.logos.size).random()])
 
 		if(siteName.isNotBlank()) {
-			Initializer(siteName, themeName)
+			val initializer = Initializer(siteName, themeName, FileHandler())
+			initializer.create()
 		}
 
 		if(deleteAllName.isNotBlank()) {

@@ -43,7 +43,7 @@ class FolderWalker(val project: ProjectStructure) {
 		emptyFolder(project.outputDir)
 		assetsProcessor.copyStatics()
 
-		var numFiles = 0;
+		var numFiles = 0
 
 		info("Scanning ${project.sourceDir.absolutePath} for markdown files")
 

@@ -8,6 +8,7 @@ import org.liamjd.bascule.Constants.CONFIG_YAML
 import org.liamjd.bascule.Constants.OUTPUT_DIR
 import org.liamjd.bascule.Constants.SOURCE_DIR
 import org.liamjd.bascule.Constants.TEMPLATES_DIR
+import org.liamjd.bascule.FileHandler
 import org.liamjd.bascule.assets.ProjectStructure
 import org.liamjd.bascule.assets.Theme
 import println.info
@@ -15,19 +16,19 @@ import java.io.File
 import java.nio.file.FileSystems
 import kotlin.system.exitProcess
 
-class Initializer(val siteName: String, val themeName: Theme?) {
+class Initializer(val siteName: String, val themeName: Theme?, val fileHandler: FileHandler) {
 
 	val currentDirectory = System.getProperty("user.dir")
-	val pathSeparator = FileSystems.getDefault().getSeparator()
+	val pathSeparator = FileSystems.getDefault().separator
 
-	init {
+	fun create() {
 		info("Initializing new site $currentDirectory$pathSeparator$siteName")
 
 		val siteRoot = File("$currentDirectory$pathSeparator$siteName")
 		val theme = themeName ?: Constants.DEFAULT_THEME
-		if (siteRoot.mkdirs() == false) {
+		if(fileHandler.createDirectories(siteRoot) == false) {
 			println.error("Could not create folder $siteRoot")
-			exitProcess(-1)
+			return
 		}
 
 		// copy configuration yaml file from resources
@@ -36,14 +37,10 @@ class Initializer(val siteName: String, val themeName: Theme?) {
 
 
 //		copyFileFromResources(fileName = CONFIG_YAML, destination = siteRoot, destFileName = yamlConfigString)
-		val sourceDir = File(siteRoot.absolutePath + "/${SOURCE_DIR}")
-		val outputDir = File(siteRoot.absolutePath + "/${OUTPUT_DIR}")
-		val assetsDir = File(siteRoot.absolutePath + "/${ASSETS_DIR}")
-		sourceDir.mkdir()
-		outputDir.mkdir()
-		assetsDir.mkdir()
-		val templatesDir = File(siteRoot.absolutePath + "/${TEMPLATES_DIR}")
-		templatesDir.mkdir()
+		val sourceDir = fileHandler.createDirectory(siteRoot.absolutePath,SOURCE_DIR)
+		val outputDir = fileHandler.createDirectory(siteRoot.absolutePath,OUTPUT_DIR)
+		val assetsDir = fileHandler.createDirectory(siteRoot.absolutePath,ASSETS_DIR)
+		val templatesDir = fileHandler.createDirectory(siteRoot.absolutePath,TEMPLATES_DIR)
 
 		info("Copying theme '${theme}' templates")
 		copyThemeToTemplates(theme, templatesDir)
@@ -64,13 +61,15 @@ class Initializer(val siteName: String, val themeName: Theme?) {
 	// TODO: this will get much more complicated in the future
 	private fun buildConfiguration(themeName: Theme, root: File): String {
 		val yamlConfigString = "${siteName}.yaml"
+
 		info("Writing $siteName.yaml configuration file")
-		val yamlTemplate = FileHandler.readFileFromResources("", CONFIG_YAML)
+		val yamlTemplate = fileHandler.readFileFromResources("", CONFIG_YAML)
 		val model = mutableMapOf<String, String>()
 		model.put("themeName", themeName)
+
 		val projectConfig = render(model, yamlTemplate)
 
-		FileHandler.writeFile(root, yamlConfigString, projectConfig)
+		fileHandler.writeFile(root, yamlConfigString, projectConfig)
 
 		return yamlConfigString
 
@@ -88,41 +87,7 @@ class Initializer(val siteName: String, val themeName: Theme?) {
 		val themeTemplateDirName = "${Constants.THEME_FOLDER}${themeName}/templates"
 		val filesToCopy = arrayOf("post.html")
 		for (f in filesToCopy) {
-			FileHandler.copyFileFromResources(fileName = f, destination = templatesDir, sourceDir = themeTemplateDirName + "/")
-		}
-	}
-
-	object FileHandler {
-		/**
-		 * Reads a file from /src/main/resources/_sourceDir_ and writes it to _destination_.
-		 * You can override the filename by supplying a value for _destFileName_
-		 * @param[fileName] Name of the file to copy
-		 * @param[destination] Folder the file is to be copied to
-		 * @param[destFileName] The final name of the file once copied. If left out, the destination file will have the same name as the source
-		 * @param[sourceDir] the folder within /src/main/resources to copy from. Optional.
-		 */
-		internal fun copyFileFromResources(fileName: String, destination: File, destFileName: String? = null, sourceDir: String = "") {
-			val data = readFileFromResources(sourceDir, fileName)
-			val finalFileName = if (destFileName == null) fileName else destFileName
-
-			writeFile(destination, finalFileName, data)
-		}
-
-		/**
-		 * Write the specified data to the file finalFileName in the directory destination
-		 * @param[data] The string to write
-		 * @param[finalFileName] The file name
-		 * @param[destination] The destination directory
-		 */
-		internal fun writeFile(destination: File, finalFileName: String, data: String) {
-			File(destination, finalFileName).bufferedWriter().use { out ->
-				out.write(data)
-			}
-		}
-
-		internal fun readFileFromResources(sourceDir: String, fileName: String): String {
-			val data = this.javaClass.getResource(sourceDir + fileName).readText()
-			return data
+			fileHandler.copyFileFromResources(fileName = f, destination = templatesDir, sourceDir = themeTemplateDirName + "/")
 		}
 	}
 
@@ -132,9 +97,9 @@ class Initializer(val siteName: String, val themeName: Theme?) {
 /**
  * Really, really destructive and I'm only using it for testing purposes!
  */
-class Destroyer(val siteName: String) {
+class Destroyer(siteName: String) {
 	val currentDirectory = System.getProperty("user.dir")
-	val pathSeparator = FileSystems.getDefault().getSeparator()
+	val pathSeparator = FileSystems.getDefault().separator
 
 	init {
 		if (siteName.isNotBlank()) {

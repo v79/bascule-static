@@ -14,7 +14,7 @@ import java.nio.file.FileSystems
 class Generator : Runnable {
 
 	val currentDirectory = System.getProperty("user.dir")
-	val pathSeparator = FileSystems.getDefault().getSeparator()
+	val pathSeparator = FileSystems.getDefault().separator
 	val yamlConfig: String
 	val parentFolder: File
 

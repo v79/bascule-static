@@ -13,7 +13,7 @@ import java.io.File
 import kotlin.system.measureTimeMillis
 
 
-class BasculeTester() {
+class BasculeTester {
 
 	val USERHOME = System.getProperty("user.home")
 	val NUM_FILES = 10
@@ -29,7 +29,7 @@ class BasculeTester() {
 		println("Building $projectName...")
 		println("USERHOME: $USERHOME")
 
-		val tmpDir = createTempDir("bascule-", "-$projectName", File(USERHOME));
+		val tmpDir = createTempDir("bascule-", "-$projectName", File(USERHOME))
 		println("Directory created at $tmpDir")
 
 
