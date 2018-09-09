@@ -33,13 +33,13 @@ class Generator : Runnable {
 		val configMap: Map<String,Any> = yaml.load(configStream)
 		println(configMap)
 
-		val projectStructure = buildProjectFromYamlConfig(yamlConfig, configMap)
+		val projectStructure = buildProjectFromYamlConfig(configMap)
 		val walker = FolderWalker(projectStructure)
 
 		walker.generate()
 	}
 
-	private fun buildProjectFromYamlConfig(yaml: String, configMap: Map<String,Any>): ProjectStructure {
+	private fun buildProjectFromYamlConfig(configMap: Map<String,Any>): ProjectStructure {
 		val sourceDir: String
 		val assetsDir: String
 		val outputDir: String
@@ -48,16 +48,17 @@ class Generator : Runnable {
 		val theme = if(configMap["theme"] == null) Constants.DEFAULT_THEME else configMap["theme"] as String
 
 		if(configMap["directories"]!= null) {
+			@Suppress("UNCHECKED_CAST")
 			val directories = configMap["directories"] as Map<String,String?>
 			sourceDir  = directories["source"] ?: Constants.SOURCE_DIR
 			assetsDir  = directories["assets"] ?: Constants.ASSETS_DIR
 			outputDir  = directories["output"] ?: Constants.OUTPUT_DIR
-			templatesDir = directories["templates"] ?: Constants.TEMPLATES_DIR
+			templatesDir = "$theme/" + ( directories["templates"] ?: Constants.TEMPLATES_DIR)
 		} else {
 			sourceDir  = Constants.SOURCE_DIR
 			assetsDir  = Constants.ASSETS_DIR
 			outputDir  = Constants.OUTPUT_DIR
-			templatesDir =  Constants.TEMPLATES_DIR
+			templatesDir =  "$theme/" + Constants.TEMPLATES_DIR
 		}
 
 		return ProjectStructure(name = parentFolder.name,

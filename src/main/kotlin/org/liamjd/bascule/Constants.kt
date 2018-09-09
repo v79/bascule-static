@@ -12,7 +12,6 @@ fun ClosedRange<Int>.random() =
 object Constants {
 	val VERSION_STRING = "v0.0.1"
 
-
 	// TODO: these will all be parameterised
 	val SOURCE_DIR = "sources"
 	val OUTPUT_DIR = "site"
@@ -22,7 +21,7 @@ object Constants {
 	val DEFAULT_THEME = "bulma"
 
 	val CONFIG_YAML  = "/initailizer/config.yaml"
-	val THEME_FOLDER = "/initailizer/themes/"
+	val THEME_FOLDER = "/initailizer/themes"
 	val THEMES_LIST = "/initailizer/themes.yaml"
 
 

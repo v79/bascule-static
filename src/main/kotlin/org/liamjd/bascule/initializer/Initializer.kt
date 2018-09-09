@@ -19,12 +19,11 @@ import kotlin.system.exitProcess
 class Initializer(val siteName: String, val themeName: Theme?, val fileHandler: FileHandler) {
 
 	val currentDirectory = System.getProperty("user.dir")
-	val pathSeparator = FileSystems.getDefault().separator
 
 	fun create() {
-		info("Initializing new site $currentDirectory$pathSeparator$siteName")
+		info("Initializing new site $currentDirectory/$siteName")
 
-		val siteRoot = File("$currentDirectory$pathSeparator$siteName")
+		val siteRoot = File("$currentDirectory/$siteName")
 		val theme = themeName ?: Constants.DEFAULT_THEME
 		if(fileHandler.createDirectories(siteRoot) == false) {
 			println.error("Could not create folder $siteRoot")
@@ -40,7 +39,7 @@ class Initializer(val siteName: String, val themeName: Theme?, val fileHandler: 
 		val sourceDir = fileHandler.createDirectory(siteRoot.absolutePath,SOURCE_DIR)
 		val outputDir = fileHandler.createDirectory(siteRoot.absolutePath,OUTPUT_DIR)
 		val assetsDir = fileHandler.createDirectory(siteRoot.absolutePath,ASSETS_DIR)
-		val templatesDir = fileHandler.createDirectory(siteRoot.absolutePath,TEMPLATES_DIR)
+		val templatesDir = fileHandler.createDirectories("${siteRoot.absolutePath}/$theme",TEMPLATES_DIR)
 
 		info("Copying theme '${theme}' templates")
 		copyThemeToTemplates(theme, templatesDir)
@@ -84,7 +83,7 @@ class Initializer(val siteName: String, val themeName: Theme?, val fileHandler: 
 	}
 
 	private fun copyThemeToTemplates(themeName: Theme, templatesDir: File) {
-		val themeTemplateDirName = "${Constants.THEME_FOLDER}${themeName}/templates"
+		val themeTemplateDirName = "${Constants.THEME_FOLDER}/${themeName}/templates"
 		val filesToCopy = arrayOf("post.html")
 		for (f in filesToCopy) {
 			fileHandler.copyFileFromResources(fileName = f, destination = templatesDir, sourceDir = themeTemplateDirName + "/")
@@ -100,12 +99,11 @@ class Initializer(val siteName: String, val themeName: Theme?, val fileHandler: 
 class Destroyer(siteName: String) {
 	val currentDirectory = System.getProperty("user.dir")
 	val pathSeparator = FileSystems.getDefault().separator
-
 	init {
 		if (siteName.isNotBlank()) {
-			println("Destroying your website $currentDirectory$pathSeparator$siteName!")
+			println("Destroying your website $currentDirectory${pathSeparator}$siteName!")
 
-			val siteRoot = File("$currentDirectory$pathSeparator$siteName")
+			val siteRoot = File("$currentDirectory${pathSeparator}$siteName")
 			siteRoot.deleteRecursively()
 		}
 		exitProcess(-1)

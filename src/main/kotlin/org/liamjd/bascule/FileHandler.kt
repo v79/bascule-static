@@ -1,11 +1,14 @@
 package org.liamjd.bascule
 
 import java.io.File
+import java.nio.file.FileSystems
 
 class FileHandler {
 
+	val pathSeparator = FileSystems.getDefault().separator
+
 	fun createDirectories(path: String): Boolean {
-		val folders = File(path)
+		val folders = File(path.replace("/",pathSeparator))
 		return folders.mkdirs()
 	}
 
@@ -14,11 +17,19 @@ class FileHandler {
 	}
 
 	fun createDirectory(parentPath: String, folderName: String): File {
-		val folder = File(parentPath, folderName)
-		if (folder.mkdir() != false) {
+		val folder = File(parentPath.replace("/",pathSeparator), folderName)
+		if (folder.mkdir()) {
 			return folder
 		}
 		throw Exception("Could not create directory $parentPath/$folderName")
+	}
+
+	fun createDirectories(parentPath: String, folderName: String): File {
+		val folder = File(parentPath.replace("/",pathSeparator), folderName)
+		if (folder.mkdirs()) {
+			return folder
+		}
+		throw Exception("Could not create directories $parentPath/$folderName")
 	}
 
 	/**
