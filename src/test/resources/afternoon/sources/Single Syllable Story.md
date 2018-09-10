@@ -6,7 +6,7 @@ date: 08/10/2005
 tags: [short story]
 slug: single-syllable-story
 ---
-#####
+
 At a recent course on _Advanced Writing for the Web_, I was challenged to write a short story featuring only single-syllable words. I had about ten minutes to compose a story starting with a given sentence: I chose **Lorna and I made a plan to meet at the station, under the clock...**. The single-syllable rule wasn't strict - _station_ clearly has two, but an alternative like _the place where trains meet_ is unnecessarily complicated and unclear. My story is below:
 
 ---

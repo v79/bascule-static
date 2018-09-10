@@ -6,7 +6,7 @@ date: 18/06/2011
 tags: [colour, decorating]
 slug: too-much-green-paint
 ---
-#####
+
 When I was very young my bedroom was painted in four different colours - bright primary colours my parents thought were modern and youthful. Unfortunately I don't remember those colours - my earliest bedroom memories were of blue walls and a blue carpet, blue curtains, and lots of glow-in-the-dark star stickers on the wardrobe and ceiling. I lived in that house for twelve years - twelve oddly-coloured years. The living room doors were painted a blue gloss (that took a lot of shifting); the hallway was green; the box room that I adopted as my personal TV/computer room as soon as I was able was painted brown with red gloss. There was a lot of red gloss.
 
 It sounds much more horrendous when written like that than I remember it being. What's wrong with an olive-green hallway? As I got older, those colours mellowed, and when I moved aged twelve, our new home was entirely magnolia. We lived in that house for five or six years, and I think the only thing that got painted was the kitchen, in a pale pink.

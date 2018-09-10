@@ -6,7 +6,7 @@ date: 12/05/2011
 tags: [health, exercise]
 slug: on-exercise
 ---
-#####
+
 I was never really one for exercise. I hated the experience of PE at school – playing sports I was no good at, getting dirty and sweaty for no good reason, the perceived humiliation of the changing rooms and showers. My school had a strong rugby focus; my focus was avoiding the ball at all costs. In football, I remember being in goal and a team member passing the ball back to me. Somebody shouted “don’t pick it up” – so I let it pass between my legs and into the goal. The teachers could never engage with those of us who weren’t that interested.
  
 I didn’t mind basketball so much – it was indoors for a start, and I wasn’t terrible at it. Hockey was bearable as well. But as soon as I could drop PE from my curriculum, I did. I never understood the mentality of those who enjoyed sports and exercise, and to be honest I still don’t.

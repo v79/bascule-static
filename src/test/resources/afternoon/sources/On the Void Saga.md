@@ -6,7 +6,6 @@ date: 29/05/2011
 tags: [books, science fiction]
 slug: on-the-void-saga
 ---
-#####
 
 I have just finished reading _The Evolutionary Void_, the final book in Peter F Hamilton’s _Void Trilogy_, itself a sequel to _The Commonwealth Saga_.
 

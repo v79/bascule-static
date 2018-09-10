@@ -5,9 +5,8 @@ layout: post
 date: 23/05/2011
 tags: [infrastructure, power]
 slug: on-pylons
+customAttribute: wibble
 ---
-#####
-
 The Royal Institute of British Architects, the Department of Energy and the National Grid are running a competition to redesign electricity pylons, those steel-framed behemoths that criss-cross the landscape and infuriate the countryside middle-class everywhere. There are [no to pylons](http://www.no-moor-pylons.co.uk "no moor pylons") campaigns running throughout the country. We'd all rather that electricity was carried in underground cables hidden from sight. However, I'm sure that none of us want to pay the extra costs of burying cables, and I'm equally sure the same complainers would be protesting against the disruption cause by the tunnelling works necessary.
 
 ![Photograph of electricity pylons on the disused Oakley Airfield](assets/pylons.jpg)  
