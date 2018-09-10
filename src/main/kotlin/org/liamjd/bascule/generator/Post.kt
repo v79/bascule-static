@@ -6,7 +6,11 @@ import org.liamjd.bascule.assets.ProjectStructure
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-class Post {
+
+sealed class PostGeneration
+data class PostGenError(val errorMessage: String, val fileName: String, var field: String?) : PostGeneration()
+
+class Post : PostGeneration() {
 
 	var sourceFileName: String = ""
 	var url: String = ""
@@ -43,47 +47,76 @@ class Post {
 
 	object Builder {
 
-		val yamlVisitor: AbstractYamlFrontMatterVisitor = AbstractYamlFrontMatterVisitor()
 
-		fun createPostFromYaml(document: Document, project: ProjectStructure): Post {
+		fun createPostFromYaml(fileName: String, document: Document, project: ProjectStructure): PostGeneration {
+			val yamlVisitor: AbstractYamlFrontMatterVisitor = AbstractYamlFrontMatterVisitor()
 			val post = Post()
 
 			yamlVisitor.visit(document)
 			yamlVisitor.data.forEach {
-				val value = it.value.get(0)
-				when (it.key) {
-					"title" -> {
-						post.title = value
+
+
+				try {
+					val metaData: PostMetaData = PostMetaData.valueOf(it.key)
+					println("\t\t metaData -> $metaData -> ${it.value}")
+					if(metaData.required && it.value.isEmpty()) {
+						return PostGenError("Missing required field '${metaData.name}' in source file '${fileName}'",fileName,metaData.name)
 					}
-					"layout" -> {
-						post.layout = value
-					}
-					"author" -> {
-						post.author = value
-					}
-					"slug" -> {
-						post.slug = value
-					}
-					"date" -> {
-						val dateFormat = project.model["dateFormat"] as String? ?: "dd/MM/yyyy"
-						val formatter = DateTimeFormatter.ofPattern(dateFormat)
-						post.date = LocalDate.parse(value, formatter)
-					}
-					"tags" -> {
-						post.tags = value.drop(1).dropLast(1).split(",")
-					}
-					else -> {
-						if (value.startsWith("[") && value.endsWith("]")) {
-							// split into an array
-							val array = value.drop(1).dropLast(1).split(",")
-							post.attributes.put(it.key, array)
-						} else {
-							post.attributes.put(it.key, value)
+				} catch (iae: IllegalArgumentException) {
+					println("found ${it.key} instead")
+				}
+
+
+
+
+
+//				println("\t\t it.value = ${it.value}")
+				if (it.value != null && it.value.isNotEmpty()) {
+					val value = it.value.get(0)
+					when (it.key) {
+						"title" -> {
+							post.title = value
+						}
+						"layout" -> {
+							post.layout = value
+						}
+						"author" -> {
+							post.author = value
+						}
+						"slug" -> {
+							post.slug = value
+						}
+						"date" -> {
+							val dateFormat = project.model["dateFormat"] as String? ?: "dd/MM/yyyy"
+							val formatter = DateTimeFormatter.ofPattern(dateFormat)
+							post.date = LocalDate.parse(value, formatter)
+						}
+						"tags" -> {
+							post.tags = value.drop(1).dropLast(1).split(",")
+						}
+						else -> {
+							if (value.startsWith("[") && value.endsWith("]")) {
+								// split into an array
+								val array = value.drop(1).dropLast(1).split(",")
+								post.attributes.put(it.key, array)
+							} else {
+								post.attributes.put(it.key, value)
+							}
 						}
 					}
-				}
+				} // else do nothing? depends on the key I guess...
 			}
 			return post
 		}
 	}
+}
+
+enum class PostMetaData( val required: Boolean, val multipleAllowed: Boolean) {
+	title(true,false),
+	layout(true,false),
+	author(false,false),
+	slug(false,false),
+	date(false,false),
+	tags(false,true),
+	custom(false,true);
 }

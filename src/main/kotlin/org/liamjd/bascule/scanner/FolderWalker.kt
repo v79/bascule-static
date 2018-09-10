@@ -16,6 +16,7 @@ import org.liamjd.bascule.FileHandler
 import org.liamjd.bascule.assets.AssetsProcessor
 import org.liamjd.bascule.assets.ProjectStructure
 import org.liamjd.bascule.generator.Post
+import org.liamjd.bascule.generator.PostGenError
 import org.liamjd.bascule.render.ForEachHelper
 import println.info
 import java.io.File
@@ -76,32 +77,43 @@ class FolderWalker(val project: ProjectStructure) {
 
 					val document = parseMarkdown(inputStream)
 
-					val post: Post = Post.Builder.createPostFromYaml(document, project)
-					model.putAll(post.toModel())
+										val post = Post.Builder.createPostFromYaml(it.name,document, project)
+					when(post) {
+						is Post -> {
 
-					val renderedMarkdown = renderMarkdown(document)
-					model.put("content", renderedMarkdown)
+							model.putAll(post.toModel())
 
-					val templateFromYaml: String = post.layout
-					val renderedContent = render(model, getTemplate(templateFromYaml))
-					post.content = renderedMarkdown
+							val renderedMarkdown = renderMarkdown(document)
+							model.put("content", renderedMarkdown)
 
-					var url = it.nameWithoutExtension
-					val slug = post.slug
-					if(docCache.containsKey(slug)) {
-						println.error("Duplicate slug '$slug' found!")
+							val templateFromYaml
+									: String = post.layout
+							val renderedContent = render(model, getTemplate(templateFromYaml))
+							post.content = renderedMarkdown
+
+							var url = it.nameWithoutExtension
+							val slug = post.slug
+							if (docCache.containsKey(slug)) {
+								println.error("Duplicate slug '$slug' found!")
+							}
+							url = slug + ".html"
+							post.url = url
+
+							info("Generating html file $url")
+							File(project.outputDir.absolutePath, url)
+									.bufferedWriter().use { out ->
+										out.write(renderedContent)
+									}
+							val gc = GeneratedContent(lastModifiedTime, slug, renderedContent)
+							docCache.put(post.sourceFileName, gc)
+
+							postList.add(post)
+						}
+						is PostGenError -> {
+							println.error("Error parsing file ${post.fileName}: ")
+							println.error(post.errorMessage)
+						}
 					}
-					url = slug + ".html"
-					post.url = url
-
-					info("Generating html file $url")
-					File(project.outputDir.absolutePath, url).bufferedWriter().use { out ->
-						out.write(renderedContent)
-					}
-					val gc = GeneratedContent(lastModifiedTime,slug,renderedContent)
-					docCache.put(post.sourceFileName, gc)
-
-					postList.add(post)
 				}
 			}
 		}
@@ -121,7 +133,7 @@ class FolderWalker(val project: ProjectStructure) {
 		model.put("postCount",numPosts)
 		val renderedContent = render(model, getTemplate("index"))
 
-		println("index -> $renderedContent")
+//		println("index -> $renderedContent")
 
 		File(project.outputDir.absolutePath, "index.html").bufferedWriter().use { out ->
 			out.write(renderedContent)

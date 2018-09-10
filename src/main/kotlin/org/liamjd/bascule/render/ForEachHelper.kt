@@ -6,8 +6,11 @@ import com.github.jknack.handlebars.Options
 import java.util.*
 import java.util.Map
 
-
-class ForEachHelper() : Helper<Any> {
+/**
+ * A modification of the standard handlebars '#each iterator.
+ * Use #forEach "5" to show only the first 5 items in the collection
+ */
+class ForEachHelper : Helper<Any> {
 	override fun apply(context: Any, options: Options): Any {
 
 		options.params.forEach {
