@@ -77,7 +77,7 @@ class FolderWalker(val project: ProjectStructure) {
 
 					val document = parseMarkdown(inputStream)
 
-										val post = Post.Builder.createPostFromYaml(it.name,document, project)
+					val post = Post.createPostFromYaml(it.name,document, project)
 					when(post) {
 						is Post -> {
 
