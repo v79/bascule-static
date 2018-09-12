@@ -1,6 +1,6 @@
 ---
 title: On Blogging
-author: Liam Davison
+author: [Liam Davison, Neil Davison]
 layout: post
 date: 17/11/2011
 tags: 
