@@ -18,71 +18,65 @@ import java.time.Month
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-
-private val TITLE: String = "Four Weeks Sick Leave"
-private val AUTHOR = "Nessie the Monster"
-private val LAYOUT_POST = "post"
-private val SLUG = "four-weeks"
-private val POST_DATE = "01/01/2018"
+private val TITLE_VAL: String = "Four Weeks Sick Leave"
+private val AUTHOR_VAL = "Nessie the Monster"
+private val LAYOUT_POST_VAL = "post"
+private val SLUG_VAL = "four-weeks"
+private val POST_DATE_VAL = "01/01/2018"
 
 class PostTest : Spek( {
 
-	describe("Can build a Post object with various valid yaml frontispieces") {
+	var data = mutableMapOf<String,MutableList<String>>()
 
-		val mYamlVistor = mockk<AbstractYamlFrontMatterVisitor>()
-		var data = mutableMapOf<String,MutableList<String>>()
-		every { mYamlVistor.visit(any<Document>()) } just Runs
-
-
-		val koinModule = module {
-			factory {
-				mYamlVistor as AbstractYamlFrontMatterVisitor
-			}
+	// initialize the mock yaml visitor
+	val mYamlVistor = mockk<AbstractYamlFrontMatterVisitor>()
+	every { mYamlVistor.visit(any<Document>()) } just Runs
+	// and inject the mock via Koin
+	val koinModule = module {
+		factory {
+			mYamlVistor
 		}
+	}
+	loadKoinModules(koinModule)
 
-		loadKoinModules(koinModule)
+	// rest of the mocks
+	val mRoot = mockk<File>()
+	val mOutputDir = mockk<File>()
+	val mSourceDir = mockk<File>()
+	val mAssetsDir = mockk<File>()
+	val mTemplatesDir = mockk<File>()
 
-		val mRoot = mockk<File>()
-		val mOutputDir = mockk<File>()
-		val mSourceDir = mockk<File>()
-		val mAssetsDir = mockk<File>()
-		val mTemplatesDir = mockk<File>()
+	// some constants
+	val fileName = "simple-file.md"
+	val mDocument = mockk<Document>()
+	val yamlString = ""
+	val project = ProjectStructure("simpleDoc",mRoot,mSourceDir,mOutputDir,mAssetsDir,mTemplatesDir,yamlString,"simple-theme")
+
+		describe("Can build a Post object with various valid yaml frontispieces") {
 
 		it("builds a simple Post") {
-
-			data = buildYamlData(data)
+			data = buildYamlData()
 			every { mYamlVistor.data}.returns(data)
 
-			val fileName = "simple-file.md"
-			val mDocument = mockk<Document>()
-			val yamlString = ""
-			val project = ProjectStructure("simpleDoc",mRoot,mSourceDir,mOutputDir,mAssetsDir,mTemplatesDir,yamlString,"simple-theme")
-
-			val result = Post.Builder.createPostFromYaml(fileName,mDocument,project)
+			val result = Post.createPostFromYaml(fileName,mDocument,project)
 			val isPost = result is Post
 			assertTrue(isPost)
 			val post = result as Post
-			assertEquals(TITLE, result.title)
-			assertEquals(AUTHOR, result.author)
-			assertEquals(LAYOUT_POST, result.layout)
-			assertEquals(SLUG, result.slug)
+			assertEquals(TITLE_VAL, result.title)
+			assertEquals(AUTHOR_VAL, result.author)
+			assertEquals(LAYOUT_POST_VAL, result.layout)
+			assertEquals(SLUG_VAL, result.slug)
 			assertEquals(LocalDate.of(2018,Month.JANUARY,1),result.date)
 			assertEquals(1,result.tags.size)
 			assertEquals("aTag",result.tags[0])
 		}
 
 		it("builds a Post with two tags") {
-
-			data = buildYamlData(data)
+			data = buildYamlData()
 			data.put("tags", arrayListOf("[tagA,tagB]"))
 			every { mYamlVistor.data}.returns(data)
 
-			val fileName = "simple-file.md"
-			val mDocument = mockk<Document>()
-			val yamlString = ""
-			val project = ProjectStructure("simpleDoc",mRoot,mSourceDir,mOutputDir,mAssetsDir,mTemplatesDir,yamlString,"simple-theme")
-
-			val result = Post.Builder.createPostFromYaml(fileName,mDocument,project)
+			val result = Post.createPostFromYaml(fileName,mDocument,project)
 			val isPost = result is Post
 			assertTrue(isPost)
 			val post = result as Post
@@ -90,19 +84,84 @@ class PostTest : Spek( {
 			assertEquals("tagA",post.tags[0])
 			assertEquals("tagB",post.tags[1])
 		}
+		it("builds a post with two custom attributes") {
+			data = buildYamlData()
+			data["wibble"] = mutableListOf("wobble")
+			data["greep"] = mutableListOf("grump")
+			every { mYamlVistor.data}.returns(data)
+
+			val result = Post.createPostFromYaml(fileName,mDocument,project)
+			val isPost = result is Post
+			assertTrue(isPost)
+			val post = result as Post
+			assertEquals("wobble",result.attributes["wibble"])
+			assertEquals("grump",result.attributes["greep"])
+		}
+
+		it("builds a post with a custom attribute list value") {
+			data = buildYamlData()
+			data["wibble"] = mutableListOf("wobble", "wumple")
+			every { mYamlVistor.data}.returns(data)
+
+			val result = Post.createPostFromYaml(fileName,mDocument,project)
+			val isPost = result is Post
+			assertTrue(isPost)
+			val post = result as Post
+			val attributes = result.attributes["wibble"] as List<*>
+			assertEquals(2,attributes.size)
+			assertEquals(listOf("wobble","wumple"),result.attributes["wibble"])
+		}
+	}
+
+	describe("Returns an Error when a compulsory field is missing") {
+		it("Does not have a title at all") {
+			data = buildYamlData()
+			data.remove("title")
+			every { mYamlVistor.data}.returns(data)
+
+			val result = Post.createPostFromYaml(fileName,mDocument,project)
+			val isError = result is PostGenError
+			assertTrue(isError)
+			val error = result as PostGenError
+			assertEquals("title",error.field)
+		}
+		it("Title is blank") {
+			data = buildYamlData()
+			data["title"] = arrayListOf("")
+			every { mYamlVistor.data}.returns(data)
+
+			val result = Post.createPostFromYaml(fileName,mDocument,project)
+			val isError = result is PostGenError
+			assertTrue(isError)
+			val error = result as PostGenError
+			assertEquals("title",error.field)
+		}
+	}
+
+	describe("Returns an Error when a singleton field has multiple answers") {
+		it("There are two layouts!") {
+			data = buildYamlData()
+			data["layout"] = mutableListOf("post","page","index")
+			every { mYamlVistor.data}.returns(data)
+
+			val result = Post.createPostFromYaml(fileName,mDocument,project)
+			val isError = result is PostGenError
+			assertTrue(isError)
+			val error = result as PostGenError
+			assertEquals("layout",error.field)
+		}
 	}
 })
 
 
 
-private fun buildYamlData(data: MutableMap<String, MutableList<String>>): MutableMap<String, MutableList<String>> {
-	var data1 = data
-	data1 = mutableMapOf()
-	data1.put("title", mutableListOf(TITLE))
-	data1.put("author", mutableListOf(AUTHOR))
-	data1.put("layout", mutableListOf(LAYOUT_POST))
-	data1.put("date", mutableListOf(POST_DATE))
+private fun buildYamlData(): MutableMap<String, MutableList<String>> {
+	val data1 = mutableMapOf<String, MutableList<String>>()
+	data1.put("title", mutableListOf(TITLE_VAL))
+	data1.put("author", mutableListOf(AUTHOR_VAL))
+	data1.put("layout", mutableListOf(LAYOUT_POST_VAL))
+	data1.put("date", mutableListOf(POST_DATE_VAL))
 	data1.put("tags", mutableListOf("[aTag]"))
-	data1.put("slug", mutableListOf(SLUG))
+	data1.put("slug", mutableListOf(SLUG_VAL))
 	return data1
 }

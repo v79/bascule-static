@@ -57,24 +57,34 @@ class Post : PostGeneration() {
 
 			yamlVisitor.visit(document)
 			val data = yamlVisitor.data
-			data.forEach {
+
+			val requiredFields = PostMetaData.values().toSet().filter { it.required }
+			requiredFields.forEach {
+				if (!data.containsKey(it.name)) {
+					// a required field is missing completely!
+					return PostGenError("Required field '${it.name} not found", fileName, it.name)
+				}
+			}
+
+			data.forEach { it ->
 
 				val metaData: PostMetaData?
 				if (PostMetaData.contains(it.key)) {
 					metaData = PostMetaData.valueOf(it.key)
 
 					// validate the metadata
-					if (it.value.isEmpty()) {
+					if (it.value.isEmpty() || (it.value.size == 1 && it.value[0].isNullOrBlank())) {
 						if (metaData.required) {
+							// a required field exists but has no value
 							return PostGenError("Missing required field '${metaData.name}' in source file '${fileName}'", fileName, metaData.name)
 						}
 					} else {
-						val valueList = splitArray(it.value[0]) // we'll have bailed by now if this is empty?
-						val value = it.value[0]
+						val valueList = it.value // we'll have bailed by now if this is empty?
 
 						if (!metaData.multipleAllowed && valueList != null && valueList.size > 1) {
 							return PostGenError("Field '${metaData.name}' is only allowed a single value; found '${it.value[0]}' in source file '$fileName'", fileName, metaData.name)
 						}
+						val value = it.value[0]
 
 						when (metaData) {
 							PostMetaData.title -> {
@@ -108,21 +118,9 @@ class Post : PostGeneration() {
 
 
 				} else {
-					val valueList = splitArray(it.value[0])
-					val value = it.value[0]
-					if(valueList != null) {
-						post.attributes.put(it.key,valueList)
-					} else {
-						post.attributes.put(it.key,value)
-					}
+					val finalVal  = if(it.value.size == 1) it.value[0] else it.value
+					post.attributes.put(it.key, finalVal)
 
-					/*if (value.startsWith("[") && value.endsWith("]")) {
-						// split into an array
-						val array = value.drop(1).dropLast(1).split(",")
-						post.attributes.put(it.key, array)
-					} else {
-						post.attributes.put(it.key, value)
-					}*/
 					println("\t\t attributes -> ${it.key} -> ${post.attributes[it.key]}")
 
 				}
