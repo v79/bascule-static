@@ -1,6 +1,7 @@
 package org.liamjd.bascule
 
 import org.fusesource.jansi.AnsiConsole
+import org.koin.standalone.StandAloneContext
 import org.liamjd.bascule.generator.Generator
 import org.liamjd.bascule.initializer.Destroyer
 import org.liamjd.bascule.initializer.Initializer
@@ -25,6 +26,9 @@ class Bascule : Runnable {
 
 	init {
 		AnsiConsole.systemInstall()
+
+		// start Koin DI
+		StandAloneContext.startKoin(listOf(generationModule))
 	}
 
 	override fun run() {

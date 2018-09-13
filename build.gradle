@@ -41,6 +41,11 @@ dependencies {
 	compile group: 'info.picocli', name: 'picocli', version: "$picocli_version"
 	compile group: 'org.fusesource.jansi', name: 'jansi', version: "$jansi_version"
 
+	// Koin for Kotlin apps
+	compile 'org.koin:koin-core:1.0.0-RC-3'
+	// Testing
+	testCompile 'org.koin:koin-test:1.0.0-RC-3'
+
 	// testing
 	testCompile group: "org.jetbrains.kotlin", name: "kotlin-test", version: "$kotlin_version"
 	testCompile(group: "org.jetbrains.spek", name: "spek-api", version: "$spek_version") {

@@ -2,6 +2,8 @@ package org.liamjd.bascule.generator
 
 import com.vladsch.flexmark.ast.Document
 import com.vladsch.flexmark.ext.yaml.front.matter.AbstractYamlFrontMatterVisitor
+import org.koin.standalone.KoinComponent
+import org.koin.standalone.inject
 import org.liamjd.bascule.assets.ProjectStructure
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -45,14 +47,17 @@ class Post : PostGeneration() {
 		return content.take(100) + "..."
 	}
 
-	companion object Builder {
+	companion object Builder : KoinComponent {
+
+		val yamlVisitor by inject<AbstractYamlFrontMatterVisitor>()
 
 		fun createPostFromYaml(fileName: String, document: Document, project: ProjectStructure): PostGeneration {
-			val yamlVisitor: AbstractYamlFrontMatterVisitor = AbstractYamlFrontMatterVisitor()
+
 			val post = Post()
 
 			yamlVisitor.visit(document)
-			yamlVisitor.data.forEach {
+			val data = yamlVisitor.data
+			data.forEach {
 
 				val metaData: PostMetaData?
 				if (PostMetaData.contains(it.key)) {
@@ -68,7 +73,7 @@ class Post : PostGeneration() {
 						val value = it.value[0]
 
 						if (!metaData.multipleAllowed && valueList != null && valueList.size > 1) {
-							return PostGenError("Field '${metaData.name}' is only allowed a single value; found '${it.value[0]}' in source file '$fileName", fileName, metaData.name)
+							return PostGenError("Field '${metaData.name}' is only allowed a single value; found '${it.value[0]}' in source file '$fileName'", fileName, metaData.name)
 						}
 
 						when (metaData) {
