@@ -59,6 +59,7 @@ class FolderWalker(val project: ProjectStructure) {
 		val docCache = mutableMapOf<String,GeneratedContent>()
 		val siteModel = project.model
 		val postList = mutableListOf<Post>()
+		val errorMap = mutableMapOf<String,Any>()
 
 		val timeTaken = measureTimeMillis {
 
@@ -67,7 +68,6 @@ class FolderWalker(val project: ProjectStructure) {
 					// do something with directories?
 				} else {
 					numPosts++
-					info("Scanning file ${it.name}")
 					val model = mutableMapOf<String, Any>()
 					model.putAll(siteModel)
 
@@ -77,7 +77,7 @@ class FolderWalker(val project: ProjectStructure) {
 
 					val document = parseMarkdown(inputStream)
 
-					val post = Post.createPostFromYaml(it.name,document, project)
+					val post = Post.createPostFromYaml(it,document, project)
 					when(post) {
 						is Post -> {
 
@@ -110,14 +110,20 @@ class FolderWalker(val project: ProjectStructure) {
 							postList.add(post)
 						}
 						is PostGenError -> {
-							println.error("Error parsing file ${post.fileName}: ")
-							println.error(post.errorMessage)
+							errorMap.put(it.name,post.errorMessage)
 						}
 					}
 				}
 			}
 		}
 		info("${timeTaken}ms to generate ${numPosts} files")
+		if(errorMap.isNotEmpty()) {
+			println.error("\nDuring processing, the following errors were found and their files were not generated:")
+			errorMap.forEach {
+				println.error("${it.key}\t\t->\t${it.value}")
+			}
+			println.error("These pages and posts will be missing from your site until you correct the errors and re-run generate.")
+		}
 
 		buildIndex(postList,numPosts)
 
@@ -175,9 +181,9 @@ class FolderWalker(val project: ProjectStructure) {
 	}
 
 	private fun emptyFolder(folder: File) {
+		info("Clearing out old generated files")
 		folder.walk().forEach {
 			if (it != folder) {
-				info("Deleting $it")
 				it.deleteRecursively()
 			}
 		}

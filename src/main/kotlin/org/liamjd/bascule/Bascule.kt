@@ -1,6 +1,7 @@
 package org.liamjd.bascule
 
 import org.fusesource.jansi.AnsiConsole
+import org.koin.log.EmptyLogger
 import org.koin.standalone.StandAloneContext
 import org.liamjd.bascule.generator.Generator
 import org.liamjd.bascule.initializer.Destroyer
@@ -18,7 +19,7 @@ class Bascule : Runnable {
 	@CommandLine.Option(names = ["-n", "--new"], description = ["name of static site"])
 	var siteName: String = ""
 
-	@CommandLine.Option(names = ["--theme"], description = ["in-build theme to base your site on (run 'bascule themes' to see a list of options)"])
+	@CommandLine.Option(names = ["--theme"], description = ["in-built theme to base your site on (run 'bascule themes' to see a list of options)"])
 	var themeName: String? = null
 
 	@CommandLine.Option(names = ["--deleteSite"], description = ["destroy your entire website!"])
@@ -28,7 +29,7 @@ class Bascule : Runnable {
 		AnsiConsole.systemInstall()
 
 		// start Koin DI
-		StandAloneContext.startKoin(listOf(generationModule))
+		StandAloneContext.startKoin(listOf(generationModule), logger = EmptyLogger())
 	}
 
 	override fun run() {

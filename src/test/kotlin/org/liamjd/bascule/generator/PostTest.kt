@@ -13,9 +13,16 @@ import org.koin.dsl.module.module
 import org.koin.standalone.StandAloneContext.loadKoinModules
 import org.liamjd.bascule.assets.ProjectStructure
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.attribute.BasicFileAttributes
+import java.nio.file.attribute.FileTime
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.Month
+import java.time.ZoneOffset
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 private val TITLE_VAL: String = "Four Weeks Sick Leave"
@@ -45,9 +52,18 @@ class PostTest : Spek( {
 	val mSourceDir = mockk<File>()
 	val mAssetsDir = mockk<File>()
 	val mTemplatesDir = mockk<File>()
+	val mFile = mockk<File>()
+	val mPath = mockk<Path>()
+	val mFileAttributes = mockk<BasicFileAttributes>()
+	val mFileCreationTime = mockk<FileTime>()
+
+	every { mFile.name } returns "Simple File (1).md"
+	every { mFile.toPath()} returns mPath
+	every { Files.readAttributes(mPath, BasicFileAttributes::class.java)} returns mFileAttributes
+	every { mFileAttributes.creationTime()} returns mFileCreationTime
+	every { mFileCreationTime.toInstant()} returns LocalDateTime.of(2018,Month.SEPTEMBER,14,8,0).toInstant(ZoneOffset.UTC)
 
 	// some constants
-	val fileName = "simple-file.md"
 	val mDocument = mockk<Document>()
 	val yamlString = ""
 	val project = ProjectStructure("simpleDoc",mRoot,mSourceDir,mOutputDir,mAssetsDir,mTemplatesDir,yamlString,"simple-theme")
@@ -58,7 +74,7 @@ class PostTest : Spek( {
 			data = buildYamlData()
 			every { mYamlVistor.data}.returns(data)
 
-			val result = Post.createPostFromYaml(fileName,mDocument,project)
+			val result = Post.createPostFromYaml(mFile,mDocument,project)
 			val isPost = result is Post
 			assertTrue(isPost)
 			val post = result as Post
@@ -76,7 +92,7 @@ class PostTest : Spek( {
 			data.put("tags", arrayListOf("[tagA,tagB]"))
 			every { mYamlVistor.data}.returns(data)
 
-			val result = Post.createPostFromYaml(fileName,mDocument,project)
+			val result = Post.createPostFromYaml(mFile,mDocument,project)
 			val isPost = result is Post
 			assertTrue(isPost)
 			val post = result as Post
@@ -90,7 +106,7 @@ class PostTest : Spek( {
 			data["greep"] = mutableListOf("grump")
 			every { mYamlVistor.data}.returns(data)
 
-			val result = Post.createPostFromYaml(fileName,mDocument,project)
+			val result = Post.createPostFromYaml(mFile,mDocument,project)
 			val isPost = result is Post
 			assertTrue(isPost)
 			val post = result as Post
@@ -103,7 +119,7 @@ class PostTest : Spek( {
 			data["wibble"] = mutableListOf("wobble", "wumple")
 			every { mYamlVistor.data}.returns(data)
 
-			val result = Post.createPostFromYaml(fileName,mDocument,project)
+			val result = Post.createPostFromYaml(mFile,mDocument,project)
 			val isPost = result is Post
 			assertTrue(isPost)
 			val post = result as Post
@@ -119,7 +135,7 @@ class PostTest : Spek( {
 			data.remove("title")
 			every { mYamlVistor.data}.returns(data)
 
-			val result = Post.createPostFromYaml(fileName,mDocument,project)
+			val result = Post.createPostFromYaml(mFile,mDocument,project)
 			val isError = result is PostGenError
 			assertTrue(isError)
 			val error = result as PostGenError
@@ -130,7 +146,7 @@ class PostTest : Spek( {
 			data["title"] = arrayListOf("")
 			every { mYamlVistor.data}.returns(data)
 
-			val result = Post.createPostFromYaml(fileName,mDocument,project)
+			val result = Post.createPostFromYaml(mFile,mDocument,project)
 			val isError = result is PostGenError
 			assertTrue(isError)
 			val error = result as PostGenError
@@ -144,13 +160,33 @@ class PostTest : Spek( {
 			data["layout"] = mutableListOf("post","page","index")
 			every { mYamlVistor.data}.returns(data)
 
-			val result = Post.createPostFromYaml(fileName,mDocument,project)
+			val result = Post.createPostFromYaml(mFile,mDocument,project)
 			val isError = result is PostGenError
 			assertTrue(isError)
 			val error = result as PostGenError
 			assertEquals("layout",error.field)
+
 		}
 	}
+
+	describe("Can construct a post even without any yaml") {
+		it("Makes assumptions based on the file name") {
+			data = mutableMapOf()
+			every { mYamlVistor.data}.returns(data)
+			val result = Post.createPostFromYaml(mFile,mDocument,project)
+			val isPost = result is Post
+			assertTrue { isPost }
+			val post = result as Post
+			assertEquals("Simple File (1)",post.title)
+			assertEquals("",post.author)
+			assertEquals("post",post.layout)
+			assertNotNull(post.date)
+			assertEquals(LocalDate.of(2018,Month.SEPTEMBER,14),post.date)
+			assertTrue(post.tags.isEmpty())
+			assertEquals("simple-file--1-",post.slug)
+		}
+	}
+
 })
 
 

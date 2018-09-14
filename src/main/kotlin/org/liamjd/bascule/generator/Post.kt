@@ -5,8 +5,13 @@ import com.vladsch.flexmark.ext.yaml.front.matter.AbstractYamlFrontMatterVisitor
 import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
 import org.liamjd.bascule.assets.ProjectStructure
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.attribute.BasicFileAttributes
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.regex.Pattern
 
 
 sealed class PostGeneration
@@ -30,7 +35,7 @@ class Post : PostGeneration() {
 
 	fun toModel(): Map<String, Any> {
 		val modelMap = mutableMapOf<String, Any>()
-		modelMap.put("sourceFileName", sourceFileName)
+		modelMap.put("sourceFileName.name", sourceFileName)
 		modelMap.put("url", url)
 		modelMap.put("title", title)
 		modelMap.put("author", author)
@@ -44,30 +49,35 @@ class Post : PostGeneration() {
 	}
 
 	fun getSummary(): String {
-		return content.take(100) + "..."
+		val REMOMVE_TAGS = Pattern.compile("<.+?>")
+		val matcher = REMOMVE_TAGS.matcher(content.take(150))
+		return matcher.replaceAll("").plus("...")
 	}
 
 	companion object Builder : KoinComponent {
 
-		val yamlVisitor by inject<AbstractYamlFrontMatterVisitor>()
-
-		fun createPostFromYaml(fileName: String, document: Document, project: ProjectStructure): PostGeneration {
-
-			val post = Post()
-
+		fun createPostFromYaml(file: File, document: Document, project: ProjectStructure): PostGeneration {
+			val yamlVisitor by inject<AbstractYamlFrontMatterVisitor>()
 			yamlVisitor.visit(document)
 			val data = yamlVisitor.data
+
+			if (data == null || data.isEmpty()) {
+				println.error("No YAML frontispiece for file '${file.name}'. Attempting to construct a post from just the file itself.")
+				val noYamlPost = buildPostWithoutYaml(file)
+				return noYamlPost
+			}
 
 			val requiredFields = PostMetaData.values().toSet().filter { it.required }
 			requiredFields.forEach {
 				if (!data.containsKey(it.name)) {
 					// a required field is missing completely!
-					return PostGenError("Required field '${it.name} not found", fileName, it.name)
+					return PostGenError("Required field '${it.name} not found", file.name, it.name)
 				}
 			}
 
-			data.forEach { it ->
+			val post = Post()
 
+			data.forEach { it ->
 				val metaData: PostMetaData?
 				if (PostMetaData.contains(it.key)) {
 					metaData = PostMetaData.valueOf(it.key)
@@ -76,55 +86,74 @@ class Post : PostGeneration() {
 					if (it.value.isEmpty() || (it.value.size == 1 && it.value[0].isNullOrBlank())) {
 						if (metaData.required) {
 							// a required field exists but has no value
-							return PostGenError("Missing required field '${metaData.name}' in source file '${fileName}'", fileName, metaData.name)
+							return PostGenError("Missing required field '${metaData.name}' in source file '${file.name}'", file.name, metaData.name)
 						}
 					} else {
 						val valueList = it.value // we'll have bailed by now if this is empty?
 
 						if (!metaData.multipleAllowed && valueList != null && valueList.size > 1) {
-							return PostGenError("Field '${metaData.name}' is only allowed a single value; found '${it.value[0]}' in source file '$fileName'", fileName, metaData.name)
+							return PostGenError("Field '${metaData.name}' is only allowed a single value; found '${it.value[0]}' in source file '$file.name'", file.name, metaData.name)
 						}
 						val value = it.value[0]
 
 						when (metaData) {
 							PostMetaData.title -> {
 								post.title = value
-								println("\t\t title -> ${post.title}")
 							}
 							PostMetaData.layout -> {
 								post.layout = value
-								println("\t\t layout -> ${post.layout}")
 							}
 							PostMetaData.author -> {
 								post.author = value
-								println("\t\t author -> ${post.author}")
 							}
 							PostMetaData.slug -> {
 								post.slug = value
-								println("\t\t slug -> ${post.slug}")
 							}
 							PostMetaData.date -> {
 								val dateFormat = project.model["dateFormat"] as String? ?: "dd/MM/yyyy"
 								val formatter = DateTimeFormatter.ofPattern(dateFormat)
 								post.date = LocalDate.parse(value, formatter)
-								println("\t\t date -> ${post.date}")
 							}
 							PostMetaData.tags -> {
 								post.tags = value.drop(1).dropLast(1).split(",")
-								println("\t\t tags -> ${post.tags}")
+							}
+							else -> {
+								println("How did i get here?")
 							}
 						}
 					}
 
 
 				} else {
-					val finalVal  = if(it.value.size == 1) it.value[0] else it.value
+					val finalVal = if (it.value.size == 1) it.value[0] else it.value
 					post.attributes.put(it.key, finalVal)
-
-					println("\t\t attributes -> ${it.key} -> ${post.attributes[it.key]}")
-
 				}
 			} // else do nothing? depends on the key I guess...
+			return post
+		}
+
+		/**
+		 * Attempt to construct a post without any Yaml metadata. Can only provide a title, layout (always "post"), a slug and a date.
+		 * No author, tags or custom attributes
+		 */
+		fun buildPostWithoutYaml(file: File): PostGeneration {
+			val post = Post()
+			post.sourceFileName = file.name
+			post.title = file.nameWithoutExtension
+
+			// have to make an assumption about the layout - going for "post"
+			post.layout = "post"
+			// get the date from the file itself
+			val filePath = file.toPath()
+			val attributes = Files.readAttributes(filePath, BasicFileAttributes::class.java)
+			val milliseconds = attributes.creationTime().toInstant()
+			post.date = milliseconds.atZone(ZoneId.systemDefault()).toLocalDate()
+
+			// transform the source file name to a cleaner URL
+			val slugRegex = Regex("[^a-zA-Z0-9-]")
+			post.slug = slugRegex.replace(file.nameWithoutExtension.toLowerCase(), "-")
+
+			// author, tags will all be empty. No custom attributes
 			return post
 		}
 
