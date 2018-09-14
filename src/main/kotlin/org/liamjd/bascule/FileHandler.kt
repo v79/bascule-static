@@ -4,9 +4,12 @@ import java.io.File
 import java.io.InputStream
 import java.nio.file.FileSystems
 
+/**
+ * File handling utility for creating files and directories, extracting files from resources, etc.
+ */
 class FileHandler {
 
-	val pathSeparator = FileSystems.getDefault().separator
+	private val pathSeparator = FileSystems.getDefault().separator!!
 
 	fun createDirectories(path: String): Boolean {
 		val folders = File(path.replace("/",pathSeparator))
@@ -48,7 +51,7 @@ class FileHandler {
 	 */
 	fun copyFileFromResources(fileName: String, destination: File, destFileName: String? = null, sourceDir: String = "") {
 		val data = readFileFromResources(sourceDir, fileName)
-		val finalFileName = if (destFileName == null) fileName else destFileName
+		val finalFileName = destFileName ?: fileName
 
 		writeFile(destination, finalFileName, data)
 	}
@@ -66,7 +69,6 @@ class FileHandler {
 	}
 
 	fun readFileFromResources(sourceDir: String, fileName: String): String {
-		val data = this.javaClass.getResource(sourceDir + fileName).readText()
-		return data
+		return javaClass.getResource(sourceDir + fileName).readText()
 	}
 }

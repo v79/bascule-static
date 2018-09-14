@@ -96,7 +96,7 @@ class FolderWalker(val project: ProjectStructure) {
 							if (docCache.containsKey(slug)) {
 								println.error("Duplicate slug '$slug' found!")
 							}
-							url = slug + ".html"
+							url = "$slug.html"
 							post.url = url
 
 							info("Generating html file $url")
@@ -116,7 +116,7 @@ class FolderWalker(val project: ProjectStructure) {
 				}
 			}
 		}
-		info("${timeTaken}ms to generate ${numPosts} files")
+		info("${timeTaken}ms to generate $numPosts files")
 		if(errorMap.isNotEmpty()) {
 			println.error("\nDuring processing, the following errors were found and their files were not generated:")
 			errorMap.forEach {
@@ -159,7 +159,7 @@ class FolderWalker(val project: ProjectStructure) {
 	}
 
 	private fun getTemplate(templateName: String): String {
-		val matches = project.templatesDir.listFiles({ dir, name -> name.equals(templateName + ".html") })
+		val matches = project.templatesDir.listFiles({ dir, name -> name == templateName + ".html" })
 
 		if (matches.isNotEmpty() && matches.size == 1) {
 			val found = matches[0]

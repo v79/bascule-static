@@ -6,6 +6,9 @@ import org.yaml.snakeyaml.Yaml
 import picocli.CommandLine
 import println.info
 
+/**
+ * List all the themes which are packaged with Bascule
+ */
 @CommandLine.Command(name = "themes", description = ["List available themes"])
 class Themes : Runnable {
 	override fun run() {

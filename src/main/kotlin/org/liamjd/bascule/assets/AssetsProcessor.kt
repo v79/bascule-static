@@ -3,6 +3,9 @@ package org.liamjd.bascule.assets
 import println.info
 import java.io.File
 
+/**
+ * Copies and generates fixed assets, such images, CSS, etc
+ */
 class AssetsProcessor(val parent: File, val assetsDir: File, val outputDir: File) {
 
 	fun copyStatics() {

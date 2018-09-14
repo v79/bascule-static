@@ -9,13 +9,16 @@ import println.info
 import java.io.File
 import java.nio.file.FileSystems
 
+/**
+ * Starts the post and page generation process. Must be run from inside the project folder
+ */
 @CommandLine.Command(name = "generate", description = ["Generate your static website"])
 class Generator : Runnable {
 
-	val currentDirectory = System.getProperty("user.dir")
-	val pathSeparator = FileSystems.getDefault().separator
-	val yamlConfig: String
-	val parentFolder: File
+	private val currentDirectory = System.getProperty("user.dir")!!
+	private val pathSeparator = FileSystems.getDefault().separator
+	private val yamlConfig: String
+	private val parentFolder: File
 
 	init  {
 		parentFolder = File(currentDirectory)

@@ -13,11 +13,17 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.regex.Pattern
 
+/**
+ * A PostStatus is either "Post" (successful) or "PostGenError" (when unable to create a Post).
+ */
+sealed class PostStatus
 
-sealed class PostGeneration
-data class PostGenError(val errorMessage: String, val fileName: String, var field: String?) : PostGeneration()
+class PostGenError(val errorMessage: String, val fileName: String, var field: String?) : PostStatus()
 
-class Post : PostGeneration() {
+/**
+ * Class representing an individual Post.
+ */
+class Post : PostStatus() {
 
 	var sourceFileName: String = ""
 	var url: String = ""
@@ -48,23 +54,32 @@ class Post : PostGeneration() {
 		return modelMap
 	}
 
-	fun getSummary(): String {
+	/**
+	 * Return a short excerpt from the post, stripping out any HTML and returning just plain text
+	 */
+	fun getSummary(characterCount: Int = 150): String {
 		val REMOMVE_TAGS = Pattern.compile("<.+?>")
-		val matcher = REMOMVE_TAGS.matcher(content.take(150))
+		val matcher = REMOMVE_TAGS.matcher(content.take(characterCount))
 		return matcher.replaceAll("").plus("...")
 	}
 
+	/**
+	 * Construct a Post from the source markdown document.
+	 * Ideally the document should contain a yaml front piece describing the post.
+	 * If the yaml does not exist, it will make some best guesses from the file.
+	 * Returns a PostStatus.Post if successful, or PostStatus.PostGenError if unable to parse the content.
+	 *
+	 */
 	companion object Builder : KoinComponent {
 
-		fun createPostFromYaml(file: File, document: Document, project: ProjectStructure): PostGeneration {
+		fun createPostFromYaml(file: File, document: Document, project: ProjectStructure): PostStatus {
 			val yamlVisitor by inject<AbstractYamlFrontMatterVisitor>()
 			yamlVisitor.visit(document)
 			val data = yamlVisitor.data
 
 			if (data == null || data.isEmpty()) {
 				println.error("No YAML frontispiece for file '${file.name}'. Attempting to construct a post from just the file itself.")
-				val noYamlPost = buildPostWithoutYaml(file)
-				return noYamlPost
+				return buildPostWithoutYaml(file)
 			}
 
 			val requiredFields = PostMetaData.values().toSet().filter { it.required }
@@ -136,7 +151,7 @@ class Post : PostGeneration() {
 		 * Attempt to construct a post without any Yaml metadata. Can only provide a title, layout (always "post"), a slug and a date.
 		 * No author, tags or custom attributes
 		 */
-		fun buildPostWithoutYaml(file: File): PostGeneration {
+		fun buildPostWithoutYaml(file: File): PostStatus {
 			val post = Post()
 			post.sourceFileName = file.name
 			post.title = file.nameWithoutExtension
@@ -158,16 +173,20 @@ class Post : PostGeneration() {
 		}
 
 		fun splitArray(value: String): List<String>? {
-			if (value.startsWith("[").and(value.endsWith("]"))) {
-				return value.drop(1).dropLast(1).split(",")
+			return if (value.startsWith("[").and(value.endsWith("]"))) {
+				value.drop(1).dropLast(1).split(",")
 			} else {
-				return null
+				null
 			}
 		}
 	}
 }
 
-enum class PostMetaData(val required: Boolean, val multipleAllowed: Boolean) {
+/**
+ * Enum representing all the key fields used to construct a Post. Each field has it's own eligibility requirements,
+ * 'required' and 'multipleAllowed'. E.g. the _title_ is required, and there must only be a single title.
+ */
+internal enum class PostMetaData(val required: Boolean, val multipleAllowed: Boolean) {
 	title(true, false),
 	layout(true, false),
 	author(false, false),

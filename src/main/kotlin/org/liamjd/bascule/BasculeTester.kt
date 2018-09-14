@@ -12,10 +12,13 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import kotlin.system.measureTimeMillis
 
-
+/**
+ * Testing ground for setting up Bascule.
+ */
+@Deprecated("Just for testing. Don't use this", level = DeprecationLevel.HIDDEN)
 class BasculeTester {
 
-	val USERHOME = System.getProperty("user.home")
+	val USERHOME = System.getProperty("user.home")!!
 	val NUM_FILES = 10
 
 	val logger = LoggerFactory.getLogger(this.javaClass)
@@ -23,7 +26,6 @@ class BasculeTester {
 	init {
 		println("Welcome to BasculeTester")
 		println("Enter the name of your project")
-//		val projectName = readLine()!!
 		val projectName = "wibble"
 
 		println("Building $projectName...")
@@ -50,7 +52,7 @@ class BasculeTester {
 				out.write(content.mdFileContent.format(content.nameArray[randomAuthor], mdFile))
 			}
 		}
-		println("\t${NUM_FILES} files created")
+		println("\t$NUM_FILES files created")
 		println()
 
 		println("Generating content...")
@@ -90,7 +92,7 @@ class BasculeTester {
 
 
 					val random = (1..3).random()
-					val model = mapOf(Pair<String, String>("animal", content.animalArray.get(random)),
+					val model = mapOf(Pair("animal", content.animalArray.get(random)),
 							Pair<String, String>("content", html), Pair<String, String>("uuu", url!!))
 
 					val hbContext = Context.newBuilder(model).build()
@@ -122,7 +124,7 @@ class BasculeTester {
 
 
 	object content {
-		val configString = "bascule-config: config\r\nauthor=liam"
+		const val configString = "bascule-config: config\r\nauthor=liam"
 		val mdFileContent = """
 			---
 			url: %s
