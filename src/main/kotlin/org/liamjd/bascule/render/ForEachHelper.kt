@@ -25,7 +25,7 @@ class ForEachHelper : Helper<Any> {
 				limit = Int.MAX_VALUE
 			}
 			val buffer = options.buffer()
-			val loop = (context as Iterable<*>).iterator()
+			val loop = context.iterator()
 			val base: Int = options.hash("base", 0) ?: 0
 			var index = base
 			var even = index % 2 == 0

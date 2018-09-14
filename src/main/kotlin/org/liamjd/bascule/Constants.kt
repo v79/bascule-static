@@ -9,8 +9,11 @@ import java.util.*
 fun ClosedRange<Int>.random() =
 		Random().nextInt((endInclusive + 1) - start) + start
 
+/**
+ * Various final values. Extension functions. Plus logos :)
+ */
 object Constants {
-	val VERSION_STRING = "v0.0.1"
+	const val VERSION_STRING = "v0.0.3"
 
 	// TODO: these will all be parameterised
 	val SOURCE_DIR = "sources"
@@ -35,7 +38,7 @@ object Constants {
 8 8888    `88.  .8' `8. `88888.       `8.`8888.  88 8888           8 8888      88 8 8888         8 8888
 8 8888      88 .8'   `8. `88888.  8b   `8.`8888. `8 8888       .8' ` 8888     ,8P 8 8888         8 8888
 8 8888    ,88'.888888888. `88888. `8b.  ;8.`8888    8888     ,88'    8888   ,d8P  8 8888         8 8888
-8 888888888P .8'       `8. `88888. `Y8888P ,88P'     `8888888P'       `Y88888P'   8 888888888888 8 888888888888 ${VERSION_STRING}
+8 888888888P .8'       `8. `88888. `Y8888P ,88P'     `8888888P'       `Y88888P'   8 888888888888 8 888888888888 $VERSION_STRING
 
 	""".trimIndent()
 

@@ -7,6 +7,8 @@ import io.mockk.verify
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
+import org.koin.dsl.module.module
+import org.koin.standalone.StandAloneContext.loadKoinModules
 import org.liamjd.bascule.Constants
 import org.liamjd.bascule.FileHandler
 import org.liamjd.bascule.assets.Theme
@@ -22,9 +24,15 @@ class InitializerTest : Spek({
 
 	val name = "testSite"
 	val defaultTheme: Theme = "bulma"
+	val mockFileHandler = mockk<org.liamjd.bascule.FileHandler>(relaxed = true)
+
+	val koinModule = module {
+		single { mockFileHandler }
+	}
+	loadKoinModules(koinModule)
 
 
-	describe("Initializer sets up an empty project with the given name") {
+	describe("BasculeInitializer sets up an empty project with the given name") {
 
 		afterEachTest {
 			val testDirectory = System.getProperty("user.dir")
@@ -38,10 +46,8 @@ class InitializerTest : Spek({
 
 		it("fails if it cannot create the root folder") {
 
-			val mockFileHandler = mockk<org.liamjd.bascule.FileHandler>(relaxed = true)
-
 			every { mockFileHandler.createDirectories(mRootFile) } returns false
-			val service = Initializer(name, defaultTheme, mockFileHandler)
+			val service = BasculeInitializer(name, defaultTheme, mockFileHandler)
 			service.create()
 
 			val shouldNotExist = File("$currentDirectory$pathSeparator$name")
@@ -50,23 +56,23 @@ class InitializerTest : Spek({
 
 		it("successfully creates a project called $name with theme 'unthemed'") {
 			val unthemed = "unthemed"
-			val mockFileHandler = spyk(FileHandler())
+			val spyFileHandler = spyk(FileHandler())
 
-			val service = Initializer(name, unthemed, mockFileHandler)
+			val service = BasculeInitializer(name, unthemed, spyFileHandler)
 			service.create()
 
 			// verification
 			val siteRoot = File("$currentDirectory$pathSeparator$name")
 			assertTrue { siteRoot.exists() }
-			verify(atMost = 4) { mockFileHandler.createDirectory(any(),any()) }
-			verify(exactly = 1) { mockFileHandler.copyFileFromResources(fileName = "post.html", destination = any<File>(), sourceDir = "${Constants.THEME_FOLDER}/${unthemed}/templates/") }
+			verify(atMost = 4) { spyFileHandler.createDirectory(any(),any()) }
+			verify(exactly = 1) { spyFileHandler.copyFileFromResources(fileName = "post.html", destination = any(), sourceDir = "${Constants.THEME_FOLDER}/$unthemed/templates/") }
 		}
 
 		it("successfully creates a project called $name with default 'bulma' theme when no theme is specified") {
 
 			val mockFileHandler = spyk(FileHandler())
 
-			val service = Initializer(name, null, mockFileHandler)
+			val service = BasculeInitializer(name, null, mockFileHandler)
 			service.create()
 
 			// verification
