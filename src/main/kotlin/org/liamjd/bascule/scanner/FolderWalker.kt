@@ -18,6 +18,7 @@ import org.liamjd.bascule.assets.ProjectStructure
 import org.liamjd.bascule.generator.Post
 import org.liamjd.bascule.generator.PostGenError
 import org.liamjd.bascule.render.ForEachHelper
+import org.liamjd.bascule.render.LocalDateFormatter
 import println.info
 import java.io.File
 import java.io.InputStream
@@ -36,6 +37,9 @@ class FolderWalker(val project: ProjectStructure) {
 
 	val mdOptions = MutableDataSet()
 	val mdParser: Parser
+
+	val TEMPLATE_SUFFIX = ".hbt"
+	val OUTPUT_SUFFIX = ".html"
 
 	init {
 		println("FolderWalker initialised")
@@ -159,13 +163,13 @@ class FolderWalker(val project: ProjectStructure) {
 	}
 
 	private fun getTemplate(templateName: String): String {
-		val matches = project.templatesDir.listFiles({ dir, name -> name == templateName + ".html" })
+		val matches = project.templatesDir.listFiles({ dir, name -> name == templateName + TEMPLATE_SUFFIX })
 
 		if (matches.isNotEmpty() && matches.size == 1) {
 			val found = matches[0]
 			return found.readText()
 		}
-		println.error("ERROR - file $templateName not found!!!!!")
+		println.error("ERROR - template file '$templateName' not found - unable to generate content.")
 		return ""
 	}
 
@@ -173,6 +177,10 @@ class FolderWalker(val project: ProjectStructure) {
 	private fun render(model: Map<String, Any>, templateString: String): String {
 		val hbRenderer = Handlebars()
 		hbRenderer.registerHelper("forEach", ForEachHelper())
+		val dateFormat = project.yamlMap["dateFormat"] as String ?: "dd/MMM/yyyy"
+		hbRenderer.registerHelper("localDate", LocalDateFormatter(dateFormat))
+
+		// ToDO: Do I register helpers like dateFormat helper here?
 
 		val hbContext = Context.newBuilder(model).resolver(MethodValueResolver.INSTANCE, JavaBeanValueResolver.INSTANCE, MapValueResolver.INSTANCE, FieldValueResolver.INSTANCE).build()
 		val template = hbRenderer.compileInline(templateString)
@@ -183,8 +191,8 @@ class FolderWalker(val project: ProjectStructure) {
 	private fun emptyFolder(folder: File) {
 		info("Clearing out old generated files")
 		folder.walk().forEach {
-			if (it != folder) {
-				it.deleteRecursively()
+			if (it != folder && it.name.endsWith(OUTPUT_SUFFIX)) {
+				it.delete()
 			}
 		}
 	}

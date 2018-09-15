@@ -14,6 +14,7 @@ typealias Theme = String
 class ProjectStructure(val name: String, val root: File, val sourceDir: File, val outputDir: File, val assetsDir: File, val templatesDir: File, val yamlConfigString: String, val theme: Theme, val model: Map<String, Any>) {
 
 	var postsPerPage = 5
+	var yamlMap: Map<String,Any> = mutableMapOf()
 
 	constructor(name: String, root: File, source: String, output: String, assets: String, templates: String, yaml: String, themeName: String, configMap: Map<String, Any>) : this(name = name,
 			root = root,
@@ -94,6 +95,8 @@ class ProjectStructure(val name: String, val root: File, val sourceDir: File, va
 			if(configMap["postsPerPage"] != null) {
 				project.postsPerPage = configMap["postsPerPage"] as Int
 			}
+
+			project.yamlMap = configMap
 
 			return project
 		}

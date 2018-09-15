@@ -65,7 +65,7 @@ class InitializerTest : Spek({
 			val siteRoot = File("$currentDirectory$pathSeparator$name")
 			assertTrue { siteRoot.exists() }
 			verify(atMost = 4) { spyFileHandler.createDirectory(any(),any()) }
-			verify(exactly = 1) { spyFileHandler.copyFileFromResources(fileName = "post.html", destination = any(), sourceDir = "${Constants.THEME_FOLDER}/$unthemed/templates/") }
+			verify(exactly = 1) { spyFileHandler.copyFileFromResources(fileName = "post.hbt", destination = any(), sourceDir = "${Constants.THEME_FOLDER}/$unthemed/templates/") }
 		}
 
 		it("successfully creates a project called $name with default 'bulma' theme when no theme is specified") {
@@ -79,7 +79,7 @@ class InitializerTest : Spek({
 			val siteRoot = File("$currentDirectory$pathSeparator$name")
 			assertTrue { siteRoot.exists() }
 			verify(atMost = 4) { mockFileHandler.createDirectory(any(),any()) }
-			verify(exactly = 1) { mockFileHandler.copyFileFromResources(fileName = "post.html", destination = any<File>(), sourceDir = "${Constants.THEME_FOLDER}/${defaultTheme}/templates/") }
+			verify(exactly = 1) { mockFileHandler.copyFileFromResources(fileName = "post.hbt", destination = any<File>(), sourceDir = "${Constants.THEME_FOLDER}/${defaultTheme}/templates/") }
 		}
 	}
 })
