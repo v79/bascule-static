@@ -12,7 +12,7 @@ class FileHandler {
 	private val pathSeparator = FileSystems.getDefault().separator!!
 
 	fun createDirectories(path: String): Boolean {
-		val folders = File(path.replace("/",pathSeparator))
+		val folders = File(path.replace("/", pathSeparator))
 		return folders.mkdirs()
 	}
 
@@ -21,15 +21,19 @@ class FileHandler {
 	}
 
 	fun createDirectory(parentPath: String, folderName: String): File {
-		val folder = File(parentPath.replace("/",pathSeparator), folderName)
-		if (folder.mkdir()) {
+		val folder = File(parentPath.replace("/", pathSeparator), folderName)
+		if (!folder.exists()) {
+			if (folder.mkdir()) {
+				return folder
+			}
+		} else {
 			return folder
 		}
-		throw Exception("Could not create directory $parentPath/$folderName")
+		throw Exception("Could not create directory $parentPath$pathSeparator$folderName")
 	}
 
 	fun createDirectories(parentPath: String, folderName: String): File {
-		val folder = File(parentPath.replace("/",pathSeparator), folderName)
+		val folder = File(parentPath.replace("/", pathSeparator), folderName)
 		if (folder.mkdirs()) {
 			return folder
 		}
@@ -37,7 +41,7 @@ class FileHandler {
 	}
 
 	fun getFileStream(folder: File, fileName: String): InputStream {
-		val file = File(folder,fileName)
+		val file = File(folder, fileName)
 		return file.inputStream()
 	}
 

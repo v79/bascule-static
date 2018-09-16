@@ -19,10 +19,13 @@ import org.liamjd.bascule.generator.Post
 import org.liamjd.bascule.generator.PostGenError
 import org.liamjd.bascule.render.ForEachHelper
 import org.liamjd.bascule.render.LocalDateFormatter
+import org.liamjd.bascule.render.Paginate
 import println.info
 import java.io.File
 import java.io.InputStream
 import java.io.Serializable
+import kotlin.math.ceil
+import kotlin.math.roundToInt
 import kotlin.system.measureTimeMillis
 
 
@@ -60,17 +63,17 @@ class FolderWalker(val project: ProjectStructure) {
 
 		info("Scanning ${project.sourceDir.absolutePath} for markdown files")
 
-		val docCache = mutableMapOf<String,GeneratedContent>()
+		val docCache = mutableMapOf<String, GeneratedContent>()
 		val siteModel = project.model
 		val postList = mutableListOf<Post>()
-		val errorMap = mutableMapOf<String,Any>()
+		val errorMap = mutableMapOf<String, Any>()
 
 		val timeTaken = measureTimeMillis {
 
 			project.sourceDir.walk().forEach {
 				if (it.isDirectory) {
 					// do something with directories?
-				} else {
+				} else if (it.extension == "md") {
 					numPosts++
 					val model = mutableMapOf<String, Any>()
 					model.putAll(siteModel)
@@ -81,8 +84,8 @@ class FolderWalker(val project: ProjectStructure) {
 
 					val document = parseMarkdown(inputStream)
 
-					val post = Post.createPostFromYaml(it,document, project)
-					when(post) {
+					val post = Post.createPostFromYaml(it, document, project)
+					when (post) {
 						is Post -> {
 
 							model.putAll(post.toModel())
@@ -114,14 +117,16 @@ class FolderWalker(val project: ProjectStructure) {
 							postList.add(post)
 						}
 						is PostGenError -> {
-							errorMap.put(it.name,post.errorMessage)
+							errorMap.put(it.name, post.errorMessage)
 						}
 					}
+				} else {
+					println("skipping file ${it.name}")
 				}
 			}
 		}
 		info("${timeTaken}ms to generate $numPosts files")
-		if(errorMap.isNotEmpty()) {
+		if (errorMap.isNotEmpty()) {
 			println.error("\nDuring processing, the following errors were found and their files were not generated:")
 			errorMap.forEach {
 				println.error("${it.key}\t\t->\t${it.value}")
@@ -129,18 +134,119 @@ class FolderWalker(val project: ProjectStructure) {
 			println.error("These pages and posts will be missing from your site until you correct the errors and re-run generate.")
 		}
 
-		buildIndex(postList,numPosts)
+		buildIndex(postList, numPosts)
+
+		buildPostNavigation(postList, numPosts)
 
 //		info("Writing document cache")
 	}
 
-	fun buildIndex(posts: List<Post>, numPosts: Int = 0) {
-		info("Building index file")
-		val model = mutableMapOf<String,Any>()
+	data class ListPage(val posts: List<Post>, val pageNum: Int = 0)
+
+	fun buildPostNavigation(posts: List<Post>, numPosts: Int = 0) {
+		info("Building navigation lists")
+		val model = mutableMapOf<String, Any>()
 		val postsPerPage = project.postsPerPage
 		model.putAll(project.model)
-		model.put("posts",posts.sortedByDescending { it.date }.take(postsPerPage))
-		model.put("postCount",numPosts)
+		val sortedPosts = posts.sortedByDescending { it.date }
+
+		val totalPages = ceil(numPosts.toDouble() / postsPerPage).roundToInt()
+		println("\nThere are $numPosts posts, and $postsPerPage per page. Which means $totalPages pages")
+		val postCounter = 0
+
+		val listPages = sortedPosts.withIndex()
+				.groupBy { it.index / postsPerPage }
+				.map { it.value.map { it.value } }
+
+		val postsFolder = fileHandler.createDirectory(project.outputDir.absolutePath, "posts")
+		listPages.forEachIndexed { pageIndex, posts ->
+			val currentPage = pageIndex + 1 // to save on mangling zero-index stuff
+			println("Listing page $currentPage")
+
+			val model = mutableMapOf<String, Any>()
+			model.putAll(project.model)
+			model.put("currentPage", currentPage)
+			model.put("totalPages", totalPages)
+			model.put("isFirst", currentPage == 1)
+			model.put("isLast", currentPage >= totalPages)
+			model.put("previousPage", currentPage - 1)
+			model.put("nextPage", currentPage + 1)
+			model.put("nextIsLast", currentPage == totalPages)
+			model.put("prevIsFirst", (currentPage - 1) == 1)
+
+
+			model.put("posts", posts)
+
+			model.put("pagination", buildPaginationList(currentPage, totalPages))
+			val renderedContent = render(model, getTemplate("list"))
+
+			File(postsFolder, "list${currentPage}.html").bufferedWriter().use { out ->
+				out.write(renderedContent)
+			}
+
+//			listItem.forEachIndexed { index, post ->
+//				println("\tpost $index - ${post.slug}\t\t${post.date} goes on page $pageIndex")
+//			}
+		}
+
+
+	}
+
+	private fun buildPaginationList(currentPage: Int, totalPages: Int): List<String> {
+		val paginationList = mutableListOf<String>()
+		val prev = currentPage - 1
+		val next = currentPage + 1
+		val isFirst = (currentPage == 1)
+		val isLast = (currentPage == totalPages)
+		val prevIsFirst = (currentPage - 1 == 1)
+		val nextIsLast = (currentPage + 1 == totalPages)
+
+		if (totalPages == 1) {
+			paginationList.add("*")
+		} else if (isFirst) {
+			paginationList.add("*")
+			if (nextIsLast) {
+				paginationList.add("$next")
+			} else {
+				paginationList.add("$next")
+				paginationList.add(".")
+				paginationList.add("$totalPages")
+			}
+		} else if (prevIsFirst) {
+			paginationList.add("1")
+			paginationList.add("*")
+			if (!isLast) {
+				paginationList.add(".")
+				paginationList.add("$totalPages")
+			}
+		} else if (!isLast) {
+			paginationList.add("1")
+			paginationList.add(".")
+			paginationList.add("$prev")
+			paginationList.add("*")
+			if (!nextIsLast) {
+				paginationList.add("$next")
+				paginationList.add(".")
+				paginationList.add("$totalPages")
+			} else {
+				paginationList.add("$totalPages")
+			}
+		} else if (isLast) {
+			paginationList.add("1")
+			paginationList.add(".")
+			paginationList.add("$prev")
+			paginationList.add("*")
+		}
+		return paginationList
+	}
+
+	fun buildIndex(posts: List<Post>, numPosts: Int = 0) {
+		info("Building index file")
+		val model = mutableMapOf<String, Any>()
+		val postsPerPage = project.postsPerPage
+		model.putAll(project.model)
+		model.put("posts", posts.sortedByDescending { it.date }.take(postsPerPage))
+		model.put("postCount", numPosts)
 		val renderedContent = render(model, getTemplate("index"))
 
 //		println("index -> $renderedContent")
@@ -177,6 +283,8 @@ class FolderWalker(val project: ProjectStructure) {
 	private fun render(model: Map<String, Any>, templateString: String): String {
 		val hbRenderer = Handlebars()
 		hbRenderer.registerHelper("forEach", ForEachHelper())
+		hbRenderer.registerHelper("paginate", Paginate())
+
 		val dateFormat = project.yamlMap["dateFormat"] as String ?: "dd/MMM/yyyy"
 		hbRenderer.registerHelper("localDate", LocalDateFormatter(dateFormat))
 
