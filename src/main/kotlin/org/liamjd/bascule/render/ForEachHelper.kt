@@ -11,55 +11,54 @@ import java.util.Map
  * Use #forEach "5" to show only the first 5 items in the collection
  */
 class ForEachHelper : Helper<Any> {
-	override fun apply(context: Any, options: Options): Any {
-
-		options.params.forEach {
-			println("option $it")
-		}
-
+	override fun apply(context: Any, options: Options?): Any {
 		if (context is Iterable<*>) {
 			val limit: Int
-			if(options.params.isNotEmpty()) {
-				limit = (options.param<String?>(0)?.toInt() ?: Int.MAX_VALUE)
-			} else {
+			if (options == null) {
 				limit = Int.MAX_VALUE
+			} else {
+				if (options.params.isNotEmpty()) {
+					limit = (options.param<String?>(0)?.toInt() ?: Int.MAX_VALUE)
+				} else {
+					limit = Int.MAX_VALUE
+				}
+				val buffer = options.buffer()
+				val loop = context.iterator()
+				val base: Int = options.hash("base", 0) ?: 0
+				var index = base
+				var even = index % 2 == 0
+				val parent = options.context
+				val fn = options.fn
+				var limitCounter = 0
+				while (loop.hasNext() && limitCounter < limit) {
+					val it = loop.next()
+					val itCtx = Context.newContext(parent, it)
+					itCtx.combine("@key", index)
+							.combine("@index", index)
+							.combine("@first", if (index == base) "first" else "")
+							.combine("@last", if (!loop.hasNext()) "last" else "")
+							.combine("@odd", if (even) "" else "odd")
+							.combine("@even", if (even) "even" else "")
+							// 1-based index
+							.combine("@index_1", index + 1)
+					buffer?.append(options.apply(fn, itCtx, Arrays.asList<Any>(it, index)))
+					index += 1
+					even = !even
+					limitCounter++
+				}
+				// empty?
+				if (base == index) {
+					buffer?.append(options.inverse())
+				}
+				return buffer as Any
 			}
-			val buffer = options.buffer()
-			val loop = context.iterator()
-			val base: Int = options.hash("base", 0) ?: 0
-			var index = base
-			var even = index % 2 == 0
-			val parent = options.context
-			val fn = options.fn
-			var limitCounter = 0
-			while (loop.hasNext() && limitCounter < limit) {
-				val it = loop.next()
-				val itCtx = Context.newContext(parent, it)
-				itCtx.combine("@key", index)
-						.combine("@index", index)
-						.combine("@first", if (index == base) "first" else "")
-						.combine("@last", if (!loop.hasNext()) "last" else "")
-						.combine("@odd", if (even) "" else "odd")
-						.combine("@even", if (even) "even" else "")
-						// 1-based index
-						.combine("@index_1", index + 1)
-				buffer?.append(options.apply(fn, itCtx, Arrays.asList<Any>(it, index)))
-				index += 1
-				even = !even
-				limitCounter++
-			}
-			// empty?
-			if (base == index) {
-				buffer?.append(options.inverse())
-			}
-			return buffer as Any
 		} else if (context != null) {
 			var index = 0
 			val loop = options?.propertySet(context)?.iterator()
-			val parent = options.context
+			val parent = options?.context
 			var first = true
-			val buffer = options.buffer()
-			val fn = options.fn
+			val buffer = options?.buffer()
+			val fn = options?.fn
 			while (loop!!.hasNext()) {
 				val entry = loop.next() as Map.Entry<*, *>
 				val key = entry.key
@@ -80,9 +79,8 @@ class ForEachHelper : Helper<Any> {
 			}
 			return buffer as Any
 		} else {
-			return options.inverse() as Any
+			return options?.inverse() as Any
 		}
-
-
+		return "" // end case, should never happen!
 	}
 }
