@@ -20,10 +20,12 @@ sealed class PostStatus
 
 class PostGenError(val errorMessage: String, val fileName: String, var field: String?) : PostStatus()
 
+data class PostLink(val title: String, val url: String, val date: LocalDate)
+
 /**
  * Class representing an individual Post.
  */
-class Post : PostStatus() {
+class Post(val document: Document) : PostStatus() {
 
 	var sourceFileName: String = ""
 	var url: String = ""
@@ -38,9 +40,11 @@ class Post : PostStatus() {
 	var attributes: MutableMap<String, Any> = mutableMapOf()
 
 	var content: String = ""
+	var newer: PostLink? = null
+	var older: PostLink? = null
 
-	fun toModel(): Map<String, Any> {
-		val modelMap = mutableMapOf<String, Any>()
+	fun toModel(): Map<String, Any?> {
+		val modelMap = mutableMapOf<String, Any?>()
 		modelMap.put("sourceFileName.name", sourceFileName)
 		modelMap.put("url", url)
 		modelMap.put("title", title)
@@ -50,6 +54,8 @@ class Post : PostStatus() {
 		modelMap.put("tags", tags)
 		modelMap.put("slug", slug)
 		modelMap.put("attributes", attributes)
+		modelMap.put("newer",newer)
+		modelMap.put("older",older)
 
 		return modelMap
 	}
@@ -70,7 +76,16 @@ class Post : PostStatus() {
 	 * Returns a PostStatus.Post if successful, or PostStatus.PostGenError if unable to parse the content.
 	 *
 	 */
-	companion object Builder : KoinComponent {
+	companion object Builder : KoinComponent, Comparator<Post>  {
+
+		/**
+		 * Sorting comparator by date order
+		 */
+		override fun compare(o1: Post, o2: Post): Int {
+			val date1 = o1.date
+			val date2 = o2.date
+			return date1.compareTo(date2)
+		}
 
 		fun createPostFromYaml(file: File, document: Document, project: ProjectStructure): PostStatus {
 			val yamlVisitor by inject<AbstractYamlFrontMatterVisitor>()
@@ -79,7 +94,7 @@ class Post : PostStatus() {
 
 			if (data == null || data.isEmpty()) {
 				println.error("No YAML frontispiece for file '${file.name}'. Attempting to construct a post from just the file itself.")
-				return buildPostWithoutYaml(file)
+				return buildPostWithoutYaml(file, document)
 			}
 
 			val requiredFields = PostMetaData.values().toSet().filter { it.required }
@@ -90,7 +105,7 @@ class Post : PostStatus() {
 				}
 			}
 
-			val post = Post()
+			val post = Post(document)
 
 			data.forEach { it ->
 				val metaData: PostMetaData?
@@ -151,8 +166,8 @@ class Post : PostStatus() {
 		 * Attempt to construct a post without any Yaml metadata. Can only provide a title, layout (always "post"), a slug and a date.
 		 * No author, tags or custom attributes
 		 */
-		fun buildPostWithoutYaml(file: File): PostStatus {
-			val post = Post()
+		fun buildPostWithoutYaml(file: File, document: Document): PostStatus {
+			val post = Post(document)
 			post.sourceFileName = file.name
 			post.title = file.nameWithoutExtension
 

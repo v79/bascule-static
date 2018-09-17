@@ -14,6 +14,7 @@ import org.liamjd.bascule.assets.AssetsProcessor
 import org.liamjd.bascule.assets.ProjectStructure
 import org.liamjd.bascule.generator.Post
 import org.liamjd.bascule.generator.PostGenError
+import org.liamjd.bascule.generator.PostLink
 import org.liamjd.bascule.render.Renderer
 import println.info
 import java.io.File
@@ -45,11 +46,11 @@ class FolderWalker(val project: ProjectStructure) : KoinComponent {
 		assetsProcessor = AssetsProcessor(project.root, project.assetsDir, project.outputDir)
 	}
 
-	// I wonder if coroutines can help with this?
+
 	fun generate(): List<Post> {
 
 		// TODO: be less agressive with this, use some sort of caching :)
-		fileHandler.emptyFolder(project.outputDir,OUTPUT_SUFFIX)
+		fileHandler.emptyFolder(project.outputDir, OUTPUT_SUFFIX)
 		assetsProcessor.copyStatics()
 
 		var numPosts = 0
@@ -58,56 +59,35 @@ class FolderWalker(val project: ProjectStructure) : KoinComponent {
 
 		val docCache = mutableMapOf<String, GeneratedContent>()
 		val siteModel = project.model
-		val postList = mutableListOf<Post>()
 		val errorMap = mutableMapOf<String, Any>()
 
+		val sortedSetOfPosts = sortedSetOf<Post>(comparator = Post)
 		val timeTaken = measureTimeMillis {
 
 			project.sourceDir.walk().forEach {
 				if (it.isDirectory) {
 					// do something with directories?
 				} else if (it.extension == "md") {
-					numPosts++
-					val model = mutableMapOf<String, Any>()
-					model.putAll(siteModel)
-
 					val inputStream = it.inputStream()
-					val inputExtension = it.extension
-					val lastModifiedTime = it.lastModified()
-
 					val document = parseMarkdown(inputStream)
+					numPosts++
 
 					val post = Post.createPostFromYaml(it, document, project)
+
 					when (post) {
 						is Post -> {
+//							val gc = GeneratedContent(lastModifiedTime, slug, renderedContent)
+//							docCache.put(post.sourceFileName, gc)
 
-							model.putAll(post.toModel())
-
-							val renderedMarkdown = renderMarkdown(document)
-							model.put("content", renderedMarkdown)
-
-							val templateFromYaml
-									: String = post.layout
-							val renderedContent = renderer.render(model, templateFromYaml)
-							post.content = renderedMarkdown
-
-							var url = it.nameWithoutExtension
+							// get the URL for prev/next generation. Doing this here in case there's a conflict of slugs
 							val slug = post.slug
 							if (docCache.containsKey(slug)) {
 								println.error("Duplicate slug '$slug' found!")
 							}
-							url = "$slug.html"
+							val url = "$slug.html"
 							post.url = url
 
-							info("Generating html file $url")
-							File(project.outputDir.absolutePath, url)
-									.bufferedWriter().use { out ->
-										out.write(renderedContent)
-									}
-							val gc = GeneratedContent(lastModifiedTime, slug, renderedContent)
-							docCache.put(post.sourceFileName, gc)
-
-							postList.add(post)
+							sortedSetOfPosts.add(post)
 						}
 						is PostGenError -> {
 							errorMap.put(it.name, post.errorMessage)
@@ -117,8 +97,47 @@ class FolderWalker(val project: ProjectStructure) : KoinComponent {
 					println("skipping file ${it.name}")
 				}
 			}
+
+			info("Parsed $numPosts files, ready to generate content")
+
+			val postList = sortedSetOfPosts.toList()
+			postList.forEachIndexed { index, post ->
+				if (index != 0) {
+					val olderPost = postList.get(index - 1)
+					post.older = PostLink(olderPost.title, olderPost.url, olderPost.date)
+				}
+				if (index != postList.size - 1) {
+					val newerPost = postList.get(index + 1)
+					post.newer = PostLink(newerPost.title, newerPost.url, newerPost.date)
+				}
+			}
+
+			postList.forEach { post ->
+
+				val model = mutableMapOf<String, Any?>()
+				model.putAll(siteModel)
+				model.putAll(post.toModel())
+
+				// first, extract the content from the markdown
+				val renderedMarkdown = renderMarkdown(post.document)
+				model.put("content", renderedMarkdown)
+
+				// then, render the corresponding Handlebars template
+				val templateFromYaml
+						: String = post.layout
+				val renderedContent = renderer.render(model, templateFromYaml)
+				post.content = renderedMarkdown
+
+				info("Generating html file ${post.url}")
+				File(project.outputDir.absolutePath, post.url)
+						.bufferedWriter().use { out ->
+							out.write(renderedContent)
+						}
+			}
+
 		}
 		info("${timeTaken}ms to generate $numPosts files")
+
 		if (errorMap.isNotEmpty()) {
 			println.error("\nDuring processing, the following errors were found and their files were not generated:")
 			errorMap.forEach {
@@ -127,7 +146,7 @@ class FolderWalker(val project: ProjectStructure) : KoinComponent {
 			println.error("These pages and posts will be missing from your site until you correct the errors and re-run generate.")
 		}
 
-		return postList
+		return sortedSetOfPosts.toList()
 
 //		info("Writing document cache")
 	}

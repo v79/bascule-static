@@ -22,7 +22,7 @@ class HandlebarsRenderer(val project: ProjectStructure) : Renderer {
 		hbRenderer.registerHelper("localDate", LocalDateFormatter(dateFormat))
 	}
 
-	override fun render(model: Map<String, Any>, templateName: String): String {
+	override fun render(model: Map<String, Any?>, templateName: String): String {
 
 		val hbContext = Context.newBuilder(model).resolver(MethodValueResolver.INSTANCE, JavaBeanValueResolver.INSTANCE, MapValueResolver.INSTANCE, FieldValueResolver.INSTANCE).build()
 		val template = hbRenderer.compileInline(getTemplate(project, templateName))

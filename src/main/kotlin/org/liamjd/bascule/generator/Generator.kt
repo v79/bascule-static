@@ -51,10 +51,11 @@ class Generator : Runnable, KoinComponent {
 		val walker = FolderWalker(project)
 
 		val postList = walker.generate()
-		val numPosts = postList.size
+		val sortedPosts = postList.sortedByDescending { it.date }
+		val numPosts = sortedPosts.size
 
-		buildIndex(postList, numPosts)
-		buildPostNavigation(postList, numPosts)
+		buildIndex(sortedPosts, numPosts)
+		buildPostNavigation(sortedPosts, numPosts)
 	}
 
 	private fun buildIndex(posts: List<Post>, numPosts: Int = 0) {
@@ -78,13 +79,12 @@ class Generator : Runnable, KoinComponent {
 		val model = mutableMapOf<String, Any>()
 		val postsPerPage = project.postsPerPage
 		model.putAll(project.model)
-		val sortedPosts = posts.sortedByDescending { it.date }
 
 		val totalPages = ceil(numPosts.toDouble() / postsPerPage).roundToInt()
 		println("\nThere are $numPosts posts, and $postsPerPage per page. Which means $totalPages pages")
 		val postCounter = 0
 
-		val listPages = sortedPosts.withIndex()
+		val listPages = posts.withIndex()
 				.groupBy { it.index / postsPerPage }
 				.map { it.value.map { it.value } }
 
