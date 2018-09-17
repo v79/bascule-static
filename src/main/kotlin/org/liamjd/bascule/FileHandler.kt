@@ -1,5 +1,6 @@
 package org.liamjd.bascule
 
+import println.info
 import java.io.File
 import java.io.InputStream
 import java.nio.file.FileSystems
@@ -16,10 +17,18 @@ class FileHandler {
 		return folders.mkdirs()
 	}
 
+	/**
+	 * Create a directory tree matching the given file path
+	 * @param[path] path of directories to create
+	 */
 	fun createDirectories(path: File): Boolean {
 		return path.mkdirs()
 	}
 
+	/**
+	 * Create a directory with the given folderName in the file path
+	 * If the folder already exists, it is returned. Otherwise, the new folder is created and returned
+	 */
 	fun createDirectory(parentPath: String, folderName: String): File {
 		val folder = File(parentPath.replace("/", pathSeparator), folderName)
 		if (!folder.exists()) {
@@ -72,7 +81,24 @@ class FileHandler {
 		}
 	}
 
+	/**
+	 * Read a text file from the project resource package
+	 */
 	fun readFileFromResources(sourceDir: String, fileName: String): String {
 		return javaClass.getResource(sourceDir + fileName).readText()
+	}
+
+	/**
+	 * Delete all files of the specified type from the given directory
+	 * @param[folder] the folder to empty
+	 * @param[fileType] the type of file to delete, e.g. ".html"
+	 */
+	fun emptyFolder(folder: File, fileType: String) {
+		info("Clearing out old generated files")
+		folder.walk().forEach {
+			if (it != folder && it.name.endsWith(fileType)) {
+				it.delete()
+			}
+		}
 	}
 }

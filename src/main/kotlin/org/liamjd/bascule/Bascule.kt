@@ -32,7 +32,7 @@ class Bascule : Runnable, KoinComponent {
 
 	init {
 		AnsiConsole.systemInstall()
-		// start Koin DI, change logger to PrintLogger() for DI logs
+		// start Koin DI, change logger to PrintLogger() for DI logs or EmptyLogger for no logs
 		StandAloneContext.startKoin(listOf(generationModule, fileModule), logger = EmptyLogger())
 	}
 
