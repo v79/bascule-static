@@ -77,7 +77,7 @@ class BasculeInitializer(val siteName: String, val themeName: Theme?, val fileHa
 
 	private fun copyThemeToTemplates(themeName: Theme, templatesDir: File) {
 		val themeTemplateDirName = "${Constants.THEME_FOLDER}/${themeName}/templates"
-		val filesToCopy = arrayOf("post.hbt","index.hbt")
+		val filesToCopy = arrayOf("post.hbs","index.hbs")
 		for (f in filesToCopy) {
 			fileHandler.copyFileFromResources(fileName = f, destination = templatesDir, sourceDir = "$themeTemplateDirName/")
 		}

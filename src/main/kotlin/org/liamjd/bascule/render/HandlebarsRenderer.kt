@@ -6,32 +6,39 @@ import com.github.jknack.handlebars.context.FieldValueResolver
 import com.github.jknack.handlebars.context.JavaBeanValueResolver
 import com.github.jknack.handlebars.context.MapValueResolver
 import com.github.jknack.handlebars.context.MethodValueResolver
+import com.github.jknack.handlebars.helper.StringHelpers
+import com.github.jknack.handlebars.io.FileTemplateLoader
 import org.liamjd.bascule.assets.ProjectStructure
 
 class HandlebarsRenderer(val project: ProjectStructure) : Renderer {
 
-	val TEMPLATE_SUFFIX = ".hbt"
+	val TEMPLATE_SUFFIX = ".hbs"
 	val hbRenderer: Handlebars
 	val dateFormat: String
+	val loader: FileTemplateLoader
 
 	init {
-		hbRenderer = Handlebars()
+		loader = FileTemplateLoader(project.templatesDir)
+		dateFormat = project.yamlMap["dateFormat"] as String? ?: "dd/MMM/yyyy"
+
+		hbRenderer = Handlebars(loader)
 		hbRenderer.registerHelper("forEach", ForEachHelper())
 		hbRenderer.registerHelper("paginate", Paginate())
-		dateFormat = project.yamlMap["dateFormat"] as String? ?: "dd/MMM/yyyy"
 		hbRenderer.registerHelper("localDate", LocalDateFormatter(dateFormat))
+		hbRenderer.registerHelper("capitalize",StringHelpers.capitalize)
+		hbRenderer.registerHelper("upper",StringHelpers.upper)
+
 	}
 
 	override fun render(model: Map<String, Any?>, templateName: String): String {
-
 		val hbContext = Context.newBuilder(model).resolver(MethodValueResolver.INSTANCE, JavaBeanValueResolver.INSTANCE, MapValueResolver.INSTANCE, FieldValueResolver.INSTANCE).build()
-		val template = hbRenderer.compileInline(getTemplate(project, templateName))
+		val template = hbRenderer.compileInline(getTemplateText(project, templateName))
 
 		return template.apply(hbContext)
 	}
 
-	private fun getTemplate(project: ProjectStructure, templateName: String): String {
-		val matches = project.templatesDir.listFiles { dir, name -> name == templateName + TEMPLATE_SUFFIX }
+	private fun getTemplateText(project: ProjectStructure, templateName: String): String {
+		val matches = project.templatesDir.listFiles { dir, name -> name == (templateName  + TEMPLATE_SUFFIX) }
 
 		if (matches.isNotEmpty() && matches.size == 1) {
 			val found = matches[0]
