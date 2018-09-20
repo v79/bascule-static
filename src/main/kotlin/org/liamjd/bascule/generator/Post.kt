@@ -5,6 +5,7 @@ import com.vladsch.flexmark.ext.yaml.front.matter.AbstractYamlFrontMatterVisitor
 import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
 import org.liamjd.bascule.assets.ProjectStructure
+import org.liamjd.bascule.slug
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.attribute.BasicFileAttributes
@@ -137,7 +138,7 @@ class Post(val document: Document) : PostStatus() {
 								post.author = value
 							}
 							PostMetaData.slug -> {
-								post.slug = value
+								post.slug = value.trim()
 							}
 							PostMetaData.date -> {
 								val dateFormat = project.model["dateFormat"] as String? ?: "dd/MM/yyyy"
@@ -145,7 +146,11 @@ class Post(val document: Document) : PostStatus() {
 								post.date = LocalDate.parse(value, formatter)
 							}
 							PostMetaData.tags -> {
-								post.tags = value.drop(1).dropLast(1).split(",")
+								// split string [tagA, tagB, tagC] into a list of three tags, removing spaces
+								post.tags = value.trim().drop(1).dropLast(1).split(",").map { it.trim() }
+								if(post.tags.size > 1) {
+
+								}
 							}
 							else -> {
 								println("How did i get here?")
@@ -180,20 +185,14 @@ class Post(val document: Document) : PostStatus() {
 			post.date = milliseconds.atZone(ZoneId.systemDefault()).toLocalDate()
 
 			// transform the source file name to a cleaner URL
-			val slugRegex = Regex("[^a-zA-Z0-9-]")
-			post.slug = slugRegex.replace(file.nameWithoutExtension.toLowerCase(), "-")
+//			val slugRegex = Regex("[^a-zA-Z0-9-]")
+//			post.slug = slugRegex.replace(file.nameWithoutExtension.toLowerCase(), "-")
+			post.slug = file.nameWithoutExtension.slug()
 
 			// author, tags will all be empty. No custom attributes
 			return post
 		}
 
-		fun splitArray(value: String): List<String>? {
-			return if (value.startsWith("[").and(value.endsWith("]"))) {
-				value.drop(1).dropLast(1).split(",")
-			} else {
-				null
-			}
-		}
 	}
 }
 

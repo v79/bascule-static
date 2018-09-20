@@ -52,7 +52,7 @@ class BasculeInitializer(val siteName: String, val themeName: Theme?, val fileHa
 
 	// TODO: this will get much more complicated in the future
 	private fun buildConfiguration(themeName: Theme, root: File): String {
-		val yamlConfigString = "${siteName}.yaml"
+		val yamlConfigString = "$siteName.yaml"
 
 		info("Writing $siteName.yaml configuration file")
 		val yamlTemplate = fileHandler.readFileFromResources("", CONFIG_YAML)
@@ -76,7 +76,7 @@ class BasculeInitializer(val siteName: String, val themeName: Theme?, val fileHa
 	}
 
 	private fun copyThemeToTemplates(themeName: Theme, templatesDir: File) {
-		val themeTemplateDirName = "${Constants.THEME_FOLDER}/${themeName}/templates"
+		val themeTemplateDirName = "${Constants.THEME_FOLDER}/$themeName/templates"
 		val filesToCopy = arrayOf("post.hbs","index.hbs")
 		for (f in filesToCopy) {
 			fileHandler.copyFileFromResources(fileName = f, destination = templatesDir, sourceDir = "$themeTemplateDirName/")
@@ -95,9 +95,9 @@ class Destroyer(siteName: String) {
 	val pathSeparator = FileSystems.getDefault().separator
 	init {
 		if (siteName.isNotBlank()) {
-			println("Destroying your website $currentDirectory${pathSeparator}$siteName!")
+			println("Destroying your website $currentDirectory$pathSeparator$siteName!")
 
-			val siteRoot = File("$currentDirectory${pathSeparator}$siteName")
+			val siteRoot = File("$currentDirectory$pathSeparator$siteName")
 			siteRoot.deleteRecursively()
 		}
 		exitProcess(-1)

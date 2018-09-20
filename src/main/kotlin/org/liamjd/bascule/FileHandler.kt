@@ -101,4 +101,13 @@ class FileHandler {
 			}
 		}
 	}
+
+	/**
+	 * Delete everything in the given folder. Destructive!
+	 * @param[folder] the folder to empty recursively
+	 */
+	fun emptyFolder(folder: File) {
+		info("Purging folder ${folder.name}")
+		folder.deleteRecursively()
+	}
 }

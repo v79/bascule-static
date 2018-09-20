@@ -9,7 +9,7 @@ typealias Theme = String
 
 // TODO: probably too much in this constructor... allow some vars!
 /**
- * Class represening the overall structure of the project, mostly the directory locations for source files, templates, etc
+ * Class representing the overall structure of the project, mostly the directory locations for source files, templates, etc
  */
 class ProjectStructure(val name: String, val root: File, val sourceDir: File, val outputDir: File, val assetsDir: File, val templatesDir: File, val yamlConfigString: String, val theme: Theme, val model: Map<String, Any>) {
 

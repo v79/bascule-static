@@ -27,6 +27,7 @@ class HandlebarsRenderer(val project: ProjectStructure) : Renderer {
 		hbRenderer.registerHelper("localDate", LocalDateFormatter(dateFormat))
 		hbRenderer.registerHelper("capitalize",StringHelpers.capitalize)
 		hbRenderer.registerHelper("upper",StringHelpers.upper)
+		hbRenderer.registerHelper("slugify", StringHelpers.slugify)
 
 	}
 

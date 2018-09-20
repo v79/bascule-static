@@ -35,9 +35,6 @@ class FolderWalker(val project: ProjectStructure) : KoinComponent {
 	val mdOptions = MutableDataSet()
 	val mdParser: Parser
 
-
-	val OUTPUT_SUFFIX = ".html"
-
 	init {
 		println("FolderWalker initialised")
 		mdOptions.set(Parser.EXTENSIONS, arrayListOf(AttributesExtension.create(), YamlFrontMatterExtension.create()))
@@ -49,8 +46,6 @@ class FolderWalker(val project: ProjectStructure) : KoinComponent {
 
 	fun generate(): List<Post> {
 
-		// TODO: be less agressive with this, use some sort of caching :)
-		fileHandler.emptyFolder(project.outputDir, OUTPUT_SUFFIX)
 		assetsProcessor.copyStatics()
 
 		var numPosts = 0

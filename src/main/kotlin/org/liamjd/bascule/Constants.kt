@@ -10,6 +10,14 @@ fun ClosedRange<Int>.random() =
 		Random().nextInt((endInclusive + 1) - start) + start
 
 /**
+ * Simple regex to make a string safe for URLs and file names
+ */
+fun String.slug() : String {
+	val slugRegex = Regex("[^a-zA-Z0-9-]")
+	return slugRegex.replace(this.toLowerCase(), "-")
+}
+
+/**
  * Various final values. Extension functions. Plus logos :)
  */
 object Constants {
@@ -47,7 +55,7 @@ object Constants {
  | __ )  __ _ ___  ___ _   _| | ___
  |  _ \ / _` / __|/ __| | | | |/ _ \
  | |_) | (_| \__ \ (__| |_| | |  __/
- |____/ \__,_|___/\___|\__,_|_|\___| ${VERSION_STRING}
+ |____/ \__,_|___/\___|\__,_|_|\___| $VERSION_STRING
 
 	""".trimIndent()
 
@@ -57,7 +65,7 @@ object Constants {
    / __ )____ _____________  __/ /__
   / __  / __ `/ ___/ ___/ / / / / _ \
  / /_/ / /_/ (__  ) /__/ /_/ / /  __/
-/_____/\__,_/____/\___/\__,_/_/\___/  ${VERSION_STRING}
+/_____/\__,_/____/\___/\__,_/_/\___/  $VERSION_STRING
 
 	""".trimIndent()
 

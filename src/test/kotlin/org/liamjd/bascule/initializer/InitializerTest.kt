@@ -79,7 +79,7 @@ class InitializerTest : Spek({
 			val siteRoot = File("$currentDirectory$pathSeparator$name")
 			assertTrue { siteRoot.exists() }
 			verify(atMost = 4) { mockFileHandler.createDirectory(any(),any()) }
-			verify(exactly = 1) { mockFileHandler.copyFileFromResources(fileName = "post.hbs", destination = any<File>(), sourceDir = "${Constants.THEME_FOLDER}/${defaultTheme}/templates/") }
+			verify(exactly = 1) { mockFileHandler.copyFileFromResources(fileName = "post.hbs", destination = any<File>(), sourceDir = "${Constants.THEME_FOLDER}/$defaultTheme/templates/") }
 		}
 	}
 })
