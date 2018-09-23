@@ -46,20 +46,20 @@ class FolderWalker(val project: ProjectStructure) : KoinComponent {
 
 	fun generate(): List<Post> {
 
-		assetsProcessor.copyStatics()
-
-		var numPosts = 0
-
 		info("Scanning ${project.sourceDir.absolutePath} for markdown files")
 
+		assetsProcessor.copyStatics()
+		var numPosts = 0
 		val docCache = mutableMapOf<String, GeneratedContent>()
 		val siteModel = project.model
 		val errorMap = mutableMapOf<String, Any>()
-
 		val sortedSetOfPosts = sortedSetOf<Post>(comparator = Post)
 		val timeTaken = measureTimeMillis {
 
 			project.sourceDir.walk().forEach {
+				if (it.name.startsWith(".") || it.name.startsWith("__")) {
+					info("Skipping draft file/folder '${it.name}'")
+				}
 				if (it.isDirectory) {
 					// do something with directories?
 				} else if (it.extension == "md") {
