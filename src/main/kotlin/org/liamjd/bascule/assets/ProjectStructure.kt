@@ -8,6 +8,7 @@ import java.io.InputStream
 typealias Theme = String
 
 // TODO: probably too much in this constructor... allow some vars!
+// TODO: there's stuff in the model which shouldn't be there, like the directory names
 /**
  * Class representing the overall structure of the project, mostly the directory locations for source files, templates, etc
  */

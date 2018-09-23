@@ -59,10 +59,12 @@ class FolderWalker(val project: ProjectStructure) : KoinComponent {
 			project.sourceDir.walk().forEach {
 				if (it.name.startsWith(".") || it.name.startsWith("__")) {
 					info("Skipping draft file/folder '${it.name}'")
+					return@forEach // skip this one
 				}
-				if (it.isDirectory) {
-					// do something with directories?
-				} else if (it.extension == "md") {
+				if(it.isDirectory) {
+					return@forEach
+				}
+				if (it.extension == "md") {
 					val inputStream = it.inputStream()
 					val document = parseMarkdown(inputStream)
 					numPosts++
@@ -89,7 +91,7 @@ class FolderWalker(val project: ProjectStructure) : KoinComponent {
 						}
 					}
 				} else {
-					println("skipping file ${it.name}")
+					println("skipping file '${it.name}' as it does not have the required '.md' file extension.")
 				}
 			}
 

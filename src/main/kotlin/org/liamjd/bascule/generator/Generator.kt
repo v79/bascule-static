@@ -15,7 +15,6 @@ import picocli.CommandLine
 import println.info
 import java.io.File
 import java.io.FileInputStream
-import java.nio.file.FileSystems
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
@@ -29,7 +28,6 @@ class Generator : Runnable, KoinComponent {
 	private val renderer by inject<Renderer> { parametersOf(project) }
 
 	private val currentDirectory = System.getProperty("user.dir")!!
-	private val pathSeparator = FileSystems.getDefault().separator
 	private val yamlConfig: String
 	private val parentFolder: File
 	private val configStream: FileInputStream
@@ -53,24 +51,24 @@ class Generator : Runnable, KoinComponent {
 
 		// TODO: be less agressive with this, use some sort of caching :)
 		fileHandler.emptyFolder(project.outputDir, OUTPUT_SUFFIX)
-		fileHandler.emptyFolder(File(project.outputDir,"tags"))
+		fileHandler.emptyFolder(File(project.outputDir, "tags"))
 		val walker = FolderWalker(project)
 
 		val postList = walker.generate()
 		val sortedPosts = postList.sortedByDescending { it.date }
 		val numPosts = sortedPosts.size
 
-		buildIndex(sortedPosts, numPosts)
+		buildIndexPage(sortedPosts, numPosts)
 		buildPostNavigation(sortedPosts, numPosts)
 		buildTaxonomyNavigation(sortedPosts, numPosts)
 	}
 
-	private fun buildIndex(posts: List<Post>, numPosts: Int = 0) {
+	private fun buildIndexPage(posts: List<Post>, numPosts: Int = 0) {
 		info("Building index file")
 		val model = mutableMapOf<String, Any>()
 		val postsPerPage = project.postsPerPage
 		model.putAll(project.model)
-		model.put("title","Index")
+		model.put("title", "Index")
 		model.put("posts", posts.sortedByDescending { it.date }.take(postsPerPage))
 		model.put("postCount", numPosts)
 		val renderedContent = renderer.render(model, "index")
@@ -86,7 +84,7 @@ class Generator : Runnable, KoinComponent {
 			if (post.tags.isNotEmpty()) {
 				for (tag in post.tags) {
 					val slugTag = tag.slug()
-					if(taxonomyMap[slugTag] == null) {
+					if (taxonomyMap[slugTag] == null) {
 						taxonomyMap.put(slugTag, mutableListOf())
 						taxonomyMap.get(slugTag)?.add(post)
 					} else {
@@ -96,23 +94,13 @@ class Generator : Runnable, KoinComponent {
 			}
 		}
 
-	/*	info("Taxonomy tags found:")
-		taxonomyMap.forEach {
-			println("Tag: ${it.key}")
-			it.value.forEach { taggedPost ->
-				println("\t${taggedPost.title}")
-			}
-		}
-*/
-		taxonomyMap.forEach{ tag ->
-//			val model = mutableMapOf<String,Any>()
+		taxonomyMap.forEach { tag ->
 			val postsPerPage = project.postsPerPage
-//			model.putAll(project.model)
 			val numPosts = tag.value.size
 			val totalPages = ceil(numPosts.toDouble() / postsPerPage).roundToInt()
 
 			// only create tagged index pages if there's more than one page with the tag
-			if(tag.value.size > 1) {
+			if (numPosts > 1) {
 				println("Building $totalPages pages for tag ${tag.key}")
 				val listPages = tag.value.withIndex()
 						.groupBy { it.index / postsPerPage }
@@ -122,22 +110,9 @@ class Generator : Runnable, KoinComponent {
 				val thisTagFolder = fileHandler.createDirectory(tagsFolder.absolutePath, tag.key)
 
 				listPages.forEachIndexed { pageIndex, taggedPosts ->
-					val model = mutableMapOf<String, Any>()
-					model.putAll(project.model)
-					model.put("title","All posts")
-					val currentPage = pageIndex + 1
-					model.put("currentPage", currentPage)
-					model.put("totalPages", totalPages)
-					model.put("isFirst", currentPage == 1)
-					model.put("isLast", currentPage >= totalPages)
-					model.put("previousPage", currentPage - 1)
-					model.put("nextPage", currentPage + 1)
-					model.put("nextIsLast", currentPage == totalPages)
-					model.put("prevIsFirst", (currentPage - 1) == 1)
-					model.put("tag",tag.key.slug())
 
-					model.put("posts", taggedPosts)
-					model.put("pagination", buildPaginationList(currentPage, totalPages))
+					val currentPage = pageIndex + 1
+					val model = buildPaginationModel(currentPage, totalPages, taggedPosts, numPosts, tag.key.slug())
 					val renderedContent = renderer.render(model, "tag")
 
 					File(thisTagFolder, "${tag.key}$currentPage.html").bufferedWriter().use { out ->
@@ -145,51 +120,59 @@ class Generator : Runnable, KoinComponent {
 					}
 				}
 			}
-
 		}
-
 	}
 
 	private fun buildPostNavigation(posts: List<Post>, numPosts: Int = 0) {
 		info("Building navigation lists")
-//		val model = mutableMapOf<String, Any>()
 		val postsPerPage = project.postsPerPage
-
 
 		val totalPages = ceil(numPosts.toDouble() / postsPerPage).roundToInt()
 		println("\nThere are $numPosts posts, and $postsPerPage per page. Which means $totalPages pages")
-		val postCounter = 0
 
 		val listPages = posts.withIndex()
 				.groupBy { it.index / postsPerPage }
 				.map { it.value.map { it.value } }
 
 		val postsFolder = fileHandler.createDirectory(project.outputDir.absolutePath, "posts")
-		listPages.forEachIndexed { pageIndex, posts ->
+		listPages.forEachIndexed { pageIndex, paginatedPosts ->
 			val currentPage = pageIndex + 1 // to save on mangling zero-index stuff
 			println("Listing page $currentPage")
 
-			val model = mutableMapOf<String, Any>()
-			model.putAll(project.model)
-			model.put("title","All posts")
-//			model.putAll(project.model)
-			model.put("currentPage", currentPage)
-			model.put("totalPages", totalPages)
-			model.put("isFirst", currentPage == 1)
-			model.put("isLast", currentPage >= totalPages)
-			model.put("previousPage", currentPage - 1)
-			model.put("nextPage", currentPage + 1)
-			model.put("nextIsLast", currentPage == totalPages)
-			model.put("prevIsFirst", (currentPage - 1) == 1)
-
-			model.put("posts", posts)
-			model.put("pagination", buildPaginationList(currentPage, totalPages))
+			val model = buildPaginationModel(currentPage, totalPages, paginatedPosts, posts.size)
 			val renderedContent = renderer.render(model, "list")
 
 			File(postsFolder, "list$currentPage.html").bufferedWriter().use { out ->
 				out.write(renderedContent)
 			}
 		}
+	}
+
+	/**
+	 * Construct pagination model for the current page in a list of posts
+	 */
+	private fun buildPaginationModel(currentPage: Int, totalPages: Int, posts: List<Post>, totalPosts: Int, tagLabel: String? = null): Map<String, Any> {
+		val model = mutableMapOf<String, Any>()
+		model.putAll(project.model)
+		model.put("currentPage", currentPage)
+		model.put("totalPages", totalPages)
+		model.put("isFirst", currentPage == 1)
+		model.put("isLast", currentPage >= totalPages)
+		model.put("previousPage", currentPage - 1)
+		model.put("nextPage", currentPage + 1)
+		model.put("nextIsLast", currentPage == totalPages)
+		model.put("prevIsFirst", (currentPage - 1) == 1)
+		model.put("totalPosts", totalPosts)
+		model.put("posts", posts)
+		model.put("pagination", buildPaginationList(currentPage, totalPages))
+		if (tagLabel != null) {
+			model.put("tag", tagLabel)
+			model.put("title","Posts tagged '$tagLabel'")
+		} else {
+			model.put("title","All posts")
+		}
+
+		return model
 	}
 
 	/**

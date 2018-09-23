@@ -2,7 +2,7 @@ buildscript {
 	ext.kotlin_version = '1.2.60'
 	ext.handlebars_version = '4.1.0'
 	ext.slf4j_version = '1.6.2'
-	ext.flexmark_version = '0.34.22'
+	ext.flexmark_version = '0.34.32'
 	ext.spek_version = '1.1.5'
 	ext.mockk_version = '1.8.7'
 	ext.picocli_version = '3.5.2'
