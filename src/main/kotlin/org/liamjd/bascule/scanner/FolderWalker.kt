@@ -15,6 +15,7 @@ import org.liamjd.bascule.assets.ProjectStructure
 import org.liamjd.bascule.generator.Post
 import org.liamjd.bascule.generator.PostGenError
 import org.liamjd.bascule.generator.PostLink
+import org.liamjd.bascule.generator.Tag
 import org.liamjd.bascule.render.Renderer
 import println.info
 import java.io.File
@@ -106,6 +107,21 @@ class FolderWalker(val project: ProjectStructure) : KoinComponent {
 				if (index != postList.size - 1) {
 					val newerPost = postList.get(index + 1)
 					post.newer = PostLink(newerPost.title, newerPost.url, newerPost.date)
+				}
+			}
+
+			val allTags = mutableSetOf<Tag>()
+			postList.forEach { post ->
+				allTags.addAll(post.tags)
+				post.tags.forEach { postTag ->
+					if(allTags.contains(postTag)) {
+						val t = allTags.find { it.equals(postTag) }
+						if(t != null) {
+							t.postCount++
+							t.hasPosts = true
+							postTag.postCount = t.postCount
+						}
+					}
 				}
 			}
 

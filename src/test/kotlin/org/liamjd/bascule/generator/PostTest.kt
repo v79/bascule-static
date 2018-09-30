@@ -84,7 +84,7 @@ class PostTest : Spek( {
 			assertEquals(SLUG_VAL, result.slug)
 			assertEquals(LocalDate.of(2018,Month.JANUARY,1),result.date)
 			assertEquals(1,result.tags.size)
-			assertEquals("aTag",result.tags[0])
+			assertEquals("aTag",result.tags.first().label)
 		}
 
 		it("builds a Post with two tags") {
@@ -97,9 +97,10 @@ class PostTest : Spek( {
 			assertTrue(isPost)
 			val post = result as Post
 			assertEquals(2,post.tags.size)
-			assertEquals("tagA",post.tags[0])
-			assertEquals("tagB",post.tags[1])
+			assertEquals(1,post.tags.filter { it.label == "tagA" }.size)
+			assertEquals(1,post.tags.filter { it.label == "tagB" }.size)
 		}
+
 		it("builds a post with two custom attributes") {
 			data = buildYamlData()
 			data["wibble"] = mutableListOf("wobble")

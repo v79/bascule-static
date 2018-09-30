@@ -10,7 +10,6 @@ import org.liamjd.bascule.assets.ProjectStructure
 import org.liamjd.bascule.random
 import org.liamjd.bascule.render.Renderer
 import org.liamjd.bascule.scanner.FolderWalker
-import org.liamjd.bascule.slug
 import picocli.CommandLine
 import println.info
 import java.io.File
@@ -49,20 +48,36 @@ class Generator : Runnable, KoinComponent {
 		info("Generating your website")
 		info("Reading yaml configuration file $yamlConfig")
 
-		// TODO: be less agressive with this, use some sort of caching :)
+		// TODO: be less aggressive with this, use some sort of caching :)
 		fileHandler.emptyFolder(project.outputDir, OUTPUT_SUFFIX)
 		fileHandler.emptyFolder(File(project.outputDir, "tags"))
 		val walker = FolderWalker(project)
 
 		val postList = walker.generate()
+		val tagsSet = getAllTags(postList)
+
 		val sortedPosts = postList.sortedByDescending { it.date }
 		val numPosts = sortedPosts.size
 
 		buildIndexPage(sortedPosts, numPosts)
 		buildPostNavigation(sortedPosts, numPosts)
-		buildTaxonomyNavigation(sortedPosts, numPosts)
+		buildTaxonomyNavigation(sortedPosts, tagsSet)
 	}
 
+	/**
+	 * Get a set of all the unique tags across the site
+	 */
+	private fun getAllTags(posts: List<Post>): Set<Tag> {
+		val tagSet = mutableSetOf<Tag>()
+		posts.forEach {
+			tagSet.addAll(it.tags)
+		}
+		return tagSet.toSet()
+	}
+
+	/**
+	 * Build the home page
+	 */
 	private fun buildIndexPage(posts: List<Post>, numPosts: Int = 0) {
 		info("Building index file")
 		val model = mutableMapOf<String, Any>()
@@ -78,49 +93,49 @@ class Generator : Runnable, KoinComponent {
 		}
 	}
 
-	private fun buildTaxonomyNavigation(posts: List<Post>, numPosts: Int = 0) {
-		val taxonomyMap = mutableMapOf<String, MutableList<Post>>()
-		posts.forEach { post ->
-			if (post.tags.isNotEmpty()) {
-				for (tag in post.tags) {
-					val slugTag = tag.slug()
-					if (taxonomyMap[slugTag] == null) {
-						taxonomyMap.put(slugTag, mutableListOf())
-						taxonomyMap.get(slugTag)?.add(post)
-					} else {
-						taxonomyMap[slugTag]?.add(post)
-					}
-				}
-			}
-		}
-
-		taxonomyMap.forEach { tag ->
+	/**
+	 * Build pagination for each tag
+	 */
+	private fun buildTaxonomyNavigation(posts: List<Post>, tagSet: Set<Tag>) {
+		info("Building tag navigation pages")
+		tagSet.forEachIndexed { index, tag ->
+			val taggedPosts = getPostsWithTag(posts,tag)
 			val postsPerPage = project.postsPerPage
-			val numPosts = tag.value.size
+			val numPosts = tag.postCount
 			val totalPages = ceil(numPosts.toDouble() / postsPerPage).roundToInt()
 
 			// only create tagged index pages if there's more than one page with the tag
-			if (numPosts > 1) {
-				println("Building $totalPages pages for tag ${tag.key}")
-				val listPages = tag.value.withIndex()
-						.groupBy { it.index / postsPerPage }
-						.map { it.value.map { it.value } }
+			if(taggedPosts.size > 1) {
+				println("Building $totalPages pages for tag ${tag}")
 
 				val tagsFolder = fileHandler.createDirectory(project.outputDir.absolutePath, "tags")
-				val thisTagFolder = fileHandler.createDirectory(tagsFolder.absolutePath, tag.key)
+				val thisTagFolder = fileHandler.createDirectory(tagsFolder.absolutePath, tag.url)
 
-				listPages.forEachIndexed { pageIndex, taggedPosts ->
-
-					val currentPage = pageIndex + 1
-					val model = buildPaginationModel(currentPage, totalPages, taggedPosts, numPosts, tag.key.slug())
+				for(page in 1..totalPages) {
+//					val currentPage = pageIndex + 1
+					val startPos = postsPerPage * (page-1)
+					val endPos = (postsPerPage * page)
+					val finalEndPos = if(endPos > taggedPosts.size) taggedPosts.size else endPos
+					val model = buildPaginationModel(page, totalPages, taggedPosts.subList(startPos,finalEndPos), numPosts, tag.url)
 					val renderedContent = renderer.render(model, "tag")
 
-					File(thisTagFolder, "${tag.key}$currentPage.html").bufferedWriter().use { out ->
+					File(thisTagFolder, "${tag.url}$page.html").bufferedWriter().use { out ->
 						out.write(renderedContent)
 					}
 				}
+			} else {
+//				println("Skipping tag $tag which is only used once")
 			}
 		}
+
+	}
+
+	private fun getPostsWithTag(posts: List<Post>, tag: Tag): List<Post> {
+		val taggedPosts = mutableListOf<Post>()
+		posts.forEach {
+			it.tags.forEach { t -> if(t.label.equals(tag.label)) taggedPosts.add(it) }
+		}
+		return taggedPosts.toList()
 	}
 
 	private fun buildPostNavigation(posts: List<Post>, numPosts: Int = 0) {
@@ -137,7 +152,6 @@ class Generator : Runnable, KoinComponent {
 		val postsFolder = fileHandler.createDirectory(project.outputDir.absolutePath, "posts")
 		listPages.forEachIndexed { pageIndex, paginatedPosts ->
 			val currentPage = pageIndex + 1 // to save on mangling zero-index stuff
-			println("Listing page $currentPage")
 
 			val model = buildPaginationModel(currentPage, totalPages, paginatedPosts, posts.size)
 			val renderedContent = renderer.render(model, "list")
@@ -167,9 +181,9 @@ class Generator : Runnable, KoinComponent {
 		model.put("pagination", buildPaginationList(currentPage, totalPages))
 		if (tagLabel != null) {
 			model.put("tag", tagLabel)
-			model.put("title","Posts tagged '$tagLabel'")
+			model.put("title", "Posts tagged '$tagLabel'")
 		} else {
-			model.put("title","All posts")
+			model.put("title", "All posts")
 		}
 
 		return model

@@ -23,6 +23,22 @@ class PostGenError(val errorMessage: String, val fileName: String, var field: St
 
 data class PostLink(val title: String, val url: String, val date: LocalDate)
 
+data class Tag(val label: String, var url: String, var postCount: Int = 0, var hasPosts: Boolean = false) {
+	// I don't care about postCount, etc when storing in a set
+	override fun equals(other: Any?): Boolean {
+		if(other is Tag) {
+			if(this.label.equals(other.label)) {
+				return true
+			}
+		}
+		return false
+	}
+
+	override fun hashCode(): Int {
+		return this.label.hashCode() + this.url.hashCode()
+	}
+}
+
 /**
  * Class representing an individual Post.
  */
@@ -36,7 +52,7 @@ class Post(val document: Document) : PostStatus() {
 	var layout: String = ""
 	var date: LocalDate = LocalDate.now()
 
-	var tags: List<String> = mutableListOf()
+	var tags = mutableSetOf<Tag>()
 	var slug: String = ""
 	var attributes: MutableMap<String, Any> = mutableMapOf()
 
@@ -147,10 +163,7 @@ class Post(val document: Document) : PostStatus() {
 							}
 							PostMetaData.tags -> {
 								// split string [tagA, tagB, tagC] into a list of three tags, removing spaces
-								post.tags = value.trim().drop(1).dropLast(1).split(",").map { it.trim() }
-								if(post.tags.size > 1) {
-
-								}
+								post.tags.addAll(value.trim().drop(1).dropLast(1).split(",").map { Tag(it.trim(),it.trim().slug()) })
 							}
 							else -> {
 								println("How did i get here?")
