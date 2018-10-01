@@ -37,16 +37,13 @@ class FolderWalker(val project: ProjectStructure) : KoinComponent {
 	val mdParser: Parser
 
 	init {
-		println("FolderWalker initialised")
 		mdOptions.set(Parser.EXTENSIONS, arrayListOf(AttributesExtension.create(), YamlFrontMatterExtension.create()))
 		mdParser = Parser.builder(mdOptions).build()
-
 		assetsProcessor = AssetsProcessor(project.root, project.assetsDir, project.outputDir)
 	}
 
 
 	fun generate(): List<Post> {
-
 		info("Scanning ${project.sourceDir.absolutePath} for markdown files")
 
 		assetsProcessor.copyStatics()
@@ -56,7 +53,6 @@ class FolderWalker(val project: ProjectStructure) : KoinComponent {
 		val errorMap = mutableMapOf<String, Any>()
 		val sortedSetOfPosts = sortedSetOf<Post>(comparator = Post)
 		val timeTaken = measureTimeMillis {
-
 			project.sourceDir.walk().forEach {
 				if (it.name.startsWith(".") || it.name.startsWith("__")) {
 					info("Skipping draft file/folder '${it.name}'")

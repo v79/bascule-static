@@ -93,7 +93,8 @@ class ProjectStructure(val name: String, val root: File, val sourceDir: File, va
 					configMap = configMap
 			)
 
-			if(configMap["postsPerPage"] != null) {
+			val postsPerPage: Any? = configMap["postsPerPage"]
+			if(postsPerPage != null && (postsPerPage as Int > 0)) {
 				project.postsPerPage = configMap["postsPerPage"] as Int
 			}
 

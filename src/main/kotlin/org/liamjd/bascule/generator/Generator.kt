@@ -106,13 +106,10 @@ class Generator : Runnable, KoinComponent {
 
 			// only create tagged index pages if there's more than one page with the tag
 			if(taggedPosts.size > 1) {
-				println("Building $totalPages pages for tag ${tag}")
-
 				val tagsFolder = fileHandler.createDirectory(project.outputDir.absolutePath, "tags")
 				val thisTagFolder = fileHandler.createDirectory(tagsFolder.absolutePath, tag.url)
 
 				for(page in 1..totalPages) {
-//					val currentPage = pageIndex + 1
 					val startPos = postsPerPage * (page-1)
 					val endPos = (postsPerPage * page)
 					val finalEndPos = if(endPos > taggedPosts.size) taggedPosts.size else endPos
@@ -141,10 +138,7 @@ class Generator : Runnable, KoinComponent {
 	private fun buildPostNavigation(posts: List<Post>, numPosts: Int = 0) {
 		info("Building navigation lists")
 		val postsPerPage = project.postsPerPage
-
 		val totalPages = ceil(numPosts.toDouble() / postsPerPage).roundToInt()
-		println("\nThere are $numPosts posts, and $postsPerPage per page. Which means $totalPages pages")
-
 		val listPages = posts.withIndex()
 				.groupBy { it.index / postsPerPage }
 				.map { it.value.map { it.value } }
