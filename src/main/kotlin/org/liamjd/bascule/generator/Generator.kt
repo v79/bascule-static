@@ -98,15 +98,17 @@ class Generator : Runnable, KoinComponent {
 	 */
 	private fun buildTaxonomyNavigation(posts: List<Post>, tagSet: Set<Tag>) {
 		info("Building tag navigation pages")
+		val tagsFolder = fileHandler.createDirectory(project.outputDir.absolutePath, "tags")
+
 		tagSet.forEachIndexed { index, tag ->
 			val taggedPosts = getPostsWithTag(posts,tag)
 			val postsPerPage = project.postsPerPage
 			val numPosts = tag.postCount
 			val totalPages = ceil(numPosts.toDouble() / postsPerPage).roundToInt()
 
+
 			// only create tagged index pages if there's more than one page with the tag
 			if(taggedPosts.size > 1) {
-				val tagsFolder = fileHandler.createDirectory(project.outputDir.absolutePath, "tags")
 				val thisTagFolder = fileHandler.createDirectory(tagsFolder.absolutePath, tag.url)
 
 				for(page in 1..totalPages) {
@@ -123,6 +125,18 @@ class Generator : Runnable, KoinComponent {
 			} else {
 //				println("Skipping tag $tag which is only used once")
 			}
+		}
+		info("Building tag list page")
+
+		val model = mutableMapOf<String,Any>()
+		model.putAll(project.model)
+		model.put("title","List of tags")
+		model.put("tags",tagSet.filter { it.postCount > 1 }.sortedBy { it.postCount }.reversed())
+
+		val renderedContent = renderer.render(model,"taglist")
+
+		File(tagsFolder, "tags.html").bufferedWriter().use { out ->
+			out.write(renderedContent)
 		}
 
 	}
