@@ -15,7 +15,7 @@ plugins {
 }
 
 group 'org.liamjd'
-version '0.0.4'
+version '0.0.5'
 
 repositories {
     mavenCentral()
@@ -24,6 +24,7 @@ repositories {
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+	compile group: 'org.jetbrains.kotlin', name: 'kotlin-reflect', version: "$kotlin_version"
 
 	// handlebars templating
 	compile group: 'com.github.jknack', name: 'handlebars', version: "$handlebars_version"
