@@ -7,5 +7,5 @@ import org.liamjd.bascule.render.Renderer
 interface GeneratorPipeline {
 
 	val TEMPLATE: String
-	fun process(project: ProjectStructure, renderer: Renderer, fileHandler: FileHandler)
+	suspend fun process(project: ProjectStructure, renderer: Renderer, fileHandler: FileHandler)
 }

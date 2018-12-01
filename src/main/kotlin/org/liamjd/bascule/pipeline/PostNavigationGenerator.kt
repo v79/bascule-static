@@ -12,7 +12,7 @@ class PostNavigationGenerator(posts: List<Post>, numPosts: Int = 1, postsPerPage
 	override val TEMPLATE: String = "list"
 	val FOLDER_NAME: String = "posts"
 
-	override fun process(project: ProjectStructure, renderer: Renderer, fileHandler: FileHandler) {
+	suspend override fun process(project: ProjectStructure, renderer: Renderer, fileHandler: FileHandler) {
 		val totalPages = ceil(numPosts.toDouble() / postsPerPage).roundToInt()
 		val listPages = posts.withIndex()
 				.groupBy { it.index / postsPerPage }

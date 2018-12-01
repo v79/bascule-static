@@ -1,5 +1,7 @@
 package org.liamjd.bascule.generator
 
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.koin.core.parameter.ParameterList
 import org.koin.core.parameter.parametersOf
 import org.koin.standalone.KoinComponent
@@ -19,7 +21,11 @@ import println.info
 import java.io.File
 import java.io.FileInputStream
 import kotlin.reflect.KClass
+import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
+import kotlin.reflect.full.callSuspend
+import kotlin.reflect.full.declaredFunctions
+import kotlin.system.measureTimeMillis
 
 /**
  * Starts the post and page generation process. Must be run from inside the project folder
@@ -62,45 +68,76 @@ class Generator : Runnable, KoinComponent {
 		val numPosts = sortedPosts.size
 
 		// TODO: is this a good idea?
-		// TODO: 
+		// TODO: how to move the creation of sortedPosts into this? Rewrite folder walker?
 		sortedPosts.process(arrayOf(IndexPageGenerator::class, PostNavigationGenerator::class, TaxonomyNavigationGenerator::class), project, renderer, fileHandler)
 
-	/*	val indexPageGenerator = IndexPageGenerator(sortedPosts, numPosts, 2)
-		indexPageGenerator.process(project, renderer, fileHandler);
+		/*	val indexPageGenerator = IndexPageGenerator(sortedPosts, numPosts, 2)
+			indexPageGenerator.process(project, renderer, fileHandler);
 
-		val postListGenerator = PostNavigationGenerator(sortedPosts, numPosts, project.postsPerPage)
-		postListGenerator.process(project, renderer, fileHandler)
+			val postListGenerator = PostNavigationGenerator(sortedPosts, numPosts, project.postsPerPage)
+			postListGenerator.process(project, renderer, fileHandler)
 
-		val taxonomyNavigationGenerator = TaxonomyNavigationGenerator(sortedPosts, numPosts, project.postsPerPage)
-		taxonomyNavigationGenerator.process(project, renderer, fileHandler)*/
+			val taxonomyNavigationGenerator = TaxonomyNavigationGenerator(sortedPosts, numPosts, project.postsPerPage)
+			taxonomyNavigationGenerator.process(project, renderer, fileHandler)*/
 
 	}
 
 }
 
 fun List<Post>.process(pipeline: Array<KClass<out GeneratorPipeline>>, project: ProjectStructure, renderer: Renderer, fileHandler: FileHandler) {
-	for (p in pipeline) {
-		println("----- initiating pipeline ${p.simpleName}")
 
-		val primaryConstructor = p.constructors.first()
-		val constructorParams: MutableMap<KParameter, Any?> = mutableMapOf()
-		val constructorKParams: List<KParameter> = primaryConstructor.parameters
-		constructorKParams.forEach { kparam ->
-			when (kparam.name) {
-				"posts" -> {
-					constructorParams.put(kparam, this)
-				}
-				"numPosts" -> {
-					constructorParams.put(kparam, this.size)
-				}
-				"postsPerPage" -> {
-					constructorParams.put(kparam, project.postsPerPage)
+	val processors = mutableMapOf<KClass<*>,KFunction<*>>()
+
+	for (p in pipeline) {
+		println("----- expanding pipeline ${p.simpleName}")
+
+
+		val processorFunc = p.declaredFunctions.find { it.name.equals("process") }
+		if (processorFunc != null) {
+			processors.put(p,processorFunc)
+
+			processorFunc.parameters.forEach {
+				println("""parameter: ${it.index} -> ${it.name} -> optional: ${it.isOptional}""")
+			}
+		}
+//			processor.process(project, renderer, fileHandler)
+	}
+	val timeTaken = measureTimeMillis {
+
+		runBlocking {
+			launch {
+				for (clazz in processors) {
+					println("Calling function: $clazz")
+					val func = clazz.value
+					func.callSuspend(constructPipeline(clazz.key as KClass<out GeneratorPipeline>,project, this@process), project, renderer, fileHandler)
 				}
 			}
 		}
 
-		val processor = primaryConstructor.callBy(constructorParams)
 
-		processor.process(project, renderer, fileHandler)
 	}
+
+	println.error("Time taken: $timeTaken ms")
+}
+
+fun constructPipeline(p: KClass<out GeneratorPipeline>, project: ProjectStructure, posts: List<Post>): GeneratorPipeline {
+	val primaryConstructor = p.constructors.first()
+	val constructorParams: MutableMap<KParameter, Any?> = mutableMapOf()
+	val constructorKParams: List<KParameter> = primaryConstructor.parameters
+	constructorKParams.forEach { kparam ->
+		when (kparam.name) {
+			"posts" -> {
+				constructorParams.put(kparam, posts)
+			}
+			"numPosts" -> {
+				constructorParams.put(kparam, posts.size)
+			}
+			"postsPerPage" -> {
+				constructorParams.put(kparam, project.postsPerPage)
+			}
+		}
+	}
+	return primaryConstructor.callBy(constructorParams)
+
+//	val processor = primaryConstructor.callBy(constructorParams)
 }
