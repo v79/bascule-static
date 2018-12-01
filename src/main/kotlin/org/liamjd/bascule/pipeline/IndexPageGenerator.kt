@@ -13,7 +13,7 @@ class IndexPageGenerator(posts: List<Post>, numPosts: Int = 1, postsPerPage: Int
 
 	override val TEMPLATE: String = "index"
 
-	suspend override fun process(project: ProjectStructure, renderer: Renderer, fileHandler: FileHandler) {
+	override suspend fun process(project: ProjectStructure, renderer: Renderer, fileHandler: FileHandler) {
 		info("Building index file")
 
 		val model = mutableMapOf<String, Any>()

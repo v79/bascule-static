@@ -17,6 +17,7 @@ import org.liamjd.bascule.random
 import org.liamjd.bascule.render.Renderer
 import org.liamjd.bascule.scanner.FolderWalker
 import picocli.CommandLine
+import println.debug
 import println.info
 import java.io.File
 import java.io.FileInputStream
@@ -65,63 +66,58 @@ class Generator : Runnable, KoinComponent {
 
 		val postList = walker.generate()
 		val sortedPosts = postList.sortedByDescending { it.date }
-		val numPosts = sortedPosts.size
 
 		// TODO: is this a good idea?
 		// TODO: how to move the creation of sortedPosts into this? Rewrite folder walker?
 		sortedPosts.process(arrayOf(IndexPageGenerator::class, PostNavigationGenerator::class, TaxonomyNavigationGenerator::class), project, renderer, fileHandler)
 
-		/*	val indexPageGenerator = IndexPageGenerator(sortedPosts, numPosts, 2)
-			indexPageGenerator.process(project, renderer, fileHandler);
-
-			val postListGenerator = PostNavigationGenerator(sortedPosts, numPosts, project.postsPerPage)
-			postListGenerator.process(project, renderer, fileHandler)
-
-			val taxonomyNavigationGenerator = TaxonomyNavigationGenerator(sortedPosts, numPosts, project.postsPerPage)
-			taxonomyNavigationGenerator.process(project, renderer, fileHandler)*/
-
 	}
 
 }
 
-fun List<Post>.process(pipeline: Array<KClass<out GeneratorPipeline>>, project: ProjectStructure, renderer: Renderer, fileHandler: FileHandler) {
+/**
+ * Extension function on a List of Posts. Uses co-routines to run the given array of GeneratorPipeline classes in parallel
+ * @param[pipeline] Array of class names to process in parallel
+ * @param[project] the bascule project model
+ * @param[renderer] the renderer which converts model map into a string
+ * @param[fileHandler] file handler for writing output to disc
+ */
+private fun List<Post>.process(pipeline: Array<KClass<out GeneratorPipeline>>, project: ProjectStructure, renderer: Renderer, fileHandler: FileHandler) {
 
 	val processors = mutableMapOf<KClass<*>,KFunction<*>>()
 
 	for (p in pipeline) {
-		println("----- expanding pipeline ${p.simpleName}")
-
-
+		debug("----- expanding pipeline ${p.simpleName}")
 		val processorFunc = p.declaredFunctions.find { it.name.equals("process") }
 		if (processorFunc != null) {
 			processors.put(p,processorFunc)
-
-			processorFunc.parameters.forEach {
-				println("""parameter: ${it.index} -> ${it.name} -> optional: ${it.isOptional}""")
-			}
 		}
-//			processor.process(project, renderer, fileHandler)
 	}
 	val timeTaken = measureTimeMillis {
-
 		runBlocking {
 			launch {
 				for (clazz in processors) {
-					println("Calling function: $clazz")
 					val func = clazz.value
+					debug("Calling function ${func.name} for pipeline ${clazz.key.simpleName}")
 					func.callSuspend(constructPipeline(clazz.key as KClass<out GeneratorPipeline>,project, this@process), project, renderer, fileHandler)
 				}
 			}
 		}
-
 
 	}
 
 	println.error("Time taken: $timeTaken ms")
 }
 
-fun constructPipeline(p: KClass<out GeneratorPipeline>, project: ProjectStructure, posts: List<Post>): GeneratorPipeline {
-	val primaryConstructor = p.constructors.first()
+/**
+ * Construct a GeneratorPipeline object from the given class
+ * @param[pipelineClazz] A class implementing the GeneratorPipeline interface
+ * @param[project] the bascule project model
+ * @param[posts] the list of posts in the project
+ * @return An instantiated GeneratorPipeline object
+ */
+private fun constructPipeline(pipelineClazz: KClass<out GeneratorPipeline>, project: ProjectStructure, posts: List<Post>): GeneratorPipeline {
+	val primaryConstructor = pipelineClazz.constructors.first()
 	val constructorParams: MutableMap<KParameter, Any?> = mutableMapOf()
 	val constructorKParams: List<KParameter> = primaryConstructor.parameters
 	constructorKParams.forEach { kparam ->
@@ -138,6 +134,4 @@ fun constructPipeline(p: KClass<out GeneratorPipeline>, project: ProjectStructur
 		}
 	}
 	return primaryConstructor.callBy(constructorParams)
-
-//	val processor = primaryConstructor.callBy(constructorParams)
 }

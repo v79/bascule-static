@@ -18,7 +18,6 @@ import org.liamjd.bascule.generator.PostLink
 import org.liamjd.bascule.generator.Tag
 import org.liamjd.bascule.render.Renderer
 import println.info
-import java.io.File
 import java.io.InputStream
 import java.io.Serializable
 import kotlin.system.measureTimeMillis
@@ -46,7 +45,9 @@ class FolderWalker(val project: ProjectStructure) : KoinComponent {
 	fun generate(): List<Post> {
 		info("Scanning ${project.sourceDir.absolutePath} for markdown files")
 
+		// TODO: copyStatics should not be here!
 		assetsProcessor.copyStatics()
+
 		var numPosts = 0
 		val docCache = mutableMapOf<String, GeneratedContent>()
 		val siteModel = project.model
@@ -58,7 +59,7 @@ class FolderWalker(val project: ProjectStructure) : KoinComponent {
 					info("Skipping draft file/folder '${it.name}'")
 					return@forEach // skip this one
 				}
-				if(it.isDirectory) {
+				if (it.isDirectory) {
 					return@forEach
 				}
 				if (it.extension == "md") {
@@ -94,6 +95,7 @@ class FolderWalker(val project: ProjectStructure) : KoinComponent {
 
 			info("Parsed $numPosts files, ready to generate content")
 
+			// create next/previous links
 			val postList = sortedSetOfPosts.toList()
 			postList.forEachIndexed { index, post ->
 				if (index != 0) {
@@ -106,13 +108,14 @@ class FolderWalker(val project: ProjectStructure) : KoinComponent {
 				}
 			}
 
+			// build the set of taxonomy tags
 			val allTags = mutableSetOf<Tag>()
 			postList.forEach { post ->
 				allTags.addAll(post.tags)
 				post.tags.forEach { postTag ->
-					if(allTags.contains(postTag)) {
+					if (allTags.contains(postTag)) {
 						val t = allTags.find { it.equals(postTag) }
-						if(t != null) {
+						if (t != null) {
 							t.postCount++
 							t.hasPosts = true
 							postTag.postCount = t.postCount
@@ -122,26 +125,7 @@ class FolderWalker(val project: ProjectStructure) : KoinComponent {
 			}
 
 			postList.forEach { post ->
-
-				val model = mutableMapOf<String, Any?>()
-				model.putAll(siteModel)
-				model.putAll(post.toModel())
-
-				// first, extract the content from the markdown
-				val renderedMarkdown = renderMarkdown(post.document)
-				model.put("content", renderedMarkdown)
-
-				// then, render the corresponding Handlebars template
-				val templateFromYaml
-						: String = post.layout
-				val renderedContent = renderer.render(model, templateFromYaml)
-				post.content = renderedMarkdown
-
-				info("Generating html file ${post.url}")
-				File(project.outputDir.absolutePath, post.url)
-						.bufferedWriter().use { out ->
-							out.write(renderedContent)
-						}
+				renderPost(siteModel, post)
 			}
 
 		}
@@ -158,6 +142,26 @@ class FolderWalker(val project: ProjectStructure) : KoinComponent {
 		return sortedSetOfPosts.toList()
 
 //		info("Writing document cache")
+	}
+
+	// no performance improvement by making this a suspending function
+	private fun renderPost(siteModel: Map<String, Any>, post: Post) {
+		val model = mutableMapOf<String, Any?>()
+		model.putAll(siteModel)
+		model.putAll(post.toModel())
+
+		// first, extract the content from the markdown
+		val renderedMarkdown = renderMarkdown(post.document)
+		model.put("content", renderedMarkdown)
+
+		// then, render the corresponding Handlebars template
+		val templateFromYaml
+				: String = post.layout
+		val renderedContent = renderer.render(model, templateFromYaml)
+		post.content = renderedMarkdown
+
+		info("Generating html file ${post.url}")
+		fileHandler.writeFile(project.outputDir.absoluteFile, post.url, renderedContent)
 	}
 
 	private fun parseMarkdown(inputStream: InputStream): Document {
