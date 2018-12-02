@@ -1,9 +1,11 @@
 package org.liamjd.bascule.pipeline
 
-import org.liamjd.bascule.FileHandler
-import org.liamjd.bascule.assets.ProjectStructure
-import org.liamjd.bascule.generator.Post
-import org.liamjd.bascule.render.Renderer
+import org.liamjd.bascule.lib.FileHandler
+import org.liamjd.bascule.lib.generators.AbstractPostListGenerator
+import org.liamjd.bascule.lib.generators.GeneratorPipeline
+import org.liamjd.bascule.lib.model.Post
+import org.liamjd.bascule.lib.model.Project
+import org.liamjd.bascule.lib.render.Renderer
 import println.info
 
 /**
@@ -13,7 +15,7 @@ class IndexPageGenerator(posts: List<Post>, numPosts: Int = 1, postsPerPage: Int
 
 	override val TEMPLATE: String = "index"
 
-	override suspend fun process(project: ProjectStructure, renderer: Renderer, fileHandler: FileHandler) {
+	override suspend fun process(project: Project, renderer: Renderer, fileHandler: FileHandler) {
 		info("Building index file")
 
 		val model = mutableMapOf<String, Any>()

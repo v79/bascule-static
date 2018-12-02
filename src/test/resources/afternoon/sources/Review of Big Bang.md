@@ -1,7 +1,7 @@
 ---
 title: Review of Big Bang by Simon Singh
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 08/10/2005
 tags: [books, science]
 slug: review-of-big-bang

@@ -1,10 +1,13 @@
-package org.liamjd.bascule.generator
+package org.liamjd.bascule.model
 
 import com.vladsch.flexmark.ast.Document
 import com.vladsch.flexmark.ext.yaml.front.matter.AbstractYamlFrontMatterVisitor
 import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
-import org.liamjd.bascule.assets.ProjectStructure
+import org.liamjd.bascule.lib.model.Post
+import org.liamjd.bascule.lib.model.PostLink
+import org.liamjd.bascule.lib.model.Project
+import org.liamjd.bascule.lib.model.Tag
 import org.liamjd.bascule.slug
 import java.io.File
 import java.nio.file.Files
@@ -14,97 +17,62 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.regex.Pattern
 
+class PostGenError(val errorMessage: String, val fileName: String, var field: String?) : PostStatus()
+
 /**
- * A PostStatus is either "Post" (successful) or "PostGenError" (when unable to create a Post).
+ * A PostStatus is either "BasculePost" (successful) or "PostGenError" (when unable to create a BasculePost).
  */
 sealed class PostStatus
 
-class PostGenError(val errorMessage: String, val fileName: String, var field: String?) : PostStatus()
-
-data class PostLink(val title: String, val url: String, val date: LocalDate)
-
-data class Tag(val label: String, var url: String, var postCount: Int = 0, var hasPosts: Boolean = false) {
-	// I don't care about postCount, etc when storing in a set
-	override fun equals(other: Any?): Boolean {
-		if(other is Tag) {
-			if(this.label.equals(other.label)) {
-				return true
-			}
-		}
-		return false
-	}
-
-	override fun hashCode(): Int {
-		return this.label.hashCode() + this.url.hashCode()
-	}
-}
-
 /**
- * Class representing an individual Post.
+ * Class representing an individual BasculePost.
  */
-class Post(val document: Document) : PostStatus() {
+class BasculePost(val document: Document) : Post, PostStatus() {
 
-	var sourceFileName: String = ""
-	var url: String = ""
-	var title: String = ""
-	var author: String = ""
+	override var sourceFileName: String = ""
+	override var url: String = ""
+	override var title: String = ""
+	override var author: String = ""
 
-	var layout: String = ""
-	var date: LocalDate = LocalDate.now()
+	override var layout: String = ""
+	override var date: LocalDate = LocalDate.now()
 
-	var tags = mutableSetOf<Tag>()
-	var slug: String = ""
-	var attributes: MutableMap<String, Any> = mutableMapOf()
+	override var tags = mutableSetOf<Tag>()
+	override var slug: String = ""
+	override var attributes: MutableMap<String, Any> = mutableMapOf()
 
-	var content: String = ""
-	var newer: PostLink? = null
-	var older: PostLink? = null
-
-	fun toModel(): Map<String, Any?> {
-		val modelMap = mutableMapOf<String, Any?>()
-		modelMap.put("sourceFileName.name", sourceFileName)
-		modelMap.put("url", url)
-		modelMap.put("title", title)
-		modelMap.put("author", author)
-		modelMap.put("layout", layout)
-		modelMap.put("date", date)
-		modelMap.put("tags", tags)
-		modelMap.put("slug", slug)
-		modelMap.put("attributes", attributes)
-		modelMap.put("newer",newer)
-		modelMap.put("older",older)
-
-		return modelMap
-	}
+	override var content: String = ""
+	override var newer: PostLink? = null
+	override var older: PostLink? = null
 
 	/**
 	 * Return a short excerpt from the post, stripping out any HTML and returning just plain text
 	 */
-	fun getSummary(characterCount: Int = 150): String {
+	override fun getSummary(characterCount: Int): String {
 		val REMOMVE_TAGS = Pattern.compile("<.+?>")
 		val matcher = REMOMVE_TAGS.matcher(content.take(characterCount))
 		return matcher.replaceAll("").plus("...")
 	}
 
 	/**
-	 * Construct a Post from the source markdown document.
+	 * Construct a BasculePost from the source markdown document.
 	 * Ideally the document should contain a yaml front piece describing the post.
 	 * If the yaml does not exist, it will make some best guesses from the file.
-	 * Returns a PostStatus.Post if successful, or PostStatus.PostGenError if unable to parse the content.
+	 * Returns a PostStatus.BasculePost if successful, or PostStatus.PostGenError if unable to parse the content.
 	 *
 	 */
-	companion object Builder : KoinComponent, Comparator<Post>  {
+	companion object Builder : KoinComponent, Comparator<BasculePost>  {
 
 		/**
 		 * Sorting comparator by date order
 		 */
-		override fun compare(o1: Post, o2: Post): Int {
+		override fun compare(o1: BasculePost, o2: BasculePost): Int {
 			val date1 = o1.date
 			val date2 = o2.date
 			return date1.compareTo(date2)
 		}
 
-		fun createPostFromYaml(file: File, document: Document, project: ProjectStructure): PostStatus {
+		fun createPostFromYaml(file: File, document: Document, project: Project): PostStatus {
 			val yamlVisitor by inject<AbstractYamlFrontMatterVisitor>()
 			yamlVisitor.visit(document)
 			val data = yamlVisitor.data
@@ -122,7 +90,7 @@ class Post(val document: Document) : PostStatus() {
 				}
 			}
 
-			val post = Post(document)
+			val post = BasculePost(document)
 
 			data.forEach { it ->
 				val metaData: PostMetaData?
@@ -163,7 +131,7 @@ class Post(val document: Document) : PostStatus() {
 							}
 							PostMetaData.tags -> {
 								// split string [tagA, tagB, tagC] into a list of three tags, removing spaces
-								post.tags.addAll(value.trim().drop(1).dropLast(1).split(",").map { Tag(it.trim(),it.trim().slug()) })
+								post.tags.addAll(value.trim().drop(1).dropLast(1).split(",").map { Tag(it.trim(), it.trim().slug()) })
 							}
 							else -> {
 								println("How did i get here?")
@@ -185,7 +153,7 @@ class Post(val document: Document) : PostStatus() {
 		 * No author, tags or custom attributes
 		 */
 		fun buildPostWithoutYaml(file: File, document: Document): PostStatus {
-			val post = Post(document)
+			val post = BasculePost(document)
 			post.sourceFileName = file.name
 			post.title = file.nameWithoutExtension
 
@@ -210,7 +178,7 @@ class Post(val document: Document) : PostStatus() {
 }
 
 /**
- * Enum representing all the key fields used to construct a Post. Each field has it's own eligibility requirements,
+ * Enum representing all the key fields used to construct a BasculePost. Each field has it's own eligibility requirements,
  * 'required' and 'multipleAllowed'. E.g. the _title_ is required, and there must only be a single title.
  */
 internal enum class PostMetaData(val required: Boolean, val multipleAllowed: Boolean) {

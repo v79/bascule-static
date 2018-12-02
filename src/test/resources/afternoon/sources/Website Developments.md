@@ -1,7 +1,7 @@
 ---
 title: Website Developments
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 15/12/2014
 tags: [software development, cms, web, wordpress]
 slug: website-developments

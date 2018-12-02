@@ -16,7 +16,7 @@
 
 		<div class="content">
 			<div class="box">
-				{{#forEach posts "2" }}
+				{{#forEach basculePosts "2" }}
 				<div class="content">
 					<small>{{ this.date}}</small> <a href="{{this.url}}" title="{{this.title}}">{{ this.title }}</a><br/>
 					{{ this.getSummary }}
@@ -24,7 +24,7 @@
 				{{/forEach}}
 			</div>
 
-			<ul>{{#forEach posts }}
+			<ul>{{#forEach basculePosts }}
 				<li>{{ this.date }} - <a href="{{this.url}}" title="{{this.title}}">{{ this.title }}</a>
 					{{{ this.getSummary }}}
 				</li>

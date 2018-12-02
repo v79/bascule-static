@@ -1,7 +1,7 @@
 ---
 title: Kotlin web development experiments
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 19/07/2017
 tags: [software development, kotlin, web]
 slug: kotlin-web-developments

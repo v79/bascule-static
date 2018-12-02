@@ -11,7 +11,9 @@ import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
 import org.koin.dsl.module.module
 import org.koin.standalone.StandAloneContext.loadKoinModules
-import org.liamjd.bascule.assets.ProjectStructure
+import org.liamjd.bascule.lib.model.Project
+import org.liamjd.bascule.model.BasculePost
+import org.liamjd.bascule.model.PostGenError
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -66,18 +68,18 @@ class PostTest : Spek( {
 	// some constants
 	val mDocument = mockk<Document>()
 	val yamlString = ""
-	val project = ProjectStructure("simpleDoc",mRoot,mSourceDir,mOutputDir,mAssetsDir,mTemplatesDir,yamlString,"simple-theme")
+	val project = Project("simpleDoc",mRoot,mSourceDir,mOutputDir,mAssetsDir,mTemplatesDir,yamlString,"simple-theme")
 
-		describe("Can build a Post object with various valid yaml frontispieces") {
+		describe("Can build a BasculePost object with various valid yaml frontispieces") {
 
-		it("builds a simple Post") {
+		it("builds a simple BasculePost") {
 			data = buildYamlData()
 			every { mYamlVistor.data}.returns(data)
 
-			val result = Post.createPostFromYaml(mFile,mDocument,project)
-			val isPost = result is Post
+			val result = BasculePost.createPostFromYaml(mFile,mDocument,project)
+			val isPost = result is BasculePost
 			assertTrue(isPost)
-			val post = result as Post
+			val post = result as BasculePost
 			assertEquals(TITLE_VAL, result.title)
 			assertEquals(AUTHOR_VAL, result.author)
 			assertEquals(LAYOUT_POST_VAL, result.layout)
@@ -87,15 +89,15 @@ class PostTest : Spek( {
 			assertEquals("aTag",result.tags.first().label)
 		}
 
-		it("builds a Post with two tags") {
+		it("builds a BasculePost with two tags") {
 			data = buildYamlData()
 			data.put("tags", arrayListOf("[tagA,tagB]"))
 			every { mYamlVistor.data}.returns(data)
 
-			val result = Post.createPostFromYaml(mFile,mDocument,project)
-			val isPost = result is Post
+			val result = BasculePost.createPostFromYaml(mFile,mDocument,project)
+			val isPost = result is BasculePost
 			assertTrue(isPost)
-			val post = result as Post
+			val post = result as BasculePost
 			assertEquals(2,post.tags.size)
 			assertEquals(1,post.tags.filter { it.label == "tagA" }.size)
 			assertEquals(1,post.tags.filter { it.label == "tagB" }.size)
@@ -107,10 +109,10 @@ class PostTest : Spek( {
 			data["greep"] = mutableListOf("grump")
 			every { mYamlVistor.data}.returns(data)
 
-			val result = Post.createPostFromYaml(mFile,mDocument,project)
-			val isPost = result is Post
+			val result = BasculePost.createPostFromYaml(mFile,mDocument,project)
+			val isPost = result is BasculePost
 			assertTrue(isPost)
-			val post = result as Post
+			val post = result as BasculePost
 			assertEquals("wobble",result.attributes["wibble"])
 			assertEquals("grump",result.attributes["greep"])
 		}
@@ -120,10 +122,10 @@ class PostTest : Spek( {
 			data["wibble"] = mutableListOf("wobble", "wumple")
 			every { mYamlVistor.data}.returns(data)
 
-			val result = Post.createPostFromYaml(mFile,mDocument,project)
-			val isPost = result is Post
+			val result = BasculePost.createPostFromYaml(mFile,mDocument,project)
+			val isPost = result is BasculePost
 			assertTrue(isPost)
-			val post = result as Post
+			val post = result as BasculePost
 			val attributes = result.attributes["wibble"] as List<*>
 			assertEquals(2,attributes.size)
 			assertEquals(listOf("wobble","wumple"),result.attributes["wibble"])
@@ -136,7 +138,7 @@ class PostTest : Spek( {
 			data.remove("title")
 			every { mYamlVistor.data}.returns(data)
 
-			val result = Post.createPostFromYaml(mFile,mDocument,project)
+			val result = BasculePost.createPostFromYaml(mFile,mDocument,project)
 			val isError = result is PostGenError
 			assertTrue(isError)
 			val error = result as PostGenError
@@ -147,7 +149,7 @@ class PostTest : Spek( {
 			data["title"] = arrayListOf("")
 			every { mYamlVistor.data}.returns(data)
 
-			val result = Post.createPostFromYaml(mFile,mDocument,project)
+			val result = BasculePost.createPostFromYaml(mFile,mDocument,project)
 			val isError = result is PostGenError
 			assertTrue(isError)
 			val error = result as PostGenError
@@ -161,7 +163,7 @@ class PostTest : Spek( {
 			data["layout"] = mutableListOf("post","page","index")
 			every { mYamlVistor.data}.returns(data)
 
-			val result = Post.createPostFromYaml(mFile,mDocument,project)
+			val result = BasculePost.createPostFromYaml(mFile,mDocument,project)
 			val isError = result is PostGenError
 			assertTrue(isError)
 			val error = result as PostGenError
@@ -174,10 +176,10 @@ class PostTest : Spek( {
 		it("Makes assumptions based on the file name") {
 			data = mutableMapOf()
 			every { mYamlVistor.data}.returns(data)
-			val result = Post.createPostFromYaml(mFile,mDocument,project)
-			val isPost = result is Post
+			val result = BasculePost.createPostFromYaml(mFile,mDocument,project)
+			val isPost = result is BasculePost
 			assertTrue { isPost }
-			val post = result as Post
+			val post = result as BasculePost
 			assertEquals("Simple File (1)",post.title)
 			assertEquals("",post.author)
 			assertEquals("post",post.layout)

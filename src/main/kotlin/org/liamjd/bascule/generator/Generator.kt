@@ -6,15 +6,18 @@ import org.koin.core.parameter.ParameterList
 import org.koin.core.parameter.parametersOf
 import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
+import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.Constants
-import org.liamjd.bascule.FileHandler
-import org.liamjd.bascule.assets.ProjectStructure
-import org.liamjd.bascule.pipeline.GeneratorPipeline
+import org.liamjd.bascule.assets.Configurator
+import org.liamjd.bascule.lib.generators.GeneratorPipeline
+import org.liamjd.bascule.lib.model.Post
+import org.liamjd.bascule.lib.model.Project
+import org.liamjd.bascule.lib.render.Renderer
+import org.liamjd.bascule.model.BasculePost
 import org.liamjd.bascule.pipeline.IndexPageGenerator
 import org.liamjd.bascule.pipeline.PostNavigationGenerator
 import org.liamjd.bascule.pipeline.TaxonomyNavigationGenerator
 import org.liamjd.bascule.random
-import org.liamjd.bascule.render.Renderer
 import org.liamjd.bascule.scanner.FolderWalker
 import picocli.CommandLine
 import println.debug
@@ -34,14 +37,14 @@ import kotlin.system.measureTimeMillis
 @CommandLine.Command(name = "generate", description = ["Generate your static website"])
 class Generator : Runnable, KoinComponent {
 
-	private val fileHandler: FileHandler by inject(parameters = { ParameterList() })
+	private val fileHandler: BasculeFileHandler by inject(parameters = { ParameterList() })
 	private val renderer by inject<Renderer> { parametersOf(project) }
 
 	private val currentDirectory = System.getProperty("user.dir")!!
 	private val yamlConfig: String
 	private val parentFolder: File
 	private val configStream: FileInputStream
-	private val project: ProjectStructure
+	private val project: Project
 
 	private val OUTPUT_SUFFIX = ".html"
 
@@ -50,7 +53,7 @@ class Generator : Runnable, KoinComponent {
 		yamlConfig = "${parentFolder.name}.yaml"
 
 		configStream = File(parentFolder.absolutePath, yamlConfig).inputStream()
-		project = ProjectStructure.Configurator.buildProjectFromYamlConfig(configStream)
+		project = Configurator.buildProjectFromYamlConfig(configStream)
 	}
 
 	override fun run() {
@@ -82,7 +85,7 @@ class Generator : Runnable, KoinComponent {
  * @param[renderer] the renderer which converts model map into a string
  * @param[fileHandler] file handler for writing output to disc
  */
-private fun List<Post>.process(pipeline: Array<KClass<out GeneratorPipeline>>, project: ProjectStructure, renderer: Renderer, fileHandler: FileHandler) {
+private fun List<BasculePost>.process(pipeline: Array<KClass<out GeneratorPipeline>>, project: Project, renderer: Renderer, fileHandler: BasculeFileHandler) {
 
 	val processors = mutableMapOf<KClass<*>,KFunction<*>>()
 
@@ -99,7 +102,12 @@ private fun List<Post>.process(pipeline: Array<KClass<out GeneratorPipeline>>, p
 				for (clazz in processors) {
 					val func = clazz.value
 					debug("Calling function ${func.name} for pipeline ${clazz.key.simpleName}")
-					func.callSuspend(constructPipeline(clazz.key as KClass<out GeneratorPipeline>,project, this@process), project, renderer, fileHandler)
+					@Suppress("UNCHECKED_CAST")
+					func.callSuspend(constructPipeline(
+							clazz.key as KClass<out GeneratorPipeline>,
+							project,
+							this@process
+					), project, renderer, fileHandler)
 				}
 			}
 		}
@@ -116,7 +124,7 @@ private fun List<Post>.process(pipeline: Array<KClass<out GeneratorPipeline>>, p
  * @param[posts] the list of posts in the project
  * @return An instantiated GeneratorPipeline object
  */
-private fun constructPipeline(pipelineClazz: KClass<out GeneratorPipeline>, project: ProjectStructure, posts: List<Post>): GeneratorPipeline {
+private fun constructPipeline(pipelineClazz: KClass<out GeneratorPipeline>, project: Project, posts: List<Post>): GeneratorPipeline {
 	val primaryConstructor = pipelineClazz.constructors.first()
 	val constructorParams: MutableMap<KParameter, Any?> = mutableMapOf()
 	val constructorKParams: List<KParameter> = primaryConstructor.parameters

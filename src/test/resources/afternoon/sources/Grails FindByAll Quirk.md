@@ -1,7 +1,7 @@
 ---
 title: Grails FindByAll Quirk with max
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 11/06/2014
 tags: [software development, cms, web, groovy]
 slug: grails-findbyall

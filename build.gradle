@@ -11,27 +11,32 @@ buildscript {
 }
 
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.3.10'
+	id 'org.jetbrains.kotlin.jvm' version '1.3.10'
 }
 
+apply plugin: 'maven-publish'
 group 'org.liamjd'
-version '0.0.5'
+version '0.0.8'
 
 repositories {
-    mavenCentral()
+	mavenCentral()
 	jcenter()
+	mavenLocal()
 }
 
 dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+	compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 	compile group: 'org.jetbrains.kotlin', name: 'kotlin-reflect', version: "$kotlin_version"
 	compile group: 'org.jetbrains.kotlinx', name: 'kotlinx-coroutines-core', version: '1.0.1'
+	
+	// bascule library
+	compile group: 'org.liamjd.bascule-lib', name: 'generators', version: '0.0.8'
 
 	// handlebars templating
 	compile group: 'com.github.jknack', name: 'handlebars', version: "$handlebars_version"
 
 	// markdown - probably want to be more selective with this!
-	compile group: 'com.vladsch.flexmark', name:'flexmark-all', version: "$flexmark_version"
+	compile group: 'com.vladsch.flexmark', name: 'flexmark-all', version: "$flexmark_version"
 
 	// snakeyaml
 	compile group: 'org.yaml', name: 'snakeyaml', version: "$snakeyaml_version"
@@ -64,10 +69,10 @@ dependencies {
 }
 
 compileKotlin {
-    kotlinOptions.jvmTarget = "1.8"
+	kotlinOptions.jvmTarget = "1.8"
 }
 compileTestKotlin {
-    kotlinOptions.jvmTarget = "1.8"
+	kotlinOptions.jvmTarget = "1.8"
 }
 
 
@@ -75,7 +80,7 @@ sourceSets {
 	main.resources.srcDirs += ['src/main/resources']
 }
 
-jar{
+jar {
 	// required for building JAR files
 	baseName = 'bascule'
 //	version = ext.version
@@ -92,3 +97,28 @@ jar{
 	from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
 }
 
+// deploy to maven local
+publishing {
+	publications {
+		mavenJava(MavenPublication) {
+			from components.java
+
+			artifact sourceJar {
+				classifier "sources"
+			}
+		}
+	}
+}
+publishing {
+	repositories {
+		maven {
+			// change to point to your repo, e.g. http://my.org/repo
+			url "$buildDir/repo"
+		}
+	}
+}
+
+// building source jar
+task sourceJar(type: Jar) {
+	from sourceSets.main.allJava
+}

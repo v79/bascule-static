@@ -1,20 +1,23 @@
 package org.liamjd.bascule.pipeline
 
-import org.liamjd.bascule.FileHandler
-import org.liamjd.bascule.assets.ProjectStructure
-import org.liamjd.bascule.generator.Post
-import org.liamjd.bascule.generator.Tag
-import org.liamjd.bascule.render.Renderer
+import org.liamjd.bascule.lib.FileHandler
+import org.liamjd.bascule.lib.generators.AbstractPostListGenerator
+import org.liamjd.bascule.lib.generators.GeneratorPipeline
+import org.liamjd.bascule.lib.model.Post
+import org.liamjd.bascule.lib.model.Project
+import org.liamjd.bascule.lib.model.Tag
+import org.liamjd.bascule.lib.render.Renderer
+import org.liamjd.bascule.model.BasculePost
 import println.info
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
-class TaxonomyNavigationGenerator(posts: List<Post>, numPosts: Int = 1, postsPerPage: Int) : GeneratorPipeline, AbstractPostListGenerator(posts, numPosts, postsPerPage) {
+class TaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int = 1, postsPerPage: Int) : GeneratorPipeline, AbstractPostListGenerator(posts, numPosts, postsPerPage) {
 
 	val FOLDER_NAME = "tags"
 	override val TEMPLATE = "tag"
 
-	override suspend fun process(project: ProjectStructure, renderer: Renderer, fileHandler: FileHandler) {
+	override suspend fun process(project: Project, renderer: Renderer, fileHandler: FileHandler) {
 		info("Building tag navigation pages")
 		val tagsFolder = fileHandler.createDirectory(project.outputDir.absolutePath, FOLDER_NAME)
 		val tagSet = getAllTags(posts)

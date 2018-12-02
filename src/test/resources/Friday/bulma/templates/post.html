@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>{{ site.siteName }}</title>
+	<title>{{ title }}</title>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.1/css/bulma.min.css">
 	<script defer src="https://use.fontawesome.com/releases/v5.1.0/js/all.js"></script>
 </head>
@@ -11,13 +11,13 @@
 <section class="section">
 	<div class="container">
 		<h1 class="title">
-			{{ site.siteName }}
+			{{ title }}
 		</h1>
-
+		<p class="subtitle">
+			by {{ author }} <span class="date"> {{ date }}</span> - {{#each tags }}<span class="tag is-primary">{{ this }}</span> {{/each}}
+		</p>
 		<div class="content">
-			{{#each site.basculePosts }}
-				{{ this }}
-			{{/each}}
+			{{{ content }}}
 		</div>
 	</div>
 </section>

@@ -1,7 +1,7 @@
 ---
 title: Looking for Web Hosting
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 31/12/2014
 tags: [software development, cms]
 slug: looking-for-web-hosting

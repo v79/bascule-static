@@ -1,7 +1,7 @@
 ---
 title: On Public Service Provision
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 11/07/2011
 tags: [politics]
 slug: on-public-service-provision

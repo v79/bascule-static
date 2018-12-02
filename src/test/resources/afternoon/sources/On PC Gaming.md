@@ -1,7 +1,7 @@
 ---
 title: On PC Gaming
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 17/03/2013
 tags: [games]
 slug: on-pc-gaming

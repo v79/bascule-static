@@ -1,9 +1,11 @@
 package org.liamjd.bascule.pipeline
 
-import org.liamjd.bascule.FileHandler
-import org.liamjd.bascule.assets.ProjectStructure
-import org.liamjd.bascule.generator.Post
-import org.liamjd.bascule.render.Renderer
+import org.liamjd.bascule.lib.FileHandler
+import org.liamjd.bascule.lib.generators.AbstractPostListGenerator
+import org.liamjd.bascule.lib.generators.GeneratorPipeline
+import org.liamjd.bascule.lib.model.Post
+import org.liamjd.bascule.lib.model.Project
+import org.liamjd.bascule.lib.render.Renderer
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
@@ -12,7 +14,7 @@ class PostNavigationGenerator(posts: List<Post>, numPosts: Int = 1, postsPerPage
 	override val TEMPLATE: String = "list"
 	val FOLDER_NAME: String = "posts"
 
-	override suspend fun process(project: ProjectStructure, renderer: Renderer, fileHandler: FileHandler) {
+	override suspend fun process(project: Project, renderer: Renderer, fileHandler: FileHandler) {
 		val totalPages = ceil(numPosts.toDouble() / postsPerPage).roundToInt()
 		val listPages = posts.withIndex()
 				.groupBy { it.index / postsPerPage }

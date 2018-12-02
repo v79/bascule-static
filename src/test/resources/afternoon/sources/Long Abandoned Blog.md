@@ -1,7 +1,7 @@
 ---
 title: Long Abandoned Blog
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 26/04/2016
 tags: 
 slug: long-abandoned-blog

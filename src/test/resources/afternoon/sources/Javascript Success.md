@@ -1,7 +1,7 @@
 ---
 title: Javascript Success
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 12/03/2014
 tags: [software development, cms, web, groovy]
 slug: javascript-success

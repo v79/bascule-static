@@ -1,12 +1,12 @@
 ---
 title: On Science Fiction
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 22/12/2011
 tags: [science fiction, books]
 slug: on-science-fiction
 ---
-I have been wanting to write a post on Science Fiction for a long time, but for various reasons I have been putting it off. Partly, I admit, out of laziness. The bigger reason - excuse - is that science fiction a slippery thing to define, and that much TV and film SF is pretty poor.
+I have been wanting to write a basculePost on Science Fiction for a long time, but for various reasons I have been putting it off. Partly, I admit, out of laziness. The bigger reason - excuse - is that science fiction a slippery thing to define, and that much TV and film SF is pretty poor.
 
 SF is my favourite genre of fiction, television and movies. It is wonderfully escapist, of course, and much commercial SF in books and TV is all about escapism. The same can be true of other genres, such as fantasy and historical, so what is different about SF? For me, good science fiction is the fiction of _ideas_. It starts with an idea, and explores _what if_ - what if we could travel faster than light? Or live for a thousand years? Or teleport ourselves, physically, to any location on Earth? Good science fiction then constrains this, _ceteris paribus_, so that we are talking about human lives and experiences, with limitations and weaknesses. Bad science fiction throws constraints out of the window whenever they are inconvenient to the plot.
 

@@ -1,0 +1,13 @@
+siteName: Bascule Site
+dateFormat: dd/MM/yyyy
+dateTimeFormat: HH:mm:ss dd/MM/yyyy
+author: bascule
+theme: bulma
+tagskey: tags
+postsPerPage: 2
+
+directories:
+  source: sources
+  output: site
+  assets: assets
+  templates: templates

@@ -3,14 +3,14 @@ package org.liamjd.bascule.initializer
 import com.github.jknack.handlebars.Context
 import com.github.jknack.handlebars.Handlebars
 import org.koin.standalone.KoinComponent
+import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.Constants
 import org.liamjd.bascule.Constants.ASSETS_DIR
 import org.liamjd.bascule.Constants.CONFIG_YAML
 import org.liamjd.bascule.Constants.OUTPUT_DIR
 import org.liamjd.bascule.Constants.SOURCE_DIR
 import org.liamjd.bascule.Constants.TEMPLATES_DIR
-import org.liamjd.bascule.FileHandler
-import org.liamjd.bascule.assets.Theme
+import org.liamjd.bascule.lib.model.Theme
 import println.info
 import java.io.File
 import java.nio.file.FileSystems
@@ -19,7 +19,7 @@ import kotlin.system.exitProcess
 /**
  * Sets up a new site with the given name and theme.
  */
-class BasculeInitializer(val siteName: String, val themeName: Theme?, val fileHandler: FileHandler) : Initializer, KoinComponent {
+class BasculeInitializer(val siteName: String, val themeName: Theme?, val fileHandler: BasculeFileHandler) : Initializer, KoinComponent {
 
 	val currentDirectory = System.getProperty("user.dir")!!
 

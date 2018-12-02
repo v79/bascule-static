@@ -1,7 +1,7 @@
 ---
 title: Upgrading to Grails 2.4.4
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 02/02/2015
 tags: [software development, cms, web, groovy]
 slug: upgrading-to-grails-2.4.4
