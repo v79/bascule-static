@@ -16,7 +16,7 @@ plugins {
 
 apply plugin: 'maven-publish'
 group 'org.liamjd'
-version '0.0.8'
+version '0.0.9'
 
 repositories {
 	mavenCentral()
@@ -30,7 +30,7 @@ dependencies {
 	compile group: 'org.jetbrains.kotlinx', name: 'kotlinx-coroutines-core', version: '1.0.1'
 	
 	// bascule library
-	compile group: 'org.liamjd.bascule-lib', name: 'generators', version: '0.0.8'
+	compile group: 'org.liamjd.bascule-lib', name: 'generators', version: '0.0.9'
 
 	// handlebars templating
 	compile group: 'com.github.jknack', name: 'handlebars', version: "$handlebars_version"

@@ -81,6 +81,7 @@ class FolderWalker(val project: Project) : KoinComponent {
 							}
 							val url = "$slug.html"
 							post.url = url
+							post.rawContent = it.readText() // TODO: this still contains the yaml front matter :(
 
 							sortedSetOfPosts.add(post)
 						}

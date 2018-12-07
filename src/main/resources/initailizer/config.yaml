@@ -11,3 +11,5 @@ directories:
   output: site
   assets: assets
   templates: templates
+plugins: []
+processors: [IndexPageGenerator,PostNavigationGenerator,TaxonomyNavigationGenerator,org.liamjd.bascule.lib.generators.pdf.SinglePagePDFGenerator]

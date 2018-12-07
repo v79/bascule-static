@@ -42,6 +42,7 @@ class BasculePost(val document: Document) : Post, PostStatus() {
 	override var attributes: MutableMap<String, Any> = mutableMapOf()
 
 	override var content: String = ""
+	override var rawContent: String = ""
 	override var newer: PostLink? = null
 	override var older: PostLink? = null
 

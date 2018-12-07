@@ -15,7 +15,7 @@ import println.info
 /**
  * Command line parser for Bascule. Declares the different ways of running Bascule
  */
-@CommandLine.Command(name = "Bascule", version = ["0.0.5"],
+@CommandLine.Command(name = "Bascule", version = [Constants.VERSION_STRING],
 		mixinStandardHelpOptions = true,
 		description = ["Bascule static site generator"],
 		subcommands = [Generator::class, Themes::class])

@@ -9,13 +9,16 @@ import java.io.InputStream
 /**
  * Builds the project structure by parsing the root yaml file
  */
+// TODO: this should be in the library, not here...
 object Configurator {
+
+	val DEFAULT_PROCESSORS = arrayOf("IndexPageGenerator","PostNavigationGenerator","TaxonomyNavigationGenerator")
 
 	fun buildProjectFromYamlConfig(configStream: InputStream): Project {
 		return buildProjectFromYamlConfig(configStream.bufferedReader().readText())
 	}
 
-	fun buildProjectFromYamlConfig(yamlConfigString: String): Project {
+	private fun buildProjectFromYamlConfig(yamlConfigString: String): Project {
 		val yaml = Yaml()
 		val configMap: Map<String, Any> = yaml.load(yamlConfigString)
 
@@ -24,6 +27,8 @@ object Configurator {
 		val assetsDir: String
 		val outputDir: String
 		val templatesDir: String
+		val plugins: Array<String>
+		val processors: Array<String>
 
 		val theme = if (configMap["theme"] == null) Constants.DEFAULT_THEME else configMap["theme"] as String
 
@@ -39,6 +44,10 @@ object Configurator {
 			assetsDir = Constants.ASSETS_DIR
 			outputDir = Constants.OUTPUT_DIR
 			templatesDir = "$theme/" + Constants.TEMPLATES_DIR
+		}
+
+		if(configMap["processors"] != null) {
+//			processors = arrayOf(configMap["processors"] as String)
 		}
 
 		val project = Project(

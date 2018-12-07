@@ -14,9 +14,6 @@ import org.liamjd.bascule.lib.model.Post
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.lib.render.Renderer
 import org.liamjd.bascule.model.BasculePost
-import org.liamjd.bascule.pipeline.IndexPageGenerator
-import org.liamjd.bascule.pipeline.PostNavigationGenerator
-import org.liamjd.bascule.pipeline.TaxonomyNavigationGenerator
 import org.liamjd.bascule.random
 import org.liamjd.bascule.scanner.FolderWalker
 import picocli.CommandLine
@@ -29,6 +26,7 @@ import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
 import kotlin.reflect.full.callSuspend
 import kotlin.reflect.full.declaredFunctions
+import kotlin.reflect.full.isSubclassOf
 import kotlin.system.measureTimeMillis
 
 /**
@@ -72,7 +70,38 @@ class Generator : Runnable, KoinComponent {
 
 		// TODO: is this a good idea?
 		// TODO: how to move the creation of sortedPosts into this? Rewrite folder walker?
-		sortedPosts.process(arrayOf(IndexPageGenerator::class, PostNavigationGenerator::class, TaxonomyNavigationGenerator::class), project, renderer, fileHandler)
+		// TODO: load the list of processors from configuration, such as config.yaml
+
+		// OK, let's just hard-code a string first
+		val DEFAULT_PROCESSORS = arrayOf("IndexPageGenerator", "PostNavigationGenerator", "TaxonomyNavigationGenerator")
+		val PIPELINE_PACKAGE = "org.liamjd.bascule.pipeline"
+
+		val processorPipeline =  ArrayList<KClass<*>>()
+		for (className in DEFAULT_PROCESSORS) {
+			val kClass = Class.forName("$PIPELINE_PACKAGE.$className").kotlin
+			println(kClass.supertypes)
+			if (kClass.isSubclassOf(GeneratorPipeline::class)) {
+				println("adding $kClass")
+				processorPipeline.add(kClass)
+			} else {
+				println.error("Pipeline class ${kClass.simpleName} is not an instance of GeneratorPipeline!")
+			}
+		}
+		if (processorPipeline.size == 0) {
+			error("No generators found in the pipeline. Aborting execution!")
+		}
+		println("Forcing SinglePagePDFGenerator into the pipeline... is it even loaded?")
+		processorPipeline.add(Class.forName("org.liamjd.bascule.lib.generators.pdf.SinglePagePDFGenerator").kotlin)
+
+		val myArray = ArrayList<KClass<GeneratorPipeline>>()
+		processorPipeline.forEachIndexed { index, kClass ->
+			println("$index -> $kClass")
+			myArray.add(kClass as KClass<GeneratorPipeline>)
+		}
+
+		sortedPosts.process(myArray, project, renderer, fileHandler)
+
+//		sortedPosts.process(arrayOf(IndexPageGenerator::class, PostNavigationGenerator::class, TaxonomyNavigationGenerator::class), project, renderer, fileHandler)
 
 	}
 
@@ -85,15 +114,15 @@ class Generator : Runnable, KoinComponent {
  * @param[renderer] the renderer which converts model map into a string
  * @param[fileHandler] file handler for writing output to disc
  */
-private fun List<BasculePost>.process(pipeline: Array<KClass<out GeneratorPipeline>>, project: Project, renderer: Renderer, fileHandler: BasculeFileHandler) {
+private fun List<BasculePost>.process(pipeline: ArrayList<KClass<GeneratorPipeline>>, project: Project, renderer: Renderer, fileHandler: BasculeFileHandler) {
 
-	val processors = mutableMapOf<KClass<*>,KFunction<*>>()
+	val processors = mutableMapOf<KClass<*>, KFunction<*>>()
 
 	for (p in pipeline) {
 		debug("----- expanding pipeline ${p.simpleName}")
 		val processorFunc = p.declaredFunctions.find { it.name.equals("process") }
 		if (processorFunc != null) {
-			processors.put(p,processorFunc)
+			processors.put(p, processorFunc)
 		}
 	}
 	val timeTaken = measureTimeMillis {

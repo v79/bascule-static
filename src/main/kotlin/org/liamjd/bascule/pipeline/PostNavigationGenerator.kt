@@ -12,7 +12,7 @@ import kotlin.math.roundToInt
 class PostNavigationGenerator(posts: List<Post>, numPosts: Int = 1, postsPerPage: Int) : GeneratorPipeline, AbstractPostListGenerator(posts, numPosts, postsPerPage) {
 
 	override val TEMPLATE: String = "list"
-	val FOLDER_NAME: String = "posts"
+	val FOLDER_NAME: String = "posts"		// TODO: move this to project model
 
 	override suspend fun process(project: Project, renderer: Renderer, fileHandler: FileHandler) {
 		val totalPages = ceil(numPosts.toDouble() / postsPerPage).roundToInt()
