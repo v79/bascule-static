@@ -1,0 +1,22 @@
+
+=======================
+Post generation time (44 files):
+sequential time:	1306 ms		961 ms		1154 ms		AVERAGE:	1140 ms				*
+sequential time:	886 ms		909 ms		891 ms		AVERAGE:	895 ms	 // no file writing
+sequential time:	231 ms		232 ms 		234 ms		AVERAGE:	232 ms   // no markdown rendering
+
+coroutine time #1:	1176 ms		1057 ms		1062 ms		AVERAGE:	1098 ms  // runblocking
+coroutine time #2:	988 ms		991 ms		1054 ms		AVERAGE:	1011 ms	 // runblocking, launch  *
+coroutine time #3:	862 ms		804 ms		791 ms		AVERAGE:	819 ms	 // no file writing
+coroutine time #4:	289 ms		253 ms		256 ms		AVERAGE:	266 ms	 // no markdown rendering
+coroutine time #5:	1270 ms		1101 ms		1012 ms		AVERAGE:	1127 ms	 // write file async
+
+Index Page Generator / PostNavigationGenerator / TaxonomyNavigationGenerator 
+sequential time:	541 ms		360 ms		382 ms		AVERAGE:	427 ms
+sequential time:	184 ms		214 ms		167 ms		AVERAGE:	188 ms	// no reflection, no rebuild, from jar
+sequential time:	226 ms		218 ms		221 ms		AVERAGE:	221 ms	// reflection, no rebuild, from jar *
+
+coroutine time:		307 ms		339 ms		264 ms		AVERAGE:	303 ms
+coroutine time:		241 ms		225 ms		226 ms		AVERAGE:	230 ms	// reflection, no rebuild, from jar *
+coroutine time run 2:	267 ms		277 ms 		239 ms		AVERAGE:	261 ms	// reflection, no rebuild, from jar *
+
