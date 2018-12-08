@@ -1,7 +1,7 @@
 ---
 title: Vote Remain, For All Our Sakes
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 23/06/2016
 tags: [politics, europe, brexit]
 slug: vote-remain

@@ -8,9 +8,10 @@ import com.github.jknack.handlebars.context.MapValueResolver
 import com.github.jknack.handlebars.context.MethodValueResolver
 import com.github.jknack.handlebars.helper.StringHelpers
 import com.github.jknack.handlebars.io.FileTemplateLoader
-import org.liamjd.bascule.assets.ProjectStructure
+import org.liamjd.bascule.lib.model.Project
+import org.liamjd.bascule.lib.render.Renderer
 
-class HandlebarsRenderer(val project: ProjectStructure) : Renderer {
+class HandlebarsRenderer(val project: Project) : Renderer {
 
 	val TEMPLATE_SUFFIX = ".hbs"
 	val hbRenderer: Handlebars
@@ -38,7 +39,7 @@ class HandlebarsRenderer(val project: ProjectStructure) : Renderer {
 		return template.apply(hbContext)
 	}
 
-	private fun getTemplateText(project: ProjectStructure, templateName: String): String {
+	private fun getTemplateText(project: Project, templateName: String): String {
 		val matches = project.templatesDir.listFiles { dir, name -> name == (templateName  + TEMPLATE_SUFFIX) }
 
 		if (matches.isNotEmpty() && matches.size == 1) {

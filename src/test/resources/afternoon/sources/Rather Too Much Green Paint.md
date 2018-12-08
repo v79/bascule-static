@@ -1,7 +1,7 @@
 ---
 title: Rather Too Much Green Paint
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 18/06/2011
 tags: [colour, decorating]
 slug: too-much-green-paint

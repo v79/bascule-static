@@ -1,7 +1,7 @@
 ---
 title: On Greg Egan's Zendegi: A Brief Review
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 13/04/2014
 tags: [books, science fiction]
 slug: greg-egan-zendegi

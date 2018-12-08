@@ -1,7 +1,7 @@
 ---
 title: Single Syllable Story
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 08/10/2005
 tags: [short story]
 slug: single-syllable-story

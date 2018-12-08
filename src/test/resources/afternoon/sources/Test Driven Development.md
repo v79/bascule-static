@@ -1,7 +1,7 @@
 ---
 title: Test Driven Development and Handling XML
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 18/05/2014
 tags: [software development, cms, web, groovy]
 slug: test-driven-development-xml

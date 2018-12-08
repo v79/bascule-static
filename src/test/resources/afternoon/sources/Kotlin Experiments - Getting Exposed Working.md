@@ -1,7 +1,7 @@
 ---
 title: Kotlin Experiments - Getting Exposed Working
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 24/07/2017
 tags: [software development, kotlin, exposed]
 slug: kotlin-experiments-exposed

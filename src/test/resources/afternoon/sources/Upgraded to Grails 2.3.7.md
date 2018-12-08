@@ -1,7 +1,7 @@
 ---
 title: Upgraded to Grails 2.3.7
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 11/04/2014
 tags: [software development, cms, web, groovy]
 slug: upgraded-grails-237

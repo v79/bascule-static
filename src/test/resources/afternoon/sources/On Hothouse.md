@@ -1,7 +1,7 @@
 ---
 title: Review of Hothouse by Brian Aldis
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 05/01/2012
 tags: [books, science fiction]
 slug: review-of-hothouse

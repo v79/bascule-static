@@ -2,7 +2,7 @@ siteName: Bascule Site
 dateFormat: dd/MM/yyyy
 dateTimeFormat: HH:mm:ss dd/MM/yyyy
 author: bascule
-theme: {{themeName}}
+theme: bulma
 tagskey: tags
 postsPerPage: 2
 
@@ -11,5 +11,3 @@ directories:
   output: site
   assets: assets
   templates: templates
-plugins: []
-processors: [IndexPageGenerator,PostNavigationGenerator,TaxonomyNavigationGenerator,org.liamjd.bascule.lib.generators.pdf.SinglePagePDFGenerator]

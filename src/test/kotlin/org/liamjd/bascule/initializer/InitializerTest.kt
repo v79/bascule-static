@@ -9,9 +9,9 @@ import org.jetbrains.spek.api.dsl.describe
 import org.jetbrains.spek.api.dsl.it
 import org.koin.dsl.module.module
 import org.koin.standalone.StandAloneContext.loadKoinModules
+import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.Constants
-import org.liamjd.bascule.FileHandler
-import org.liamjd.bascule.assets.Theme
+import org.liamjd.bascule.lib.model.Theme
 import java.io.File
 import java.nio.file.FileSystems
 import kotlin.test.assertFalse
@@ -24,7 +24,7 @@ class InitializerTest : Spek({
 
 	val name = "testSite"
 	val defaultTheme: Theme = "bulma"
-	val mockFileHandler = mockk<org.liamjd.bascule.FileHandler>(relaxed = true)
+	val mockFileHandler = mockk<org.liamjd.bascule.BasculeFileHandler>(relaxed = true)
 
 	val koinModule = module {
 		single { mockFileHandler }
@@ -56,7 +56,7 @@ class InitializerTest : Spek({
 
 		it("successfully creates a project called $name with theme 'unthemed'") {
 			val unthemed = "unthemed"
-			val spyFileHandler = spyk(FileHandler())
+			val spyFileHandler = spyk(BasculeFileHandler())
 
 			val service = BasculeInitializer(name, unthemed, spyFileHandler)
 			service.create()
@@ -70,7 +70,7 @@ class InitializerTest : Spek({
 
 		it("successfully creates a project called $name with default 'bulma' theme when no theme is specified") {
 
-			val mockFileHandler = spyk(FileHandler())
+			val mockFileHandler = spyk(BasculeFileHandler())
 
 			val service = BasculeInitializer(name, null, mockFileHandler)
 			service.create()

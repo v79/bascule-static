@@ -1,7 +1,7 @@
 ---
 title: Refactoring, and Javascript Woes
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 09/03/2014
 tags: [software development, cms, web, groovy]
 slug: refactoring

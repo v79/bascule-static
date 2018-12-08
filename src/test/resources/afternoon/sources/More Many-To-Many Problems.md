@@ -1,7 +1,7 @@
 ---
 title: More Many-to-Many Problems
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 13/04/2014
 tags: [software development, cms, web, groovy]
 slug: more-many-to-many-problems

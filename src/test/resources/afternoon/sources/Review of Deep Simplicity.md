@@ -1,7 +1,7 @@
 ---
 title: Review of Deep Simplicity by John Gribbon
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 21/07/2011
 tags: [books, science]
 slug: on-the-void-saga

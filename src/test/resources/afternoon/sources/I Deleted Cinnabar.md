@@ -1,7 +1,7 @@
 ---
 title: I Deleted Cinnabar
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 15/03/2014
 tags: [software development, cms, web, groovy]
 slug: deleted-cinnabar

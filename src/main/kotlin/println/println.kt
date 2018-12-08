@@ -2,6 +2,8 @@ package println
 
 import org.fusesource.jansi.Ansi
 
+val debug = true
+
 /**
  * Prints text in a nice yellow colour
  */
@@ -14,4 +16,10 @@ fun info(string: String) {
  */
 fun error(string: String) {
 	println(Ansi.ansi().fgBrightRed().a(string).reset())
+}
+
+fun debug(string: String) {
+	if(debug) {
+		println(Ansi.ansi().fgCyan().a(string).reset())
+	}
 }

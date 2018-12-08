@@ -1,14 +1,14 @@
 ---
 title: On Bridges, Infrastructure and Trams
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 27/03/2012
 tags: [engineering, bridges, transport]
 slug: on-bridges-and-trams
 ---
 The company I work for has recently moved to a new office in the centre of Edinburgh. It's a nice serviced office, much smaller than we're used to but a reasonable size for just the six of us. It's very central, just minutes from Waverley Train Station and St Andrew Bus Station. It also overlooks a major tram construction site.
 
-And it's horrid. The daily noise is almost unbearable as the tram works rip up the road, constantly drilling and hammering. A nearby tartan-tat shop plays nasty bagpipe music all day long, loudly, in the belief that they need to compete with the noise of the tram works. The Edinburgh Trams are our new national folly, a grandiose scheme that has gone way over budget, way over deadline, will only provide half the promised track, and has severely disrupted the retail economy of central Edinburgh. Now, this post is not going to be about the trams, _per se_ - personally, I liked the idea of the tram network and am sorely disappointed that is has gone so badly. After the debacle of the Scottish Parliament, it seems that Scotland, and the UK, is incapable of delivering a large scale building project on time or on budget.
+And it's horrid. The daily noise is almost unbearable as the tram works rip up the road, constantly drilling and hammering. A nearby tartan-tat shop plays nasty bagpipe music all day long, loudly, in the belief that they need to compete with the noise of the tram works. The Edinburgh Trams are our new national folly, a grandiose scheme that has gone way over budget, way over deadline, will only provide half the promised track, and has severely disrupted the retail economy of central Edinburgh. Now, this basculePost is not going to be about the trams, _per se_ - personally, I liked the idea of the tram network and am sorely disappointed that is has gone so badly. After the debacle of the Scottish Parliament, it seems that Scotland, and the UK, is incapable of delivering a large scale building project on time or on budget.
 
 This is a worry, as work has already started on another great engineering project, the building of the [Forth Replacement Crossing](http://www.transportscotland.gov.uk/road/projects/forth-replacement-crossing "Forth Replacement Crossing"), a new road bridge to replace the decaying Forth Road Bridge. The existing [Forth Road Bridge](http://en.wikipedia.org/wiki/Forth_Road_Bridge "The Forth Road Bride (wikipedia)"), which opened in 1964 and was expected to last around 120 years, is suffering from significant structural wear as the suspension cables which hold up the deck are beginning to snap. Though work is under way to slow the decline, the bridge will not be able to sustain its current levels of traffic for much longer. One estimate is that the bridge only has eight years of useful life left [http://www.forthroadbridge.org/sites/default/files/documents/firstinsp.pdf](http://www.forthroadbridge.org/sites/default/files/documents/firstinsp.pdf) - A sorry end to what was once the fourth-longest bridge in the world. With over 65,000 vehicles crossing the river daily, the Forth Bridge is the most important bridge in the Scottish transport network.
 

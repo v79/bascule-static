@@ -1,7 +1,7 @@
 ---
 title: Adding Validation to Cinnabar
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 11/04/2014
 tags: [software development, cms, web, groovy]
 slug: adding-validation-to-cinnabar

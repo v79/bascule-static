@@ -1,7 +1,7 @@
 ---
 title: Four Weeks Sick Leave
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 31/03/2014
 tags: [health]
 slug: four-weeks-sick-leave

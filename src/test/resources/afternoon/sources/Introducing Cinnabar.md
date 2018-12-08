@@ -1,7 +1,7 @@
 ---
 title: Introducing Cinnabar, a work-in-progress CMS
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 01/03/2014
 tags: [software development, cms, web, groovy]
 slug: introducing-cinnabar

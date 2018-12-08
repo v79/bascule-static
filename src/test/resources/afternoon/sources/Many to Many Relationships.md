@@ -1,7 +1,7 @@
 ---
 title: Many-to-Many Relationships in Grails and Grom
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 04/04/2014
 tags: [software development, cms, web, groovy]
 slug: many-to-many-relationships

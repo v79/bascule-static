@@ -1,7 +1,7 @@
 ---
 title: Back at the Gym
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 26/08/2014
 tags: [health]
 slug: back-at-the-gym

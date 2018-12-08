@@ -1,7 +1,7 @@
 ---
 title: Coping, Or Not, With a Slipped Disc
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 26/05/2014
 tags: [health]
 slug: coping-or-not
@@ -22,7 +22,7 @@ This weekend was a long weekend for me, with both Friday and Monday being holida
 
 I woke on Sunday morning feeling dazed and confused, but mobile. But the nerve pain returned, with pins and needles running up and down my entire right leg. I called a friend, who agreed to go the the shops for me and made me lunch. She even washed the dishes in the kitchen - I am blessed with a few but very dear friends. I took an amitriptyline during the day, and I dosed off to sleep. My friend, bless her heart, dosed off on my sofa.
 
-Now it's Monday morning, and I feel... fine. Not perfect. Still a little sore. Still wary of pins and needles, particularly when I stand still for any length of time, like peeing. I'm acutely aware of my back position as I sit at my desk writing this post - the first time I have sat at my computer since Thursday. But so much better than I felt on Friday or Saturday. It's hard to know why - did my double-dosing of amitriptyline really help? Maybe I just needed lots of consistent rest and sleep? Was I only in pain because I tried to do too much at work? It's really difficult to unpick all the factors that may or may not have contributed to my relapse and my apparent recovery today. If only I could clone myself and perform a randomized controlled trial on the clones.
+Now it's Monday morning, and I feel... fine. Not perfect. Still a little sore. Still wary of pins and needles, particularly when I stand still for any length of time, like peeing. I'm acutely aware of my back position as I sit at my desk writing this basculePost - the first time I have sat at my computer since Thursday. But so much better than I felt on Friday or Saturday. It's hard to know why - did my double-dosing of amitriptyline really help? Maybe I just needed lots of consistent rest and sleep? Was I only in pain because I tried to do too much at work? It's really difficult to unpick all the factors that may or may not have contributed to my relapse and my apparent recovery today. If only I could clone myself and perform a randomized controlled trial on the clones.
 
 I need to decide whether I am fit enough to return to work tomorrow - I really hope I am. Can I work from home part-time? Maybe it's the commute on the bus that really hurts me, or is it the long planning meetings we have on uncomfortable chairs?
 

@@ -9,16 +9,15 @@ import com.vladsch.flexmark.util.options.MutableDataSet
 import org.koin.core.parameter.ParameterList
 import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
-import org.liamjd.bascule.FileHandler
+import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.assets.AssetsProcessor
-import org.liamjd.bascule.assets.ProjectStructure
-import org.liamjd.bascule.generator.Post
-import org.liamjd.bascule.generator.PostGenError
-import org.liamjd.bascule.generator.PostLink
-import org.liamjd.bascule.generator.Tag
-import org.liamjd.bascule.render.Renderer
+import org.liamjd.bascule.lib.model.PostLink
+import org.liamjd.bascule.lib.model.Project
+import org.liamjd.bascule.lib.model.Tag
+import org.liamjd.bascule.lib.render.Renderer
+import org.liamjd.bascule.model.BasculePost
+import org.liamjd.bascule.model.PostGenError
 import println.info
-import java.io.File
 import java.io.InputStream
 import java.io.Serializable
 import kotlin.system.measureTimeMillis
@@ -27,11 +26,11 @@ import kotlin.system.measureTimeMillis
 // TODO: this is a sort of cache. What should it contain?
 class GeneratedContent(val lastUpdated: Long, val url: String, val content: String) : Serializable
 
-class FolderWalker(val project: ProjectStructure) : KoinComponent {
+class FolderWalker(val project: Project) : KoinComponent {
 
 	private val assetsProcessor: AssetsProcessor
 	private val renderer by inject<Renderer> { ParameterList(project) }
-	private val fileHandler: FileHandler by inject(parameters = { ParameterList() })
+	private val fileHandler: BasculeFileHandler by inject(parameters = { ParameterList() })
 
 	val mdOptions = MutableDataSet()
 	val mdParser: Parser
@@ -43,22 +42,24 @@ class FolderWalker(val project: ProjectStructure) : KoinComponent {
 	}
 
 
-	fun generate(): List<Post> {
+	fun generate(): List<BasculePost> {
 		info("Scanning ${project.sourceDir.absolutePath} for markdown files")
 
+		// TODO: copyStatics should not be here!
 		assetsProcessor.copyStatics()
+
 		var numPosts = 0
 		val docCache = mutableMapOf<String, GeneratedContent>()
 		val siteModel = project.model
 		val errorMap = mutableMapOf<String, Any>()
-		val sortedSetOfPosts = sortedSetOf<Post>(comparator = Post)
+		val sortedSetOfPosts = sortedSetOf<BasculePost>(comparator = BasculePost)
 		val timeTaken = measureTimeMillis {
 			project.sourceDir.walk().forEach {
 				if (it.name.startsWith(".") || it.name.startsWith("__")) {
 					info("Skipping draft file/folder '${it.name}'")
 					return@forEach // skip this one
 				}
-				if(it.isDirectory) {
+				if (it.isDirectory) {
 					return@forEach
 				}
 				if (it.extension == "md") {
@@ -66,10 +67,10 @@ class FolderWalker(val project: ProjectStructure) : KoinComponent {
 					val document = parseMarkdown(inputStream)
 					numPosts++
 
-					val post = Post.createPostFromYaml(it, document, project)
+					val post = BasculePost.createPostFromYaml(it, document, project)
 
 					when (post) {
-						is Post -> {
+						is BasculePost -> {
 //							val gc = GeneratedContent(lastModifiedTime, slug, renderedContent)
 //							docCache.put(post.sourceFileName, gc)
 
@@ -80,6 +81,7 @@ class FolderWalker(val project: ProjectStructure) : KoinComponent {
 							}
 							val url = "$slug.html"
 							post.url = url
+							post.rawContent = it.readText() // TODO: this still contains the yaml front matter :(
 
 							sortedSetOfPosts.add(post)
 						}
@@ -94,6 +96,7 @@ class FolderWalker(val project: ProjectStructure) : KoinComponent {
 
 			info("Parsed $numPosts files, ready to generate content")
 
+			// create next/previous links
 			val postList = sortedSetOfPosts.toList()
 			postList.forEachIndexed { index, post ->
 				if (index != 0) {
@@ -106,13 +109,14 @@ class FolderWalker(val project: ProjectStructure) : KoinComponent {
 				}
 			}
 
+			// build the set of taxonomy tags
 			val allTags = mutableSetOf<Tag>()
 			postList.forEach { post ->
 				allTags.addAll(post.tags)
 				post.tags.forEach { postTag ->
-					if(allTags.contains(postTag)) {
+					if (allTags.contains(postTag)) {
 						val t = allTags.find { it.equals(postTag) }
-						if(t != null) {
+						if (t != null) {
 							t.postCount++
 							t.hasPosts = true
 							postTag.postCount = t.postCount
@@ -122,26 +126,7 @@ class FolderWalker(val project: ProjectStructure) : KoinComponent {
 			}
 
 			postList.forEach { post ->
-
-				val model = mutableMapOf<String, Any?>()
-				model.putAll(siteModel)
-				model.putAll(post.toModel())
-
-				// first, extract the content from the markdown
-				val renderedMarkdown = renderMarkdown(post.document)
-				model.put("content", renderedMarkdown)
-
-				// then, render the corresponding Handlebars template
-				val templateFromYaml
-						: String = post.layout
-				val renderedContent = renderer.render(model, templateFromYaml)
-				post.content = renderedMarkdown
-
-				info("Generating html file ${post.url}")
-				File(project.outputDir.absolutePath, post.url)
-						.bufferedWriter().use { out ->
-							out.write(renderedContent)
-						}
+				renderPost(siteModel, post)
 			}
 
 		}
@@ -158,6 +143,26 @@ class FolderWalker(val project: ProjectStructure) : KoinComponent {
 		return sortedSetOfPosts.toList()
 
 //		info("Writing document cache")
+	}
+
+	// no performance improvement by making this a suspending function
+	private fun renderPost(siteModel: Map<String, Any>, basculePost: BasculePost) {
+		val model = mutableMapOf<String, Any?>()
+		model.putAll(siteModel)
+		model.putAll(basculePost.toModel())
+
+		// first, extract the content from the markdown
+		val renderedMarkdown = renderMarkdown(basculePost.document)
+		model.put("content", renderedMarkdown)
+
+		// then, render the corresponding Handlebars template
+		val templateFromYaml
+				: String = basculePost.layout
+		val renderedContent = renderer.render(model, templateFromYaml)
+		basculePost.content = renderedMarkdown
+
+		info("Generating html file ${basculePost.url}")
+		fileHandler.writeFile(project.outputDir.absoluteFile, basculePost.url, renderedContent)
 	}
 
 	private fun parseMarkdown(inputStream: InputStream): Document {

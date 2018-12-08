@@ -1,21 +1,33 @@
 package org.liamjd.bascule.generator
 
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.koin.core.parameter.ParameterList
 import org.koin.core.parameter.parametersOf
 import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
+import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.Constants
-import org.liamjd.bascule.FileHandler
-import org.liamjd.bascule.assets.ProjectStructure
+import org.liamjd.bascule.assets.Configurator
+import org.liamjd.bascule.lib.generators.GeneratorPipeline
+import org.liamjd.bascule.lib.model.Post
+import org.liamjd.bascule.lib.model.Project
+import org.liamjd.bascule.lib.render.Renderer
+import org.liamjd.bascule.model.BasculePost
 import org.liamjd.bascule.random
-import org.liamjd.bascule.render.Renderer
 import org.liamjd.bascule.scanner.FolderWalker
 import picocli.CommandLine
+import println.debug
 import println.info
 import java.io.File
 import java.io.FileInputStream
-import kotlin.math.ceil
-import kotlin.math.roundToInt
+import kotlin.reflect.KClass
+import kotlin.reflect.KFunction
+import kotlin.reflect.KParameter
+import kotlin.reflect.full.callSuspend
+import kotlin.reflect.full.declaredFunctions
+import kotlin.reflect.full.isSubclassOf
+import kotlin.system.measureTimeMillis
 
 /**
  * Starts the post and page generation process. Must be run from inside the project folder
@@ -23,14 +35,14 @@ import kotlin.math.roundToInt
 @CommandLine.Command(name = "generate", description = ["Generate your static website"])
 class Generator : Runnable, KoinComponent {
 
-	private val fileHandler: FileHandler by inject(parameters = { ParameterList() })
+	private val fileHandler: BasculeFileHandler by inject(parameters = { ParameterList() })
 	private val renderer by inject<Renderer> { parametersOf(project) }
 
 	private val currentDirectory = System.getProperty("user.dir")!!
 	private val yamlConfig: String
 	private val parentFolder: File
 	private val configStream: FileInputStream
-	private val project: ProjectStructure
+	private val project: Project
 
 	private val OUTPUT_SUFFIX = ".html"
 
@@ -39,7 +51,7 @@ class Generator : Runnable, KoinComponent {
 		yamlConfig = "${parentFolder.name}.yaml"
 
 		configStream = File(parentFolder.absolutePath, yamlConfig).inputStream()
-		project = ProjectStructure.Configurator.buildProjectFromYamlConfig(configStream)
+		project = Configurator.buildProjectFromYamlConfig(configStream)
 	}
 
 	override fun run() {
@@ -54,204 +66,109 @@ class Generator : Runnable, KoinComponent {
 		val walker = FolderWalker(project)
 
 		val postList = walker.generate()
-		val tagsSet = getAllTags(postList)
-
 		val sortedPosts = postList.sortedByDescending { it.date }
-		val numPosts = sortedPosts.size
 
-		buildIndexPage(sortedPosts, numPosts)
-		buildPostNavigation(sortedPosts, numPosts)
-		buildTaxonomyNavigation(sortedPosts, tagsSet)
-	}
+		// TODO: is this a good idea?
+		// TODO: how to move the creation of sortedPosts into this? Rewrite folder walker?
+		// TODO: load the list of processors from configuration, such as config.yaml
 
-	/**
-	 * Get a set of all the unique tags across the site
-	 */
-	private fun getAllTags(posts: List<Post>): Set<Tag> {
-		val tagSet = mutableSetOf<Tag>()
-		posts.forEach {
-			tagSet.addAll(it.tags)
+		// OK, let's just hard-code a string first
+		val DEFAULT_PROCESSORS = arrayOf("IndexPageGenerator", "PostNavigationGenerator", "TaxonomyNavigationGenerator")
+		val PIPELINE_PACKAGE = "org.liamjd.bascule.pipeline"
+
+		val processorPipeline =  ArrayList<KClass<*>>()
+		for (className in DEFAULT_PROCESSORS) {
+			val kClass = Class.forName("$PIPELINE_PACKAGE.$className").kotlin
+			println(kClass.supertypes)
+			if (kClass.isSubclassOf(GeneratorPipeline::class)) {
+				println("adding $kClass")
+				processorPipeline.add(kClass)
+			} else {
+				println.error("Pipeline class ${kClass.simpleName} is not an instance of GeneratorPipeline!")
+			}
 		}
-		return tagSet.toSet()
+		if (processorPipeline.size == 0) {
+			error("No generators found in the pipeline. Aborting execution!")
+		}
+		println("Forcing SinglePagePDFGenerator into the pipeline... is it even loaded?")
+		processorPipeline.add(Class.forName("org.liamjd.bascule.lib.generators.pdf.SinglePagePDFGenerator").kotlin)
+
+		val myArray = ArrayList<KClass<GeneratorPipeline>>()
+		processorPipeline.forEachIndexed { index, kClass ->
+			println("$index -> $kClass")
+			myArray.add(kClass as KClass<GeneratorPipeline>)
+		}
+
+		sortedPosts.process(myArray, project, renderer, fileHandler)
+
+//		sortedPosts.process(arrayOf(IndexPageGenerator::class, PostNavigationGenerator::class, TaxonomyNavigationGenerator::class), project, renderer, fileHandler)
+
 	}
 
-	/**
-	 * Build the home page
-	 */
-	private fun buildIndexPage(posts: List<Post>, numPosts: Int = 0) {
-		info("Building index file")
-		val model = mutableMapOf<String, Any>()
-		val postsPerPage = project.postsPerPage
-		model.putAll(project.model)
-		model.put("title", "Index")
-		model.put("posts", posts.sortedByDescending { it.date }.take(postsPerPage))
-		model.put("postCount", numPosts)
-		val renderedContent = renderer.render(model, "index")
+}
 
-		File(project.outputDir.absolutePath, "index.html").bufferedWriter().use { out ->
-			out.write(renderedContent)
+/**
+ * Extension function on a List of Posts. Uses co-routines to run the given array of GeneratorPipeline classes in parallel
+ * @param[pipeline] Array of class names to process in parallel
+ * @param[project] the bascule project model
+ * @param[renderer] the renderer which converts model map into a string
+ * @param[fileHandler] file handler for writing output to disc
+ */
+private fun List<BasculePost>.process(pipeline: ArrayList<KClass<GeneratorPipeline>>, project: Project, renderer: Renderer, fileHandler: BasculeFileHandler) {
+
+	val processors = mutableMapOf<KClass<*>, KFunction<*>>()
+
+	for (p in pipeline) {
+		debug("----- expanding pipeline ${p.simpleName}")
+		val processorFunc = p.declaredFunctions.find { it.name.equals("process") }
+		if (processorFunc != null) {
+			processors.put(p, processorFunc)
 		}
 	}
-
-	/**
-	 * Build pagination for each tag
-	 */
-	private fun buildTaxonomyNavigation(posts: List<Post>, tagSet: Set<Tag>) {
-		info("Building tag navigation pages")
-		val tagsFolder = fileHandler.createDirectory(project.outputDir.absolutePath, "tags")
-
-		tagSet.forEachIndexed { index, tag ->
-			val taggedPosts = getPostsWithTag(posts,tag)
-			val postsPerPage = project.postsPerPage
-			val numPosts = tag.postCount
-			val totalPages = ceil(numPosts.toDouble() / postsPerPage).roundToInt()
-
-
-			// only create tagged index pages if there's more than one page with the tag
-			if(taggedPosts.size > 1) {
-				val thisTagFolder = fileHandler.createDirectory(tagsFolder.absolutePath, tag.url)
-
-				for(page in 1..totalPages) {
-					val startPos = postsPerPage * (page-1)
-					val endPos = (postsPerPage * page)
-					val finalEndPos = if(endPos > taggedPosts.size) taggedPosts.size else endPos
-					val model = buildPaginationModel(page, totalPages, taggedPosts.subList(startPos,finalEndPos), numPosts, tag.url)
-					val renderedContent = renderer.render(model, "tag")
-
-					File(thisTagFolder, "${tag.url}$page.html").bufferedWriter().use { out ->
-						out.write(renderedContent)
-					}
+	val timeTaken = measureTimeMillis {
+		runBlocking {
+			launch {
+				for (clazz in processors) {
+					val func = clazz.value
+					debug("Calling function ${func.name} for pipeline ${clazz.key.simpleName}")
+					@Suppress("UNCHECKED_CAST")
+					func.callSuspend(constructPipeline(
+							clazz.key as KClass<out GeneratorPipeline>,
+							project,
+							this@process
+					), project, renderer, fileHandler)
 				}
-			} else {
-//				println("Skipping tag $tag which is only used once")
 			}
-		}
-		info("Building tag list page")
-
-		val model = mutableMapOf<String,Any>()
-		model.putAll(project.model)
-		model.put("title","List of tags")
-		model.put("tags",tagSet.filter { it.postCount > 1 }.sortedBy { it.postCount }.reversed())
-
-		val renderedContent = renderer.render(model,"taglist")
-
-		File(tagsFolder, "tags.html").bufferedWriter().use { out ->
-			out.write(renderedContent)
 		}
 
 	}
 
-	private fun getPostsWithTag(posts: List<Post>, tag: Tag): List<Post> {
-		val taggedPosts = mutableListOf<Post>()
-		posts.forEach {
-			it.tags.forEach { t -> if(t.label.equals(tag.label)) taggedPosts.add(it) }
-		}
-		return taggedPosts.toList()
-	}
+	println.error("Time taken: $timeTaken ms")
+}
 
-	private fun buildPostNavigation(posts: List<Post>, numPosts: Int = 0) {
-		info("Building navigation lists")
-		val postsPerPage = project.postsPerPage
-		val totalPages = ceil(numPosts.toDouble() / postsPerPage).roundToInt()
-		val listPages = posts.withIndex()
-				.groupBy { it.index / postsPerPage }
-				.map { it.value.map { it.value } }
-
-		val postsFolder = fileHandler.createDirectory(project.outputDir.absolutePath, "posts")
-		listPages.forEachIndexed { pageIndex, paginatedPosts ->
-			val currentPage = pageIndex + 1 // to save on mangling zero-index stuff
-
-			val model = buildPaginationModel(currentPage, totalPages, paginatedPosts, posts.size)
-			val renderedContent = renderer.render(model, "list")
-
-			File(postsFolder, "list$currentPage.html").bufferedWriter().use { out ->
-				out.write(renderedContent)
+/**
+ * Construct a GeneratorPipeline object from the given class
+ * @param[pipelineClazz] A class implementing the GeneratorPipeline interface
+ * @param[project] the bascule project model
+ * @param[posts] the list of posts in the project
+ * @return An instantiated GeneratorPipeline object
+ */
+private fun constructPipeline(pipelineClazz: KClass<out GeneratorPipeline>, project: Project, posts: List<Post>): GeneratorPipeline {
+	val primaryConstructor = pipelineClazz.constructors.first()
+	val constructorParams: MutableMap<KParameter, Any?> = mutableMapOf()
+	val constructorKParams: List<KParameter> = primaryConstructor.parameters
+	constructorKParams.forEach { kparam ->
+		when (kparam.name) {
+			"posts" -> {
+				constructorParams.put(kparam, posts)
+			}
+			"numPosts" -> {
+				constructorParams.put(kparam, posts.size)
+			}
+			"postsPerPage" -> {
+				constructorParams.put(kparam, project.postsPerPage)
 			}
 		}
 	}
-
-	/**
-	 * Construct pagination model for the current page in a list of posts
-	 */
-	private fun buildPaginationModel(currentPage: Int, totalPages: Int, posts: List<Post>, totalPosts: Int, tagLabel: String? = null): Map<String, Any> {
-		val model = mutableMapOf<String, Any>()
-		model.putAll(project.model)
-		model.put("currentPage", currentPage)
-		model.put("totalPages", totalPages)
-		model.put("isFirst", currentPage == 1)
-		model.put("isLast", currentPage >= totalPages)
-		model.put("previousPage", currentPage - 1)
-		model.put("nextPage", currentPage + 1)
-		model.put("nextIsLast", currentPage == totalPages)
-		model.put("prevIsFirst", (currentPage - 1) == 1)
-		model.put("totalPosts", totalPosts)
-		model.put("posts", posts)
-		model.put("pagination", buildPaginationList(currentPage, totalPages))
-		if (tagLabel != null) {
-			model.put("tag", tagLabel)
-			model.put("title", "Posts tagged '$tagLabel'")
-		} else {
-			model.put("title", "All posts")
-		}
-
-		return model
-	}
-
-	/**
-	 * This is an awful hard-coded algorithm to produce a pagination list.
-	 * @param[currentPage] The current page in the list of pages
-	 * @param[totalPages] Total number of pages in the list
-	 * @return A list of strings representing the pagination buttons, with a specific format:
-	 * _an integer_ represents a page number, e.g. 1, 2, 12...
-	 * _. a period_ represents an elipsis, i.e. numbers which have been skipped, e.g 1, 2, ..., 5.
-	 * _* an asterisk_, representing the current page.
-	 */
-	private fun buildPaginationList(currentPage: Int, totalPages: Int): List<String> {
-		val paginationList = mutableListOf<String>()
-		val prev = currentPage - 1
-		val next = currentPage + 1
-		val isFirst = (currentPage == 1)
-		val isLast = (currentPage == totalPages)
-		val prevIsFirst = (currentPage - 1 == 1)
-		val nextIsLast = (currentPage + 1 == totalPages)
-
-		if (totalPages == 1) {
-			paginationList.add("*")
-		} else if (isFirst) {
-			paginationList.add("*")
-			if (nextIsLast) {
-				paginationList.add("$next")
-			} else {
-				paginationList.add("$next")
-				paginationList.add(".")
-				paginationList.add("$totalPages")
-			}
-		} else if (prevIsFirst) {
-			paginationList.add("1")
-			paginationList.add("*")
-			if (!isLast) {
-				paginationList.add(".")
-				paginationList.add("$totalPages")
-			}
-		} else if (!isLast) {
-			paginationList.add("1")
-			paginationList.add(".")
-			paginationList.add("$prev")
-			paginationList.add("*")
-			if (!nextIsLast) {
-				paginationList.add("$next")
-				paginationList.add(".")
-				paginationList.add("$totalPages")
-			} else {
-				paginationList.add("$totalPages")
-			}
-		} else if (isLast) {
-			paginationList.add("1")
-			paginationList.add(".")
-			paginationList.add("$prev")
-			paginationList.add("*")
-		}
-		return paginationList
-	}
-
+	return primaryConstructor.callBy(constructorParams)
 }

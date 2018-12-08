@@ -1,7 +1,7 @@
 ---
 title: Tinkering at the Edges
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 28/06/2014
 tags: [software development, cms, web, groovy]
 slug: tinkering-at-the-edges

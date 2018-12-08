@@ -1,7 +1,7 @@
 ---
 title: On Exercise
 author: Liam Davison
-layout: post
+layout: basculePost
 date: 12/05/2011
 tags: [health, exercise]
 slug: on-exercise
@@ -17,4 +17,4 @@ Yesterday, I rejoined the gym. They are strange places, artifices of sweat and h
  
 I dread to think what the environmental impact of a modern gym is. We plug ourselves into electric devices to replicate the experience of running. Huge air conditioning systems keep us cool in a room with no windows. The gym is open from 6.30am to 10pm, lights blazing the whole time. The pool is maintained at a constant temperature. There’s a bank of computers. The list goes on. I think I’ll do some research on the average gym’s CO2 emissions – not that it will stop me going.
  
-So I have committed myself to a year’s membership, and I have been twice this week. According to the Wii Fit, I’ve lost 1lb in that time. Only 3 more stones to go. I think a post on Food may follow. And then Drink.
+So I have committed myself to a year’s membership, and I have been twice this week. According to the Wii Fit, I’ve lost 1lb in that time. Only 3 more stones to go. I think a basculePost on Food may follow. And then Drink.
