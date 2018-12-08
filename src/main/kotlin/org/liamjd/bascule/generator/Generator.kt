@@ -8,14 +8,13 @@ import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
 import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.Constants
-import org.liamjd.bascule.assets.Configurator
 import org.liamjd.bascule.lib.generators.GeneratorPipeline
 import org.liamjd.bascule.lib.model.Post
 import org.liamjd.bascule.lib.model.Project
-import org.liamjd.bascule.lib.render.Renderer
 import org.liamjd.bascule.model.BasculePost
 import org.liamjd.bascule.random
 import org.liamjd.bascule.scanner.FolderWalker
+import org.liamjd.bascule.lib.render.Renderer
 import picocli.CommandLine
 import println.debug
 import println.info
@@ -41,7 +40,6 @@ class Generator : Runnable, KoinComponent {
 	private val currentDirectory = System.getProperty("user.dir")!!
 	private val yamlConfig: String
 	private val parentFolder: File
-	private val configStream: FileInputStream
 	private val project: Project
 
 	private val OUTPUT_SUFFIX = ".html"
@@ -50,8 +48,10 @@ class Generator : Runnable, KoinComponent {
 		parentFolder = File(currentDirectory)
 		yamlConfig = "${parentFolder.name}.yaml"
 
-		configStream = File(parentFolder.absolutePath, yamlConfig).inputStream()
-		project = Configurator.buildProjectFromYamlConfig(configStream)
+		val configText = File(parentFolder.absolutePath, yamlConfig).readText()
+		project = Project(configText)
+
+		println(project)
 	}
 
 	override fun run() {
@@ -61,8 +61,8 @@ class Generator : Runnable, KoinComponent {
 		info("Reading yaml configuration file $yamlConfig")
 
 		// TODO: be less aggressive with this, use some sort of caching :)
-		fileHandler.emptyFolder(project.outputDir, OUTPUT_SUFFIX)
-		fileHandler.emptyFolder(File(project.outputDir, "tags"))
+		fileHandler.emptyFolder(project.dirs.output, OUTPUT_SUFFIX)
+		fileHandler.emptyFolder(File(project.dirs.output, "tags"))
 		val walker = FolderWalker(project)
 
 		val postList = walker.generate()
