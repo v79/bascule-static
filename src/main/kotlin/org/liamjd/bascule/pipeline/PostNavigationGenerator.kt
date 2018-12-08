@@ -20,7 +20,7 @@ class PostNavigationGenerator(posts: List<Post>, numPosts: Int = 1, postsPerPage
 				.groupBy { it.index / postsPerPage }
 				.map { it.value.map { it.value } }
 
-		val postsFolder = fileHandler.createDirectory(project.outputDir.absolutePath, FOLDER_NAME)
+		val postsFolder = fileHandler.createDirectory(project.dirs.output.absolutePath, FOLDER_NAME)
 
 		listPages.forEachIndexed { pageIndex, paginatedPosts ->
 			val currentPage = pageIndex + 1 // to save on mangling zero-index stuff

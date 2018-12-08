@@ -49,11 +49,6 @@ class PostTest : Spek( {
 	loadKoinModules(koinModule)
 
 	// rest of the mocks
-	val mRoot = mockk<File>()
-	val mOutputDir = mockk<File>()
-	val mSourceDir = mockk<File>()
-	val mAssetsDir = mockk<File>()
-	val mTemplatesDir = mockk<File>()
 	val mFile = mockk<File>()
 	val mPath = mockk<Path>()
 	val mFileAttributes = mockk<BasicFileAttributes>()
@@ -67,8 +62,7 @@ class PostTest : Spek( {
 
 	// some constants
 	val mDocument = mockk<Document>()
-	val yamlString = ""
-	val project = Project("simpleDoc",mRoot,mSourceDir,mOutputDir,mAssetsDir,mTemplatesDir,yamlString,"simple-theme")
+	val project = Project(yaml.simple)
 
 		describe("Can build a BasculePost object with various valid yaml frontispieces") {
 
@@ -203,4 +197,11 @@ private fun buildYamlData(): MutableMap<String, MutableList<String>> {
 	data1.put("tags", mutableListOf("[aTag]"))
 	data1.put("slug", mutableListOf(SLUG_VAL))
 	return data1
+}
+
+object yaml {
+	val simple = """
+		sitename: simpleDoc
+		theme: simple-theme
+	""".replace("\t","  ")
 }

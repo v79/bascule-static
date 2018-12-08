@@ -19,8 +19,8 @@ class HandlebarsRenderer(val project: Project) : Renderer {
 	val loader: FileTemplateLoader
 
 	init {
-		loader = FileTemplateLoader(project.templatesDir)
-		dateFormat = project.yamlMap["dateFormat"] as String? ?: "dd/MMM/yyyy"
+		loader = FileTemplateLoader(project.dirs.templates)
+		dateFormat = project.model["dateFormat"] as String? ?: "dd/MMM/yyyy"
 
 		hbRenderer = Handlebars(loader)
 		hbRenderer.registerHelper("forEach", ForEachHelper())
@@ -29,7 +29,6 @@ class HandlebarsRenderer(val project: Project) : Renderer {
 		hbRenderer.registerHelper("capitalize",StringHelpers.capitalize)
 		hbRenderer.registerHelper("upper",StringHelpers.upper)
 		hbRenderer.registerHelper("slugify", StringHelpers.slugify)
-
 	}
 
 	override fun render(model: Map<String, Any?>, templateName: String): String {
@@ -40,7 +39,7 @@ class HandlebarsRenderer(val project: Project) : Renderer {
 	}
 
 	private fun getTemplateText(project: Project, templateName: String): String {
-		val matches = project.templatesDir.listFiles { dir, name -> name == (templateName  + TEMPLATE_SUFFIX) }
+		val matches = project.dirs.templates.listFiles { dir, name -> name == (templateName  + TEMPLATE_SUFFIX) }
 
 		if (matches.isNotEmpty() && matches.size == 1) {
 			val found = matches[0]

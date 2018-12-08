@@ -8,19 +8,20 @@ import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
 import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.Constants
-import org.liamjd.bascule.assets.Configurator
 import org.liamjd.bascule.lib.generators.GeneratorPipeline
 import org.liamjd.bascule.lib.model.Post
 import org.liamjd.bascule.lib.model.Project
-import org.liamjd.bascule.lib.render.Renderer
 import org.liamjd.bascule.model.BasculePost
 import org.liamjd.bascule.random
 import org.liamjd.bascule.scanner.FolderWalker
+import org.liamjd.bascule.lib.render.Renderer
 import picocli.CommandLine
 import println.debug
 import println.info
 import java.io.File
 import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.PrintStream
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
@@ -28,6 +29,8 @@ import kotlin.reflect.full.callSuspend
 import kotlin.reflect.full.declaredFunctions
 import kotlin.reflect.full.isSubclassOf
 import kotlin.system.measureTimeMillis
+
+val DEFAULT_PROCESSORS = arrayOf("org.liamjd.bascule.pipeline.IndexPageGenerator", "org.liamjd.bascule.pipeline.PostNavigationGenerator", "org.liamjd.bascule.pipeline.TaxonomyNavigationGenerator")
 
 /**
  * Starts the post and page generation process. Must be run from inside the project folder
@@ -41,7 +44,6 @@ class Generator : Runnable, KoinComponent {
 	private val currentDirectory = System.getProperty("user.dir")!!
 	private val yamlConfig: String
 	private val parentFolder: File
-	private val configStream: FileInputStream
 	private val project: Project
 
 	private val OUTPUT_SUFFIX = ".html"
@@ -50,8 +52,16 @@ class Generator : Runnable, KoinComponent {
 		parentFolder = File(currentDirectory)
 		yamlConfig = "${parentFolder.name}.yaml"
 
-		configStream = File(parentFolder.absolutePath, yamlConfig).inputStream()
-		project = Configurator.buildProjectFromYamlConfig(configStream)
+		val configText = File(parentFolder.absolutePath, yamlConfig).readText()
+		project = Project(configText)
+
+		// suppress apache FOP logging to a log file
+		// TODO: do this we a better logger?
+		val errDumpFile = File(parentFolder, parentFolder.name + ".log")
+		val errorOutStream = FileOutputStream(errDumpFile)
+		val printStream = PrintStream(errorOutStream)
+		System.setErr(printStream);
+
 	}
 
 	override fun run() {
@@ -61,48 +71,44 @@ class Generator : Runnable, KoinComponent {
 		info("Reading yaml configuration file $yamlConfig")
 
 		// TODO: be less aggressive with this, use some sort of caching :)
-		fileHandler.emptyFolder(project.outputDir, OUTPUT_SUFFIX)
-		fileHandler.emptyFolder(File(project.outputDir, "tags"))
+		fileHandler.emptyFolder(project.dirs.output, OUTPUT_SUFFIX)
+		fileHandler.emptyFolder(File(project.dirs.output, "tags"))
 		val walker = FolderWalker(project)
 
 		val postList = walker.generate()
 		val sortedPosts = postList.sortedByDescending { it.date }
+		val generators = mutableListOf<String>()
 
-		// TODO: is this a good idea?
-		// TODO: how to move the creation of sortedPosts into this? Rewrite folder walker?
-		// TODO: load the list of processors from configuration, such as config.yaml
+		if (project.generators.isNullOrEmpty()) {
+			generators.addAll(DEFAULT_PROCESSORS)
+		} else {
+			generators.addAll(project.generators!!)
+		}
 
-		// OK, let's just hard-code a string first
-		val DEFAULT_PROCESSORS = arrayOf("IndexPageGenerator", "PostNavigationGenerator", "TaxonomyNavigationGenerator")
-		val PIPELINE_PACKAGE = "org.liamjd.bascule.pipeline"
-
-		val processorPipeline =  ArrayList<KClass<*>>()
-		for (className in DEFAULT_PROCESSORS) {
-			val kClass = Class.forName("$PIPELINE_PACKAGE.$className").kotlin
-			println(kClass.supertypes)
-			if (kClass.isSubclassOf(GeneratorPipeline::class)) {
-				println("adding $kClass")
-				processorPipeline.add(kClass)
-			} else {
-				println.error("Pipeline class ${kClass.simpleName} is not an instance of GeneratorPipeline!")
+		val processorPipeline = ArrayList<KClass<*>>()
+		for (className in generators) {
+			try {
+				val kClass = Class.forName(className).kotlin
+				if (kClass.isSubclassOf(GeneratorPipeline::class)) {
+					processorPipeline.add(kClass)
+				} else {
+					println.error("Pipeline class ${kClass.simpleName} is not an instance of GeneratorPipeline!")
+				}
+			} catch (cnfe: java.lang.ClassNotFoundException) {
+				println.error("Unable to load class '$className' - is it defined in the classpath or provided in a jar? The full package name must be provided.")
 			}
 		}
 		if (processorPipeline.size == 0) {
 			error("No generators found in the pipeline. Aborting execution!")
 		}
-		println("Forcing SinglePagePDFGenerator into the pipeline... is it even loaded?")
-		processorPipeline.add(Class.forName("org.liamjd.bascule.lib.generators.pdf.SinglePagePDFGenerator").kotlin)
 
 		val myArray = ArrayList<KClass<GeneratorPipeline>>()
 		processorPipeline.forEachIndexed { index, kClass ->
-			println("$index -> $kClass")
+			//			println("$index -> $kClass")
 			myArray.add(kClass as KClass<GeneratorPipeline>)
 		}
 
 		sortedPosts.process(myArray, project, renderer, fileHandler)
-
-//		sortedPosts.process(arrayOf(IndexPageGenerator::class, PostNavigationGenerator::class, TaxonomyNavigationGenerator::class), project, renderer, fileHandler)
-
 	}
 
 }
@@ -119,7 +125,6 @@ private fun List<BasculePost>.process(pipeline: ArrayList<KClass<GeneratorPipeli
 	val processors = mutableMapOf<KClass<*>, KFunction<*>>()
 
 	for (p in pipeline) {
-		debug("----- expanding pipeline ${p.simpleName}")
 		val processorFunc = p.declaredFunctions.find { it.name.equals("process") }
 		if (processorFunc != null) {
 			processors.put(p, processorFunc)
@@ -130,7 +135,7 @@ private fun List<BasculePost>.process(pipeline: ArrayList<KClass<GeneratorPipeli
 			launch {
 				for (clazz in processors) {
 					val func = clazz.value
-					debug("Calling function ${func.name} for pipeline ${clazz.key.simpleName}")
+//					debug("Calling function ${func.name} for pipeline ${clazz.key.simpleName}")
 					@Suppress("UNCHECKED_CAST")
 					func.callSuspend(constructPipeline(
 							clazz.key as KClass<out GeneratorPipeline>,

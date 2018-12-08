@@ -25,7 +25,7 @@ class IndexPageGenerator(posts: List<Post>, numPosts: Int = 1, postsPerPage: Int
 
 		val renderedContent = renderer.render(model, TEMPLATE)
 
-		fileHandler.writeFile(project.outputDir, "$TEMPLATE.html", renderedContent)
+		fileHandler.writeFile(project.dirs.output, "$TEMPLATE.html", renderedContent)
 	}
 }
 

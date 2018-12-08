@@ -38,12 +38,12 @@ class FolderWalker(val project: Project) : KoinComponent {
 	init {
 		mdOptions.set(Parser.EXTENSIONS, arrayListOf(AttributesExtension.create(), YamlFrontMatterExtension.create()))
 		mdParser = Parser.builder(mdOptions).build()
-		assetsProcessor = AssetsProcessor(project.root, project.assetsDir, project.outputDir)
+		assetsProcessor = AssetsProcessor(project.dirs.root, project.dirs.assets, project.dirs.output)
 	}
 
 
 	fun generate(): List<BasculePost> {
-		info("Scanning ${project.sourceDir.absolutePath} for markdown files")
+		info("Scanning ${project.dirs.sources.absolutePath} for markdown files")
 
 		// TODO: copyStatics should not be here!
 		assetsProcessor.copyStatics()
@@ -54,7 +54,7 @@ class FolderWalker(val project: Project) : KoinComponent {
 		val errorMap = mutableMapOf<String, Any>()
 		val sortedSetOfPosts = sortedSetOf<BasculePost>(comparator = BasculePost)
 		val timeTaken = measureTimeMillis {
-			project.sourceDir.walk().forEach {
+			project.dirs.sources.walk().forEach {
 				if (it.name.startsWith(".") || it.name.startsWith("__")) {
 					info("Skipping draft file/folder '${it.name}'")
 					return@forEach // skip this one
@@ -162,7 +162,7 @@ class FolderWalker(val project: Project) : KoinComponent {
 		basculePost.content = renderedMarkdown
 
 		info("Generating html file ${basculePost.url}")
-		fileHandler.writeFile(project.outputDir.absoluteFile, basculePost.url, renderedContent)
+		fileHandler.writeFile(project.dirs.output.absoluteFile, basculePost.url, renderedContent)
 	}
 
 	private fun parseMarkdown(inputStream: InputStream): Document {
