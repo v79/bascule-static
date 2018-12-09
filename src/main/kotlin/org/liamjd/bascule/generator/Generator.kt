@@ -19,9 +19,10 @@ import picocli.CommandLine
 import println.debug
 import println.info
 import java.io.File
-import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.PrintStream
+import java.net.URL
+import java.net.URLClassLoader
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
@@ -29,6 +30,8 @@ import kotlin.reflect.full.callSuspend
 import kotlin.reflect.full.declaredFunctions
 import kotlin.reflect.full.isSubclassOf
 import kotlin.system.measureTimeMillis
+import kotlin.collections.ArrayList
+
 
 val DEFAULT_PROCESSORS = arrayOf("org.liamjd.bascule.pipeline.IndexPageGenerator", "org.liamjd.bascule.pipeline.PostNavigationGenerator", "org.liamjd.bascule.pipeline.TaxonomyNavigationGenerator")
 
@@ -47,6 +50,8 @@ class Generator : Runnable, KoinComponent {
 	private val project: Project
 
 	private val OUTPUT_SUFFIX = ".html"
+
+	val loader = this.javaClass.classLoader
 
 	init {
 		parentFolder = File(currentDirectory)
@@ -85,11 +90,15 @@ class Generator : Runnable, KoinComponent {
 			generators.addAll(project.generators!!)
 		}
 
+		val pluginLoader = loadPlugins(project.generators)
+
 		val processorPipeline = ArrayList<KClass<*>>()
+
 		for (className in generators) {
 			try {
-				val kClass = Class.forName(className).kotlin
+				val kClass = if(pluginLoader != null) { pluginLoader.loadClass(className).kotlin } else { Class.forName(className).kotlin }
 				if (kClass.isSubclassOf(GeneratorPipeline::class)) {
+					println.debug("Adding $kClass to the generator pipeline")
 					processorPipeline.add(kClass)
 				} else {
 					println.error("Pipeline class ${kClass.simpleName} is not an instance of GeneratorPipeline!")
@@ -103,12 +112,31 @@ class Generator : Runnable, KoinComponent {
 		}
 
 		val myArray = ArrayList<KClass<GeneratorPipeline>>()
+		@Suppress("UNCHECKED_CAST")
 		processorPipeline.forEachIndexed { index, kClass ->
-			//			println("$index -> $kClass")
 			myArray.add(kClass as KClass<GeneratorPipeline>)
 		}
 
 		sortedPosts.process(myArray, project, renderer, fileHandler)
+	}
+
+	private fun loadPlugins(plugins: ArrayList<String>?): ClassLoader? {
+		if (plugins != null) {
+			val pluginFolder = File(project.parentFolder, "plugins")
+			val jars = ArrayList<URL>()
+			pluginFolder.walk().forEach {
+				if (it.extension.equals("jar")) {
+					jars.add(it.toURI().toURL())
+					println.debug(it.toURI().toURL().toString())
+				}
+			}
+
+			for (generator in plugins) {
+				println.debug("Loading class $generator from classLoader $loader")
+				return URLClassLoader.newInstance(jars.toTypedArray(), loader)
+			}
+		}
+		return null
 	}
 
 }
@@ -135,7 +163,7 @@ private fun List<BasculePost>.process(pipeline: ArrayList<KClass<GeneratorPipeli
 			launch {
 				for (clazz in processors) {
 					val func = clazz.value
-//					debug("Calling function ${func.name} for pipeline ${clazz.key.simpleName}")
+					debug("Calling function ${func.name} for pipeline ${clazz.key.simpleName}")
 					@Suppress("UNCHECKED_CAST")
 					func.callSuspend(constructPipeline(
 							clazz.key as KClass<out GeneratorPipeline>,

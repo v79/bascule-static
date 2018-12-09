@@ -70,16 +70,16 @@ class InitializerTest : Spek({
 
 		it("successfully creates a project called $name with default 'bulma' theme when no theme is specified") {
 
-			val mockFileHandler = spyk(BasculeFileHandler())
+			val spyFileHandler = spyk(BasculeFileHandler())
 
-			val service = BasculeInitializer(name, null, mockFileHandler)
+			val service = BasculeInitializer(name, null, spyFileHandler)
 			service.create()
 
 			// verification
 			val siteRoot = File("$currentDirectory$pathSeparator$name")
 			assertTrue { siteRoot.exists() }
-			verify(atMost = 4) { mockFileHandler.createDirectory(any(),any()) }
-			verify(exactly = 1) { mockFileHandler.copyFileFromResources(fileName = "post.hbs", destination = any<File>(), sourceDir = "${Constants.THEME_FOLDER}/$defaultTheme/templates/") }
+			verify(atMost = 4) { spyFileHandler.createDirectory(any(),any()) }
+			verify(exactly = 1) { spyFileHandler.copyFileFromResources(fileName = "post.hbs", destination = any<File>(), sourceDir = "${Constants.THEME_FOLDER}/$defaultTheme/templates/") }
 		}
 	}
 })

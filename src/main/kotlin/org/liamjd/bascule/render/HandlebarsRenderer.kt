@@ -39,7 +39,7 @@ class HandlebarsRenderer(val project: Project) : Renderer {
 	}
 
 	private fun getTemplateText(project: Project, templateName: String): String {
-		val matches = project.dirs.templates.listFiles { dir, name -> name == (templateName  + TEMPLATE_SUFFIX) }
+		val matches = project.dirs.templates.listFiles { _, name -> name == (templateName  + TEMPLATE_SUFFIX) }
 
 		if (matches.isNotEmpty() && matches.size == 1) {
 			val found = matches[0]

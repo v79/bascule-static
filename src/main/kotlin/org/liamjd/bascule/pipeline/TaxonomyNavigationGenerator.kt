@@ -22,7 +22,7 @@ class TaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int = 1, p
 		val tagsFolder = fileHandler.createDirectory(project.dirs.output.absolutePath, FOLDER_NAME)
 		val tagSet = getAllTags(posts)
 
-		tagSet.forEachIndexed { index, tag ->
+		tagSet.forEach { tag ->
 			val taggedPosts = getPostsWithTag(posts, tag)
 			val numPosts = tag.postCount
 			val totalPages = ceil(numPosts.toDouble() / postsPerPage).roundToInt()
