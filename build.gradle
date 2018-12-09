@@ -12,6 +12,7 @@ buildscript {
 
 plugins {
 	id 'org.jetbrains.kotlin.jvm' version '1.3.11'
+	id 'com.github.johnrengelman.shadow' version '4.0.3'
 }
 
 apply plugin: 'maven-publish'
@@ -81,23 +82,6 @@ sourceSets {
 	main.resources.srcDirs += ['src/main/resources']
 }
 
-jar {
-	// required for building JAR files
-	baseName = 'bascule'
-//	version = ext.version
-	manifest {
-		attributes(
-				'Main-Class': 'org.liamjd.bascule.MainKt'
-		)
-	}
-
-	from('/src/main/resources') {
-		include '*'
-	}
-
-	from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-}
-
 // deploy to maven local
 publishing {
 	publications {
@@ -116,6 +100,16 @@ publishing {
 			// change to point to your repo, e.g. http://my.org/repo
 			url "$buildDir/repo"
 		}
+	}
+}
+
+// configure shadowJar
+shadowJar {
+	classifier = null
+	manifest {
+		attributes(
+				'Main-Class': 'org.liamjd.bascule.MainKt'
+		)
 	}
 }
 

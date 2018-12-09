@@ -132,7 +132,6 @@ class Generator : Runnable, KoinComponent {
 			}
 
 			for (generator in plugins) {
-				println.debug("Loading class $generator from classLoader $loader")
 				return URLClassLoader.newInstance(jars.toTypedArray(), loader)
 			}
 		}
