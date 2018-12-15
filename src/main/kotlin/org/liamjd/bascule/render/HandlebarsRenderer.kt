@@ -33,6 +33,7 @@ class HandlebarsRenderer(val project: Project) : Renderer {
 
 	override fun render(model: Map<String, Any?>, templateName: String): String {
 		val hbContext = Context.newBuilder(model).resolver(MethodValueResolver.INSTANCE, JavaBeanValueResolver.INSTANCE, MapValueResolver.INSTANCE, FieldValueResolver.INSTANCE).build()
+
 		val template = hbRenderer.compileInline(getTemplateText(project, templateName))
 
 		return template.apply(hbContext)

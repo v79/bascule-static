@@ -21,7 +21,7 @@ fun String.slug() : String {
  * Various final values. Extension functions. Plus logos :)
  */
 object Constants {
-	const val VERSION_STRING = "v0.0.8"
+	const val VERSION_STRING = "v0.0.12"
 
 	// TODO: these will all be parameterised
 	val SOURCE_DIR = "sources"

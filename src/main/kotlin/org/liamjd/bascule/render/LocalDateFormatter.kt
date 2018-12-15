@@ -8,7 +8,7 @@ import java.time.format.DateTimeFormatter
 /**
  * Only handles LocalDate with no time component
  */
-class LocalDateFormatter(val inputFormat: String) : Helper<Any> {
+class LocalDateFormatter(val inputFormat: String = "dd/MM/yyyy") : Helper<Any> {
 
 	private val ISO_DATE = "ISO_DATE"
 	private val ISO_LOCAL_DATE = "ISO_LOCAL_DATE"
