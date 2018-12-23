@@ -18,6 +18,7 @@ import org.liamjd.bascule.lib.render.Renderer
 import org.liamjd.bascule.model.BasculePost
 import org.liamjd.bascule.model.PostGenError
 import println.info
+import java.io.File
 import java.io.InputStream
 import java.io.Serializable
 import kotlin.system.measureTimeMillis
@@ -71,30 +72,34 @@ class FolderWalker(val project: Project) : KoinComponent {
 
 					when (post) {
 						is BasculePost -> {
-//							val gc = GeneratedContent(lastModifiedTime, slug, renderedContent)
-//							docCache.put(post.sourceFileName, gc)
-
 							// get the URL for prev/next generation. Doing this here in case there's a conflict of slugs
+
+							post.sourceFileName = it.canonicalPath
+							val sourcePath = it.parentFile.absolutePath.toString().removePrefix(project.dirs.sources.absolutePath.toString())
+							post.destinationFolder = File(project.dirs.output,sourcePath)
 							val slug = post.slug
 							if (docCache.containsKey(slug)) {
 								println.error("Duplicate slug '$slug' found!")
 							}
-							val url = "$slug.html"
+							val url = "${sourcePath.removePrefix("\\")}\\$slug.html".replace("\\","/")
 							post.url = url
 							post.rawContent = it.readText() // TODO: this still contains the yaml front matter :(
 
-							sortedSetOfPosts.add(post)
+							val added = sortedSetOfPosts.add(post) // sorting by date, then by url
+							if(!added) {
+								println.error("Post '${post.url}' was not added to the treeset; likely cause is that it has the same date and URL as another post")
+							}
 						}
 						is PostGenError -> {
 							errorMap.put(it.name, post.errorMessage)
 						}
 					}
 				} else {
-					println("skipping file '${it.name}' as it does not have the required '.md' file extension.")
+					println.error("skipping file '${it.name}' as it does not have the required '.md' file extension.")
 				}
 			}
 
-			info("Parsed $numPosts files, ready to generate content")
+			info("Parsed $numPosts files, ready to generate content (sortedSetOfPosts contains ${sortedSetOfPosts.size} files)")
 
 			// create next/previous links
 			val postList = sortedSetOfPosts.toList()
@@ -124,10 +129,12 @@ class FolderWalker(val project: Project) : KoinComponent {
 					}
 				}
 			}
-
-			postList.forEach { post ->
+			var generated = 0
+			postList.forEach{ post ->
 				renderPost(siteModel, post)
+				generated++
 			}
+			info("Rendered html files: ${generated}")
 
 		}
 		info("${timeTaken}ms to generate $numPosts files")
@@ -150,6 +157,7 @@ class FolderWalker(val project: Project) : KoinComponent {
 		val model = mutableMapOf<String, Any?>()
 		model.putAll(siteModel)
 		model.putAll(basculePost.toModel())
+		model.put("\$currentPage",basculePost.slug)
 
 		// first, extract the content from the markdown
 		val renderedMarkdown = renderMarkdown(basculePost.document)
@@ -162,6 +170,7 @@ class FolderWalker(val project: Project) : KoinComponent {
 		basculePost.content = renderedMarkdown
 
 		info("Generating html file ${basculePost.url}")
+		fileHandler.createDirectories(basculePost.destinationFolder!!)
 		fileHandler.writeFile(project.dirs.output.absoluteFile, basculePost.url, renderedContent)
 	}
 

@@ -46,6 +46,8 @@ class BasculePost(val document: Document) : Post, PostStatus() {
 	override var newer: PostLink? = null
 	override var older: PostLink? = null
 
+	var destinationFolder: File? = null
+
 	/**
 	 * Return a short excerpt from the post, stripping out any HTML and returning just plain text
 	 */
@@ -68,9 +70,11 @@ class BasculePost(val document: Document) : Post, PostStatus() {
 		 * Sorting comparator by date order
 		 */
 		override fun compare(o1: BasculePost, o2: BasculePost): Int {
-			val date1 = o1.date
-			val date2 = o2.date
-			return date1.compareTo(date2)
+			if(o1.date.compareTo(o2.date)== 0) {
+				return o1.url.compareTo(o2.url)
+			} else {
+				return o1.date.compareTo(o2.date)
+			}
 		}
 
 		fun createPostFromYaml(file: File, document: Document, project: Project): PostStatus {

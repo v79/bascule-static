@@ -66,7 +66,6 @@ class Generator : Runnable, KoinComponent {
 		val errorOutStream = FileOutputStream(errDumpFile)
 		val printStream = PrintStream(errorOutStream)
 		System.setErr(printStream);
-
 	}
 
 	override fun run() {
@@ -113,7 +112,7 @@ class Generator : Runnable, KoinComponent {
 
 		val myArray = ArrayList<KClass<GeneratorPipeline>>()
 		@Suppress("UNCHECKED_CAST")
-		processorPipeline.forEachIndexed { index, kClass ->
+		processorPipeline.forEach{ kClass ->
 			myArray.add(kClass as KClass<GeneratorPipeline>)
 		}
 

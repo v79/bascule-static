@@ -95,7 +95,7 @@ class BasculeFileHandler: FileHandler {
 	 * @param[fileType] the type of file to delete, e.g. ".html"
 	 */
 	override fun emptyFolder(folder: File, fileType: String) {
-		info("Clearing out old generated files")
+		info("Purging folder ${folder.name} of '$fileType' files")
 		folder.walk().forEach {
 			if (it != folder && it.name.endsWith(fileType)) {
 				it.delete()

@@ -20,8 +20,10 @@ class IndexPageGenerator(posts: List<Post>, numPosts: Int = 1, postsPerPage: Int
 
 		val model = mutableMapOf<String, Any>()
 		model.putAll(project.model)
-		model.put("posts", posts.sortedByDescending { it.date }.take(postsPerPage))
+		// only include blog posts, not pages other other layouts
+		model.put("posts", posts.filter { post -> post.layout == "post" }.sortedByDescending { it.date }.take(postsPerPage))
 		model.put("postCount", numPosts)
+		model.put("\$thisPage","index")
 
 		val renderedContent = renderer.render(model, TEMPLATE)
 
