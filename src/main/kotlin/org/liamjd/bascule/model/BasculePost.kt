@@ -1,7 +1,7 @@
 package org.liamjd.bascule.model
 
-import com.vladsch.flexmark.ast.Document
 import com.vladsch.flexmark.ext.yaml.front.matter.AbstractYamlFrontMatterVisitor
+import com.vladsch.flexmark.util.ast.Document
 import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
 import org.liamjd.bascule.lib.model.Post

@@ -1,7 +1,7 @@
 package org.liamjd.bascule.generator
 
-import com.vladsch.flexmark.ast.Document
 import com.vladsch.flexmark.ext.yaml.front.matter.AbstractYamlFrontMatterVisitor
+import com.vladsch.flexmark.util.ast.Document
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just

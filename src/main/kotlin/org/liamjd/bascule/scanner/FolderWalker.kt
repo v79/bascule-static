@@ -1,10 +1,15 @@
 package org.liamjd.bascule.scanner
 
-import com.vladsch.flexmark.ast.Document
+import com.vladsch.flexmark.ext.anchorlink.AnchorLinkExtension
 import com.vladsch.flexmark.ext.attributes.AttributesExtension
+import com.vladsch.flexmark.ext.tables.TablesExtension
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
 import com.vladsch.flexmark.html.HtmlRenderer
+import com.vladsch.flexmark.html.HtmlRenderer.GENERATE_HEADER_ID
+import com.vladsch.flexmark.html.HtmlRenderer.INDENT_SIZE
 import com.vladsch.flexmark.parser.Parser
+import com.vladsch.flexmark.parser.ParserEmulationProfile
+import com.vladsch.flexmark.util.ast.Document
 import com.vladsch.flexmark.util.options.MutableDataSet
 import org.koin.core.parameter.ParameterList
 import org.koin.standalone.KoinComponent
@@ -37,7 +42,10 @@ class FolderWalker(val project: Project) : KoinComponent {
 	val mdParser: Parser
 
 	init {
-		mdOptions.set(Parser.EXTENSIONS, arrayListOf(AttributesExtension.create(), YamlFrontMatterExtension.create()))
+		// TODO: move this into another class? Configure externally?
+		mdOptions.set(Parser.EXTENSIONS, arrayListOf(AttributesExtension.create(), YamlFrontMatterExtension.create(), TablesExtension.create()))
+		mdOptions.set(GENERATE_HEADER_ID,true).set(HtmlRenderer.RENDER_HEADER_ID,true) // to give headings IDs
+		mdOptions.set(INDENT_SIZE,2) // prettier HTML
 		mdParser = Parser.builder(mdOptions).build()
 		assetsProcessor = AssetsProcessor(project.dirs.root, project.dirs.assets, project.dirs.output)
 	}
@@ -81,7 +89,7 @@ class FolderWalker(val project: Project) : KoinComponent {
 							if (docCache.containsKey(slug)) {
 								println.error("Duplicate slug '$slug' found!")
 							}
-							val url = "${sourcePath.removePrefix("\\")}\\$slug.html".replace("\\","/")
+							val url: String = if(sourcePath.isNullOrEmpty()) {"$slug.html"} else { "${sourcePath.removePrefix("\\")}\\$slug.html".replace("\\","/") }
 							post.url = url
 							post.rawContent = it.readText() // TODO: this still contains the yaml front matter :(
 
