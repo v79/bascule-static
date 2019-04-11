@@ -23,6 +23,7 @@ import java.io.FileOutputStream
 import java.io.PrintStream
 import java.net.URL
 import java.net.URLClassLoader
+import java.nio.file.FileSystems
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
@@ -117,6 +118,12 @@ class Generator : Runnable, KoinComponent {
 		}
 
 		sortedPosts.process(myArray, project, renderer, fileHandler)
+
+
+
+
+		//TODO: come up with a better asset copying pipeline stage thingy
+		copyAssets()
 	}
 
 	private fun loadPlugins(plugins: ArrayList<String>?): ClassLoader? {
@@ -136,6 +143,21 @@ class Generator : Runnable, KoinComponent {
 		}
 		return null
 	}
+
+	// TODO: make this not crap
+	private fun copyAssets() {
+		val pathSeparator = FileSystems.getDefault().separator!!
+		println("Copying asset files")
+		val assetsFiles = project.dirs.assets.listFiles()
+		println("${assetsFiles.size} files found")
+		val destinationDir = project.dirs.output.path + pathSeparator + "assets" + pathSeparator
+		assetsFiles.forEachIndexed { idx, file ->
+			println("Copying ${idx} ${file.path}")
+			val res = fileHandler.copyFile(file,File(destinationDir + file.name))
+			println("Result: ${res.path}")
+		}
+	}
+
 
 }
 

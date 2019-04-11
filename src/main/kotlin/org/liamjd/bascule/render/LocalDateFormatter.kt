@@ -41,7 +41,7 @@ class LocalDateFormatter(val inputFormat: String = "dd/MM/yyyy") : Helper<Any> {
 					}
 				}
 			}
-			val result =	outputFormatter.format(value as LocalDate)
+			val result = outputFormatter.format(value as LocalDate)
 			return result
 		}
 		return LocalDate.now().toString()

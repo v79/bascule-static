@@ -1,14 +1,13 @@
 package org.liamjd.bascule.scanner
 
-import com.vladsch.flexmark.ext.anchorlink.AnchorLinkExtension
 import com.vladsch.flexmark.ext.attributes.AttributesExtension
+import com.vladsch.flexmark.ext.media.tags.MediaTagsExtension
 import com.vladsch.flexmark.ext.tables.TablesExtension
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.html.HtmlRenderer.GENERATE_HEADER_ID
 import com.vladsch.flexmark.html.HtmlRenderer.INDENT_SIZE
 import com.vladsch.flexmark.parser.Parser
-import com.vladsch.flexmark.parser.ParserEmulationProfile
 import com.vladsch.flexmark.util.ast.Document
 import com.vladsch.flexmark.util.options.MutableDataSet
 import org.koin.core.parameter.ParameterList
@@ -110,21 +109,23 @@ class FolderWalker(val project: Project) : KoinComponent {
 			info("Parsed $numPosts files, ready to generate content (sortedSetOfPosts contains ${sortedSetOfPosts.size} files)")
 
 			// create next/previous links
-			val postList = sortedSetOfPosts.toList()
-			postList.forEachIndexed { index, post ->
+			// TODO: horrible hack to only generate next/previous "post"s.  .filter { basculePost -> basculePost.layout.equals("post")  }
+			val completeList = sortedSetOfPosts.toList()
+			val filteredPostList = completeList.filter { basculePost -> basculePost.layout.equals("post")  }
+			filteredPostList.forEachIndexed { index, post ->
 				if (index != 0) {
-					val olderPost = postList.get(index - 1)
+					val olderPost = filteredPostList.get(index - 1)
 					post.older = PostLink(olderPost.title, olderPost.url, olderPost.date)
 				}
-				if (index != postList.size - 1) {
-					val newerPost = postList.get(index + 1)
+				if (index != filteredPostList.size - 1) {
+					val newerPost = filteredPostList.get(index + 1)
 					post.newer = PostLink(newerPost.title, newerPost.url, newerPost.date)
 				}
 			}
 
 			// build the set of taxonomy tags
 			val allTags = mutableSetOf<Tag>()
-			postList.forEach { post ->
+			completeList.forEach { post ->
 				allTags.addAll(post.tags)
 				post.tags.forEach { postTag ->
 					if (allTags.contains(postTag)) {
@@ -138,8 +139,8 @@ class FolderWalker(val project: Project) : KoinComponent {
 				}
 			}
 			var generated = 0
-			postList.forEach{ post ->
-				renderPost(siteModel, post)
+			completeList.forEach{ post ->
+				render(siteModel, post)
 				generated++
 			}
 			info("Rendered html files: ${generated}")
@@ -161,7 +162,7 @@ class FolderWalker(val project: Project) : KoinComponent {
 	}
 
 	// no performance improvement by making this a suspending function
-	private fun renderPost(siteModel: Map<String, Any>, basculePost: BasculePost) {
+	private fun render(siteModel: Map<String, Any>, basculePost: BasculePost) {
 		val model = mutableMapOf<String, Any?>()
 		model.putAll(siteModel)
 		model.putAll(basculePost.toModel())
@@ -189,6 +190,7 @@ class FolderWalker(val project: Project) : KoinComponent {
 
 	private fun renderMarkdown(document: Document): String {
 		val mdRender = HtmlRenderer.builder(mdOptions).build()
+
 		return mdRender.render(document)
 	}
 

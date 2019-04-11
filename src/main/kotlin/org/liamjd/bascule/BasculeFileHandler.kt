@@ -111,4 +111,10 @@ class BasculeFileHandler: FileHandler {
 		info("Purging folder ${folder.name}")
 		folder.deleteRecursively()
 	}
+
+	override fun copyFile(source: File, destination: File) : File {
+		info("Copying '${source.path}' to '${destination.path}'")
+		return source.copyTo(destination, overwrite = true)
+	}
+
 }
