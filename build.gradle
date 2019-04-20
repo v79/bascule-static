@@ -31,7 +31,7 @@ dependencies {
 	compile group: 'org.jetbrains.kotlinx', name: 'kotlinx-coroutines-core', version: '1.0.1'
 	
 	// bascule library
-	compile group: 'org.liamjd.bascule-lib', name: 'bascule-lib', version: '0.0.14'
+	compile group: 'org.liamjd.bascule-lib', name: 'bascule-lib', version: '0.0.15'
 
 	// handlebars templating
 	compile group: 'com.github.jknack', name: 'handlebars', version: "$handlebars_version"

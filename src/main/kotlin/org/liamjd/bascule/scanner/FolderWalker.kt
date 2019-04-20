@@ -1,7 +1,6 @@
 package org.liamjd.bascule.scanner
 
 import com.vladsch.flexmark.ext.attributes.AttributesExtension
-import com.vladsch.flexmark.ext.media.tags.MediaTagsExtension
 import com.vladsch.flexmark.ext.tables.TablesExtension
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
 import com.vladsch.flexmark.html.HtmlRenderer
@@ -15,6 +14,7 @@ import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
 import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.assets.AssetsProcessor
+import org.liamjd.bascule.flexmark.ExtendedEmbedExtension
 import org.liamjd.bascule.lib.model.PostLink
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.lib.model.Tag
@@ -42,9 +42,10 @@ class FolderWalker(val project: Project) : KoinComponent {
 
 	init {
 		// TODO: move this into another class? Configure externally?
-		mdOptions.set(Parser.EXTENSIONS, arrayListOf(AttributesExtension.create(), YamlFrontMatterExtension.create(), TablesExtension.create()))
+		mdOptions.set(Parser.EXTENSIONS, arrayListOf(AttributesExtension.create(), YamlFrontMatterExtension.create(), TablesExtension.create(), ExtendedEmbedExtension.create()))
 		mdOptions.set(GENERATE_HEADER_ID,true).set(HtmlRenderer.RENDER_HEADER_ID,true) // to give headings IDs
 		mdOptions.set(INDENT_SIZE,2) // prettier HTML
+		mdOptions.set(ExtendedEmbedExtension.SOURCE_FOLDER,project.dirs.sources.toString())
 		mdParser = Parser.builder(mdOptions).build()
 		assetsProcessor = AssetsProcessor(project.dirs.root, project.dirs.assets, project.dirs.output)
 	}
