@@ -12,9 +12,10 @@ class HydeTagBlockParser(options: DataHolder?) : AbstractBlockParser() {
 	private var block = HydeTagBlock()
 	private var content: BlockContent? = BlockContent()
 
-	override fun tryContinue(state: ParserState?): BlockContinue {
+	override fun tryContinue(state: ParserState?): BlockContinue? {
 		return BlockContinue.none()
 	}
+
 
 	override fun getBlock(): Block = block
 
@@ -42,9 +43,11 @@ class HydeTagBlockParser(options: DataHolder?) : AbstractBlockParser() {
 	class BlockFactory(options: DataHolder?) : AbstractBlockParserFactory(options) {
 
 		private var parsing: HydeTagParsing
+		private var opts: DataHolder?
 
 		init {
 			this.parsing = HydeTagParsing(Parsing(options))
+			opts = options
 		}
 
 		override fun tryStart(state: ParserState?, matchedBlockParser: MatchedBlockParser?): BlockStart? {
@@ -60,16 +63,34 @@ class HydeTagBlockParser(options: DataHolder?) : AbstractBlockParser() {
 					val tagName = line?.subSequence(matcher.start(1), matcher.end(1))
 					val parameters = tryLine?.subSequence(matcher.end(1), matcher.end() - 2)?.trim()
 
-					val tagNode = tag?.endSequence(2)?.let { HydeTag(tag.subSequence(0, 2), tagName, parameters, it) }
-//					tagNode.setCharsFromContent()
 
-					val parser = HydeTagBlockParser(state.getProperties())
-					parser.block.appendChild(tagNode)
+					when(tagName.toString()) {
+						"include" -> {
+							val tagNode = tag?.endSequence(2)?.let { HydeTag(tag.subSequence(0, 2), tagName, parameters, it) }
+							tagNode?.setCharsFromContent()
+
+							val parser = HydeTagBlockParser(state.getProperties())
+							parser.block.appendChild(tagNode)
+
+							return BlockStart.of(parser)
+									.atIndex(state.getLineEndIndex())
+						}
+						/*"md" -> {
+							println("found an md on tag ${tag}")
+							val sourceFile = File(File(opts?.get(HydeExtension.SOURCE_FOLDER)),parameters.toString())
+							if(sourceFile.exists()) {
+								val content = sourceFile.inputStream().bufferedReader().readText()
+								state.line.replace(line,BasedSequence.EmptyBasedSequence.of(content))
+//								matchedBlockParser?.blockParser?.closeBlock(state)
+//								matchedBlockParser?.blockParser?.addLine(state,BasedSequence.EmptyBasedSequence.of(content))
+								return BlockStart.of(parser)
+										.atIndex(state.getLineEndIndex())
+							}
+
+						}*/
+					}
 
 
-
-					return BlockStart.of(parser)
-							.atIndex(state.getLineEndIndex())
 				}
 			}
 			return BlockStart.none()

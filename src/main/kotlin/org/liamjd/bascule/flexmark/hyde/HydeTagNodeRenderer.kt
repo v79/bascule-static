@@ -7,7 +7,6 @@ import com.vladsch.flexmark.html.renderer.NodeRendererContext
 import com.vladsch.flexmark.html.renderer.NodeRendererFactory
 import com.vladsch.flexmark.html.renderer.NodeRenderingHandler
 import com.vladsch.flexmark.util.options.DataHolder
-import org.liamjd.bascule.flexmark.ExtendedEmbedExtension
 import java.io.File
 import java.util.*
 
@@ -35,10 +34,26 @@ class HydeTagNodeRenderer(options: DataHolder) : NodeRenderer {
 		val fileUrl = node.parameters
 
 		if(fileUrl.isNotNull) {
-			val sourceFile = File(File(opts.get(ExtendedEmbedExtension.SOURCE_FOLDER)),fileUrl.toString())
+			val sourceFile = File(File(opts.get(HydeExtension.SOURCE_FOLDER)),fileUrl.toString())
 			if(sourceFile.exists()) {
-				val stream = sourceFile.inputStream()
-				html.indent().append(stream.bufferedReader().readText())
+
+				when(node.tag.toString()) {
+					"include" -> {
+						val stream = sourceFile.inputStream()
+						html.indent().append(stream.bufferedReader().readText())
+					}
+					"md" -> {
+						html.indent().append("markdown source file found; attemping to parse... (existing chars: ${node.chars}")
+						val stream = sourceFile.inputStream()
+
+//						node.appendChild(stream.bufferedReader().readText())
+
+						context.renderChildren(node)
+					}
+				}
+
+
+
 			} else {
 				html.tag("em").text("${sourceFile.name} not found").closeTag("em")
 			}
