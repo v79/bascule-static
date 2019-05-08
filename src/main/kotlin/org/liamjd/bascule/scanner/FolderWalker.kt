@@ -13,7 +13,6 @@ import org.koin.core.parameter.ParameterList
 import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
 import org.liamjd.bascule.BasculeFileHandler
-import org.liamjd.bascule.assets.AssetsProcessor
 import org.liamjd.bascule.flexmark.hyde.HydeExtension
 import org.liamjd.bascule.lib.model.PostLink
 import org.liamjd.bascule.lib.model.Project
@@ -33,7 +32,6 @@ class GeneratedContent(val lastUpdated: Long, val url: String, val content: Stri
 
 class FolderWalker(val project: Project) : KoinComponent {
 
-	private val assetsProcessor: AssetsProcessor
 	private val renderer by inject<Renderer> { ParameterList(project) }
 	private val fileHandler: BasculeFileHandler by inject(parameters = { ParameterList() })
 
@@ -47,15 +45,12 @@ class FolderWalker(val project: Project) : KoinComponent {
 		mdOptions.set(INDENT_SIZE,2) // prettier HTML
 		mdOptions.set(HydeExtension.SOURCE_FOLDER,project.dirs.sources.toString())
 		mdParser = Parser.builder(mdOptions).build()
-		assetsProcessor = AssetsProcessor(project.dirs.root, project.dirs.assets, project.dirs.output)
+//		assetsProcessor = AssetsProcessor(project.dirs.root, project.dirs.assets, project.dirs.output)
 	}
 
 
 	fun generate(): List<BasculePost> {
 		info("Scanning ${project.dirs.sources.absolutePath} for markdown files")
-
-		// TODO: copyStatics should not be here!
-		assetsProcessor.copyStatics()
 
 		var numPosts = 0
 		val docCache = mutableMapOf<String, GeneratedContent>()
@@ -89,7 +84,7 @@ class FolderWalker(val project: Project) : KoinComponent {
 							if (docCache.containsKey(slug)) {
 								println.error("Duplicate slug '$slug' found!")
 							}
-							val url: String = if(sourcePath.isNullOrEmpty()) {"$slug.html"} else { "${sourcePath.removePrefix("\\")}\\$slug.html".replace("\\","/") }
+							val url: String = if(sourcePath.isEmpty()) {"$slug.html"} else { "${sourcePath.removePrefix("\\")}\\$slug.html".replace("\\","/") }
 							post.url = url
 							post.rawContent = it.readText() // TODO: this still contains the yaml front matter :(
 
@@ -156,6 +151,8 @@ class FolderWalker(val project: Project) : KoinComponent {
 			}
 			println.error("These pages and posts will be missing from your site until you correct the errors and re-run generate.")
 		}
+
+
 
 		return sortedSetOfPosts.toList()
 

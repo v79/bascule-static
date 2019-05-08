@@ -1,20 +1,44 @@
 package org.liamjd.bascule.assets
 
+import org.koin.core.parameter.ParameterList
+import org.koin.standalone.KoinComponent
+import org.koin.standalone.inject
+import org.liamjd.bascule.BasculeFileHandler
+import org.liamjd.bascule.lib.model.Project
 import println.info
 import java.io.File
+import java.nio.file.FileSystems
 
 /**
  * Copies and generates fixed assets, such images, CSS, etc
  */
-class AssetsProcessor(val parent: File, val assetsDir: File, val outputDir: File) {
+class AssetsProcessor(val project: Project) : KoinComponent {
 
-	// TODO: Need to make this cleverer, perhaps including executable actions like running sass for CSS.
-	// AS it is, it's not respecting theme customisation
+	private val fileHandler: BasculeFileHandler by inject(parameters = { ParameterList() })
+	val pathSeparator = FileSystems.getDefault().separator!!
+
 	fun copyStatics() {
-	/*	info("Copying image and other assets")
-		val newAssetsDir = File(outputDir, assetsDir.name)
-		newAssetsDir.mkdir()
-		assetsDir.copyRecursively(newAssetsDir, false)*/
+
+		println("Copying asset files through processor")
+		val destinationDir = project.dirs.output.path + pathSeparator + "assets" + pathSeparator
+		copyDirectory(project.dirs.assets,destinationDir)
+	}
+
+	private fun copyFile(idx: Int, file: File, destinationDir: String) {
+		val res = fileHandler.copyFile(file, File(destinationDir + pathSeparator + file.name))
+	}
+
+	private fun copyDirectory(dir: File, destination: String) {
+		println("Copying directory ${dir.absolutePath} -> ${destination}")
+		val files = dir.listFiles()
+		files.forEachIndexed { idx, file ->
+			if(file.isDirectory) {
+				fileHandler.createDirectories(destination,file.name)
+				copyDirectory(file,destination + pathSeparator + file.name)
+			} else {
+				copyFile(idx, file, destination)
+			}
+		}
 	}
 
 	fun copyTheme() {

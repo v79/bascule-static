@@ -8,13 +8,14 @@ import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
 import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.Constants
+import org.liamjd.bascule.assets.AssetsProcessor
 import org.liamjd.bascule.lib.generators.GeneratorPipeline
 import org.liamjd.bascule.lib.model.Post
 import org.liamjd.bascule.lib.model.Project
+import org.liamjd.bascule.lib.render.Renderer
 import org.liamjd.bascule.model.BasculePost
 import org.liamjd.bascule.random
 import org.liamjd.bascule.scanner.FolderWalker
-import org.liamjd.bascule.lib.render.Renderer
 import picocli.CommandLine
 import println.debug
 import println.info
@@ -23,7 +24,6 @@ import java.io.FileOutputStream
 import java.io.PrintStream
 import java.net.URL
 import java.net.URLClassLoader
-import java.nio.file.FileSystems
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
@@ -31,7 +31,6 @@ import kotlin.reflect.full.callSuspend
 import kotlin.reflect.full.declaredFunctions
 import kotlin.reflect.full.isSubclassOf
 import kotlin.system.measureTimeMillis
-import kotlin.collections.ArrayList
 
 
 val DEFAULT_PROCESSORS = arrayOf("org.liamjd.bascule.pipeline.IndexPageGenerator", "org.liamjd.bascule.pipeline.PostNavigationGenerator", "org.liamjd.bascule.pipeline.TaxonomyNavigationGenerator")
@@ -44,6 +43,7 @@ class Generator : Runnable, KoinComponent {
 
 	private val fileHandler: BasculeFileHandler by inject(parameters = { ParameterList() })
 	private val renderer by inject<Renderer> { parametersOf(project) }
+	private val assetsProcessor: AssetsProcessor
 
 	private val currentDirectory = System.getProperty("user.dir")!!
 	private val yamlConfig: String
@@ -60,6 +60,8 @@ class Generator : Runnable, KoinComponent {
 
 		val configText = File(parentFolder.absolutePath, yamlConfig).readText()
 		project = Project(configText)
+
+		assetsProcessor = AssetsProcessor(project)
 
 		// suppress apache FOP logging to a log file
 		// TODO: do this we a better logger?
@@ -96,7 +98,11 @@ class Generator : Runnable, KoinComponent {
 
 		for (className in generators) {
 			try {
-				val kClass = if(pluginLoader != null) { pluginLoader.loadClass(className).kotlin } else { Class.forName(className).kotlin }
+				val kClass = if (pluginLoader != null) {
+					pluginLoader.loadClass(className).kotlin
+				} else {
+					Class.forName(className).kotlin
+				}
 				if (kClass.isSubclassOf(GeneratorPipeline::class)) {
 					println.debug("Adding $kClass to the generator pipeline")
 					processorPipeline.add(kClass)
@@ -113,17 +119,15 @@ class Generator : Runnable, KoinComponent {
 
 		val myArray = ArrayList<KClass<GeneratorPipeline>>()
 		@Suppress("UNCHECKED_CAST")
-		processorPipeline.forEach{ kClass ->
+		processorPipeline.forEach { kClass ->
 			myArray.add(kClass as KClass<GeneratorPipeline>)
 		}
 
 		sortedPosts.process(myArray, project, renderer, fileHandler)
 
 
-
-
 		//TODO: come up with a better asset copying pipeline stage thingy
-		copyAssets()
+		assetsProcessor.copyStatics()
 	}
 
 	private fun loadPlugins(plugins: ArrayList<String>?): ClassLoader? {
@@ -143,21 +147,6 @@ class Generator : Runnable, KoinComponent {
 		}
 		return null
 	}
-
-	// TODO: make this not crap
-	private fun copyAssets() {
-		val pathSeparator = FileSystems.getDefault().separator!!
-		println("Copying asset files")
-		val assetsFiles = project.dirs.assets.listFiles()
-		println("${assetsFiles.size} files found")
-		val destinationDir = project.dirs.output.path + pathSeparator + "assets" + pathSeparator
-		assetsFiles.forEachIndexed { idx, file ->
-			println("Copying ${idx} ${file.path}")
-			val res = fileHandler.copyFile(file,File(destinationDir + file.name))
-			println("Result: ${res.path}")
-		}
-	}
-
 
 }
 

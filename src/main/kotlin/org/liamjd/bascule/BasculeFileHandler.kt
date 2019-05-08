@@ -9,7 +9,7 @@ import java.nio.file.FileSystems
 /**
  * File handling utility for creating files and directories, extracting files from resources, etc.
  */
-class BasculeFileHandler: FileHandler {
+class BasculeFileHandler : FileHandler {
 
 	override val pathSeparator = FileSystems.getDefault().separator!!
 
@@ -44,10 +44,14 @@ class BasculeFileHandler: FileHandler {
 
 	override fun createDirectories(parentPath: String, folderName: String): File {
 		val folder = File(parentPath.replace("/", pathSeparator), folderName)
-		if (folder.mkdirs()) {
+		if (!folder.exists()) {
+			if (folder.mkdirs()) {
+				return folder
+			}
+		} else {
 			return folder
 		}
-		throw Exception("Could not create directories $parentPath/$folderName")
+		throw Exception("Could not create directories $parentPath\$folderName")
 	}
 
 	override fun getFileStream(folder: File, fileName: String): InputStream {
@@ -112,7 +116,7 @@ class BasculeFileHandler: FileHandler {
 		folder.deleteRecursively()
 	}
 
-	override fun copyFile(source: File, destination: File) : File {
+	override fun copyFile(source: File, destination: File): File {
 		info("Copying '${source.path}' to '${destination.path}'")
 		return source.copyTo(destination, overwrite = true)
 	}

@@ -63,7 +63,6 @@ class HydeTagBlockParser(options: DataHolder?) : AbstractBlockParser() {
 					val tagName = line?.subSequence(matcher.start(1), matcher.end(1))
 					val parameters = tryLine?.subSequence(matcher.end(1), matcher.end() - 2)?.trim()
 
-
 					when(tagName.toString()) {
 						"include" -> {
 							val tagNode = tag?.endSequence(2)?.let { HydeTag(tag.subSequence(0, 2), tagName, parameters, it) }
@@ -75,21 +74,7 @@ class HydeTagBlockParser(options: DataHolder?) : AbstractBlockParser() {
 							return BlockStart.of(parser)
 									.atIndex(state.getLineEndIndex())
 						}
-						/*"md" -> {
-							println("found an md on tag ${tag}")
-							val sourceFile = File(File(opts?.get(HydeExtension.SOURCE_FOLDER)),parameters.toString())
-							if(sourceFile.exists()) {
-								val content = sourceFile.inputStream().bufferedReader().readText()
-								state.line.replace(line,BasedSequence.EmptyBasedSequence.of(content))
-//								matchedBlockParser?.blockParser?.closeBlock(state)
-//								matchedBlockParser?.blockParser?.addLine(state,BasedSequence.EmptyBasedSequence.of(content))
-								return BlockStart.of(parser)
-										.atIndex(state.getLineEndIndex())
-							}
-
-						}*/
 					}
-
 
 				}
 			}
