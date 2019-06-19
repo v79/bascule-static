@@ -41,6 +41,9 @@ val DEFAULT_PROCESSORS = arrayOf("org.liamjd.bascule.pipeline.IndexPageGenerator
 @CommandLine.Command(name = "generate", description = ["Generate your static website"])
 class Generator : Runnable, KoinComponent {
 
+	@CommandLine.Option(names = ["-c", "--clean"], description = ["do not use caching; clears generation directory for a clean build"])
+	var clean: Boolean = false
+
 	private val fileHandler: BasculeFileHandler by inject(parameters = { ParameterList() })
 	private val renderer by inject<Renderer> { parametersOf(project) }
 	private val assetsProcessor: AssetsProcessor
@@ -73,13 +76,18 @@ class Generator : Runnable, KoinComponent {
 
 	override fun run() {
 
+		println("clean value is: ${clean}")
+
 		info(Constants.logos[(0 until Constants.logos.size).random()])
 		info("Generating your website")
 		info("Reading yaml configuration file $yamlConfig")
 
 		// TODO: be less aggressive with this, use some sort of caching :)
-		fileHandler.emptyFolder(project.dirs.output, OUTPUT_SUFFIX)
-		fileHandler.emptyFolder(File(project.dirs.output, "tags"))
+		// if I don't delete, how do I keep track of deleted files?
+		// if I do delete, there is no cache
+		// unless I cache all content externally
+//		fileHandler.emptyFolder(project.dirs.output, OUTPUT_SUFFIX)
+//		fileHandler.emptyFolder(File(project.dirs.output, "tags"))
 		val walker = FolderWalker(project)
 
 		val postList = walker.generate()

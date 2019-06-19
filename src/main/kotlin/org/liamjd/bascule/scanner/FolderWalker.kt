@@ -24,11 +24,13 @@ import println.info
 import java.io.File
 import java.io.InputStream
 import java.io.Serializable
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
 import kotlin.system.measureTimeMillis
 
 
-// TODO: this is a sort of cache. What should it contain?
-class GeneratedContent(val lastUpdated: Long, val url: String, val content: String) : Serializable
+data class DocCache(val lastModified: LocalDateTime, val fileSize: Long) : Serializable
 
 class FolderWalker(val project: Project) : KoinComponent {
 
@@ -41,9 +43,9 @@ class FolderWalker(val project: Project) : KoinComponent {
 	init {
 		// TODO: move this into another class? Configure externally?
 		mdOptions.set(Parser.EXTENSIONS, arrayListOf(AttributesExtension.create(), YamlFrontMatterExtension.create(), TablesExtension.create(), HydeExtension.create()))
-		mdOptions.set(GENERATE_HEADER_ID,true).set(HtmlRenderer.RENDER_HEADER_ID,true) // to give headings IDs
-		mdOptions.set(INDENT_SIZE,2) // prettier HTML
-		mdOptions.set(HydeExtension.SOURCE_FOLDER,project.dirs.sources.toString())
+		mdOptions.set(GENERATE_HEADER_ID, true).set(HtmlRenderer.RENDER_HEADER_ID, true) // to give headings IDs
+		mdOptions.set(INDENT_SIZE, 2) // prettier HTML
+		mdOptions.set(HydeExtension.SOURCE_FOLDER, project.dirs.sources.toString())
 		mdParser = Parser.builder(mdOptions).build()
 //		assetsProcessor = AssetsProcessor(project.dirs.root, project.dirs.assets, project.dirs.output)
 	}
@@ -52,53 +54,66 @@ class FolderWalker(val project: Project) : KoinComponent {
 	fun generate(): List<BasculePost> {
 		info("Scanning ${project.dirs.sources.absolutePath} for markdown files")
 
+
+		/** document cache:
+		/for each md file, write:
+		file name, or slug, or combination?
+		file size
+		last modified date
+		 **/
+		val docCacheMap: MutableMap<String, DocCache> = mutableMapOf()
+
+
 		var numPosts = 0
-		val docCache = mutableMapOf<String, GeneratedContent>()
 		val siteModel = project.model
 		val errorMap = mutableMapOf<String, Any>()
 		val sortedSetOfPosts = sortedSetOf<BasculePost>(comparator = BasculePost)
 		val timeTaken = measureTimeMillis {
-			project.dirs.sources.walk().forEach {
-				if (it.name.startsWith(".") || it.name.startsWith("__")) {
-					info("Skipping draft file/folder '${it.name}'")
+			project.dirs.sources.walk().forEach { mdFile ->
+				if (mdFile.name.startsWith(".") || mdFile.name.startsWith("__")) {
+					info("Skipping draft file/folder '${mdFile.name}'")
 					return@forEach // skip this one
 				}
-				if (it.isDirectory) {
+				if (mdFile.isDirectory) {
 					return@forEach
 				}
-				if (it.extension == "md") {
-					val inputStream = it.inputStream()
+				if (mdFile.extension == "md") {
+					val inputStream = mdFile.inputStream()
 					val document = parseMarkdown(inputStream)
 					numPosts++
 
-					val post = BasculePost.createPostFromYaml(it, document, project)
+					val post = BasculePost.createPostFromYaml(mdFile, document, project)
 
 					when (post) {
 						is BasculePost -> {
 							// get the URL for prev/next generation. Doing this here in case there's a conflict of slugs
 
-							post.sourceFileName = it.canonicalPath
-							val sourcePath = it.parentFile.absolutePath.toString().removePrefix(project.dirs.sources.absolutePath.toString())
-							post.destinationFolder = File(project.dirs.output,sourcePath)
+							post.sourceFileName = mdFile.canonicalPath
+							val sourcePath = mdFile.parentFile.absolutePath.toString().removePrefix(project.dirs.sources.absolutePath.toString())
+							post.destinationFolder = File(project.dirs.output, sourcePath)
 							val slug = post.slug
-							if (docCache.containsKey(slug)) {
-								println.error("Duplicate slug '$slug' found!")
+							val url: String = if (sourcePath.isEmpty()) {
+								"$slug.html"
+							} else {
+								"${sourcePath.removePrefix("\\")}\\$slug.html".replace("\\", "/")
 							}
-							val url: String = if(sourcePath.isEmpty()) {"$slug.html"} else { "${sourcePath.removePrefix("\\")}\\$slug.html".replace("\\","/") }
 							post.url = url
-							post.rawContent = it.readText() // TODO: this still contains the yaml front matter :(
+							post.rawContent = mdFile.readText() // TODO: this still contains the yaml front matter :(
 
 							val added = sortedSetOfPosts.add(post) // sorting by date, then by url
-							if(!added) {
+							if (!added) {
 								println.error("Post '${post.url}' was not added to the treeset; likely cause is that it has the same date and URL as another post")
+								errorMap.put(mdFile.name, "Post '${post.url}' was not added to the treeset; likely cause is that it has the same date and URL as another post")
+							} else {
+								docCacheMap.put(post.sourceFileName, DocCache(localDateTimeFromLong(mdFile.lastModified()),mdFile.length()))
 							}
 						}
 						is PostGenError -> {
-							errorMap.put(it.name, post.errorMessage)
+							errorMap.put(mdFile.name, post.errorMessage)
 						}
 					}
 				} else {
-					println.error("skipping file '${it.name}' as it does not have the required '.md' file extension.")
+					println.error("skipping file '${mdFile.name}' as it does not have the required '.md' file extension.")
 				}
 			}
 
@@ -107,7 +122,7 @@ class FolderWalker(val project: Project) : KoinComponent {
 			// create next/previous links
 			// TODO: horrible hack to only generate next/previous "post"s.  .filter { basculePost -> basculePost.layout.equals("post")  }
 			val completeList = sortedSetOfPosts.toList()
-			val filteredPostList = completeList.filter { basculePost -> basculePost.layout.equals("post")  }
+			val filteredPostList = completeList.filter { basculePost -> basculePost.layout.equals("post") }
 			filteredPostList.forEachIndexed { index, post ->
 				if (index != 0) {
 					val olderPost = filteredPostList.get(index - 1)
@@ -135,7 +150,7 @@ class FolderWalker(val project: Project) : KoinComponent {
 				}
 			}
 			var generated = 0
-			completeList.forEach{ post ->
+			completeList.forEach { post ->
 				render(siteModel, post)
 				generated++
 			}
@@ -153,10 +168,13 @@ class FolderWalker(val project: Project) : KoinComponent {
 		}
 
 
+		info("Writing document cache")
+		for(f in docCacheMap) {
+			println.debug(f.toString())
+		}
+
 
 		return sortedSetOfPosts.toList()
-
-//		info("Writing document cache")
 	}
 
 	// no performance improvement by making this a suspending function
@@ -164,7 +182,7 @@ class FolderWalker(val project: Project) : KoinComponent {
 		val model = mutableMapOf<String, Any?>()
 		model.putAll(siteModel)
 		model.putAll(basculePost.toModel())
-		model.put("\$currentPage",basculePost.slug)
+		model.put("\$currentPage", basculePost.slug)
 
 		// first, extract the content from the markdown
 		val renderedMarkdown = renderMarkdown(basculePost.document)
@@ -190,6 +208,10 @@ class FolderWalker(val project: Project) : KoinComponent {
 		val mdRender = HtmlRenderer.builder(mdOptions).build()
 
 		return mdRender.render(document)
+	}
+
+	private fun localDateTimeFromLong(longTime: Long): LocalDateTime {
+		return LocalDateTime.ofInstant(Instant.ofEpochMilli(longTime), ZoneId.systemDefault());
 	}
 
 }
