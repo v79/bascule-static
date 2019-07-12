@@ -15,11 +15,11 @@ fun info(string: String) {
  * Prints text in a scary red colour
  */
 fun error(string: String) {
-	println(Ansi.ansi().fgBrightRed().a(string).reset())
+	println(Ansi.ansi().fgBrightRed().a("ERROR: $string").reset())
 }
 
 fun debug(string: String) {
 	if(debug) {
-		println(Ansi.ansi().fgCyan().a(string).reset())
+		println(Ansi.ansi().fgCyan().a("DEBUG: $string").reset())
 	}
 }

@@ -9,10 +9,16 @@ import com.vladsch.flexmark.html.HtmlRenderer.INDENT_SIZE
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.ast.Document
 import com.vladsch.flexmark.util.options.MutableDataSet
+import kotlinx.serialization.UnstableDefault
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonConfiguration
+import kotlinx.serialization.json.JsonParsingException
 import org.koin.core.parameter.ParameterList
 import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
 import org.liamjd.bascule.BasculeFileHandler
+import org.liamjd.bascule.cache.CacheMap
+import org.liamjd.bascule.cache.DocCache
 import org.liamjd.bascule.flexmark.hyde.HydeExtension
 import org.liamjd.bascule.lib.model.PostLink
 import org.liamjd.bascule.lib.model.Project
@@ -20,17 +26,17 @@ import org.liamjd.bascule.lib.model.Tag
 import org.liamjd.bascule.lib.render.Renderer
 import org.liamjd.bascule.model.BasculePost
 import org.liamjd.bascule.model.PostGenError
+import println.debug
 import println.info
 import java.io.File
+import java.io.FileNotFoundException
 import java.io.InputStream
-import java.io.Serializable
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
+import java.util.*
 import kotlin.system.measureTimeMillis
 
-
-data class DocCache(val lastModified: LocalDateTime, val fileSize: Long) : Serializable
 
 class FolderWalker(val project: Project) : KoinComponent {
 
@@ -61,10 +67,11 @@ class FolderWalker(val project: Project) : KoinComponent {
 		file size
 		last modified date
 		 **/
-		val docCacheMap: MutableMap<String, DocCache> = mutableMapOf()
+		val docCacheMap = loadCacheMap()
 
 
 		var numPosts = 0
+		var cacheHits = 0
 		val siteModel = project.model
 		val errorMap = mutableMapOf<String, Any>()
 		val sortedSetOfPosts = sortedSetOf<BasculePost>(comparator = BasculePost)
@@ -78,6 +85,30 @@ class FolderWalker(val project: Project) : KoinComponent {
 					return@forEach
 				}
 				if (mdFile.extension == "md") {
+					val fileLastModifiedDateTimeLong = mdFile.lastModified();
+					val fileLastModifiedDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(fileLastModifiedDateTimeLong), TimeZone
+							.getDefault().toZoneId())
+					val fileCache = DocCache(mdFile.absolutePath, fileLastModifiedDateTime, mdFile.length())
+
+					docCacheMap[fileCache.filePath]?.let {
+						val (destination, lastModified, fileSize) = it
+						if (lastModified == fileLastModifiedDateTime && fileSize == mdFile.length()) {
+							println.info("********* CACHE HIT for ${mdFile.name} ************")
+							// check the file actually exists
+							val genFileCheck = File(project.dirs.output,destination)
+							if(genFileCheck.exists()) {
+								cacheHits++
+								return@forEach // skip this one
+							} else {
+								println.error("Cache hit for ${mdFile.name} but generated file ${destination} not found. Regenerating.")
+							}
+						} else {
+							// cache miss
+							println.debug("******* CACHE MISS for ${mdFile.name} (cache value ${it} != ${fileCache})")
+						}
+					}
+
+
 					val inputStream = mdFile.inputStream()
 					val document = parseMarkdown(inputStream)
 					numPosts++
@@ -105,7 +136,7 @@ class FolderWalker(val project: Project) : KoinComponent {
 								println.error("Post '${post.url}' was not added to the treeset; likely cause is that it has the same date and URL as another post")
 								errorMap.put(mdFile.name, "Post '${post.url}' was not added to the treeset; likely cause is that it has the same date and URL as another post")
 							} else {
-								docCacheMap.put(post.sourceFileName, DocCache(localDateTimeFromLong(mdFile.lastModified()),mdFile.length()))
+								docCacheMap.put(post.sourceFileName, DocCache(post.url, localDateTimeFromLong(mdFile.lastModified()), mdFile.length()))
 							}
 						}
 						is PostGenError -> {
@@ -116,7 +147,7 @@ class FolderWalker(val project: Project) : KoinComponent {
 					println.error("skipping file '${mdFile.name}' as it does not have the required '.md' file extension.")
 				}
 			}
-
+			info("Cached content for $cacheHits files found; skipping generation")
 			info("Parsed $numPosts files, ready to generate content (sortedSetOfPosts contains ${sortedSetOfPosts.size} files)")
 
 			// create next/previous links
@@ -145,6 +176,8 @@ class FolderWalker(val project: Project) : KoinComponent {
 							t.postCount++
 							t.hasPosts = true
 							postTag.postCount = t.postCount
+						} else {
+							debug("Tag $t found")
 						}
 					}
 				}
@@ -168,10 +201,7 @@ class FolderWalker(val project: Project) : KoinComponent {
 		}
 
 
-		info("Writing document cache")
-		for(f in docCacheMap) {
-			println.debug(f.toString())
-		}
+		writePostCache(docCacheMap)
 
 
 		return sortedSetOfPosts.toList()
@@ -214,4 +244,45 @@ class FolderWalker(val project: Project) : KoinComponent {
 		return LocalDateTime.ofInstant(Instant.ofEpochMilli(longTime), ZoneId.systemDefault());
 	}
 
+	private fun writePostCache(docCacheMap: MutableMap<String, DocCache>) {
+		info("Writing document cache")
+
+		val map = CacheMap(docCacheMap)
+		val json = Json(JsonConfiguration.Stable)
+		val jsonData = json.stringify(CacheMap.serializer(), map)
+
+		fileHandler.writeFile(project.dirs.sources, "__buildcache.tmp", jsonData)
+
+	}
+
+	@UnstableDefault
+	private fun loadCacheMap(): MutableMap<String, DocCache> {
+		val emptyMap = mutableMapOf<String, DocCache>()
+		try {
+			val cacheStream: String? = fileHandler.getFileStream(project.dirs.sources, "__buildcache.tmp").bufferedReader().readText()
+			if (cacheStream == null) {
+				return emptyMap
+			} else {
+				try {
+					val cacheJson = cacheStream
+					if (cacheJson.isNotEmpty()) {
+						val map = Json.parse(CacheMap.serializer(), cacheJson)
+						return map.map as MutableMap<String, DocCache>
+					}
+
+				} catch (jpe: JsonParsingException) {
+					println.error("Unable to parse document cache. Message is: ${jpe.message}")
+					println.error("Proceeding with full generation.")
+				}
+			}
+			return emptyMap
+		} catch (fnfe: FileNotFoundException) {
+			println.error("Cache file '__buildcache.tmp' not found; proceeding with full generation.")
+		} catch (e: Exception) {
+			println.error("Exception: ${e.message}. Proceeding with full generation.")
+		}
+		return emptyMap
+	}
 }
+
+
