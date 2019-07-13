@@ -30,7 +30,6 @@ import kotlin.reflect.KParameter
 import kotlin.reflect.full.callSuspend
 import kotlin.reflect.full.declaredFunctions
 import kotlin.reflect.full.isSubclassOf
-import kotlin.system.measureTimeMillis
 
 
 val DEFAULT_PROCESSORS = arrayOf("org.liamjd.bascule.pipeline.IndexPageGenerator", "org.liamjd.bascule.pipeline.PostNavigationGenerator", "org.liamjd.bascule.pipeline.TaxonomyNavigationGenerator")
@@ -75,9 +74,7 @@ class Generator : Runnable, KoinComponent {
 	}
 
 	override fun run() {
-
-		println("clean value is: ${clean}")
-
+		project.clean = clean
 		info(Constants.logos[(0 until Constants.logos.size).random()])
 		info("Generating your website")
 		info("Reading yaml configuration file $yamlConfig")
@@ -175,25 +172,26 @@ private fun List<BasculePost>.process(pipeline: ArrayList<KClass<GeneratorPipeli
 			processors.put(p, processorFunc)
 		}
 	}
-	val timeTaken = measureTimeMillis {
-		runBlocking {
-			launch {
-				for (clazz in processors) {
-					val func = clazz.value
-					debug("Calling function ${func.name} for pipeline ${clazz.key.simpleName}")
-					@Suppress("UNCHECKED_CAST")
-					func.callSuspend(constructPipeline(
-							clazz.key as KClass<out GeneratorPipeline>,
-							project,
-							this@process
-					), project, renderer, fileHandler)
-				}
+
+	val progress = runBlocking {
+		launch {
+			for (clazz in processors) {
+				val func = clazz.value
+				debug("Calling function ${func.name} for pipeline ${clazz.key.simpleName}")
+				@Suppress("UNCHECKED_CAST")
+				func.callSuspend(constructPipeline(
+						clazz.key as KClass<out GeneratorPipeline>,
+						project,
+						this@process
+				), project, renderer, fileHandler)
 			}
 		}
-
+	}
+	if (progress.isCompleted) {
+		info("Generation complete. HTML files are stored in folder ${project.dirs.output}")
 	}
 
-	println.error("Time taken: $timeTaken ms")
+
 }
 
 /**

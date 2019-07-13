@@ -26,6 +26,7 @@ import org.liamjd.bascule.lib.model.Tag
 import org.liamjd.bascule.lib.render.Renderer
 import org.liamjd.bascule.model.BasculePost
 import org.liamjd.bascule.model.PostGenError
+import println.ProgressBar
 import println.debug
 import println.info
 import java.io.File
@@ -53,36 +54,28 @@ class FolderWalker(val project: Project) : KoinComponent {
 		mdOptions.set(INDENT_SIZE, 2) // prettier HTML
 		mdOptions.set(HydeExtension.SOURCE_FOLDER, project.dirs.sources.toString())
 		mdParser = Parser.builder(mdOptions).build()
-//		assetsProcessor = AssetsProcessor(project.dirs.root, project.dirs.assets, project.dirs.output)
 	}
 
 
 	fun generate(): List<BasculePost> {
 		info("Scanning ${project.dirs.sources.absolutePath} for markdown files")
 
-
-		/** document cache:
-		/for each md file, write:
-		file name, or slug, or combination?
-		file size
-		last modified date
-		 **/
 		val docCacheMap = loadCacheMap()
-
-
 		var numPosts = 0
 		var cacheHits = 0
 		val siteModel = project.model
 		val errorMap = mutableMapOf<String, Any>()
 		val sortedSetOfPosts = sortedSetOf<BasculePost>(comparator = BasculePost)
 		val timeTaken = measureTimeMillis {
-			project.dirs.sources.walk().forEach { mdFile ->
+			val walkProgressBar = ProgressBar(label = "Reading markdown files",animated = true,asPercentage = false)
+			project.dirs.sources.walk().forEachIndexed { mdIdx, mdFile ->
+
 				if (mdFile.name.startsWith(".") || mdFile.name.startsWith("__")) {
-					info("Skipping draft file/folder '${mdFile.name}'")
-					return@forEach // skip this one
+					walkProgressBar.progress(mdIdx,"Skipping draft file/folder '${mdFile.name}'")
+					return@forEachIndexed // skip this one
 				}
 				if (mdFile.isDirectory) {
-					return@forEach
+					return@forEachIndexed
 				}
 				if (mdFile.extension == "md") {
 					val fileLastModifiedDateTimeLong = mdFile.lastModified();
@@ -90,24 +83,24 @@ class FolderWalker(val project: Project) : KoinComponent {
 							.getDefault().toZoneId())
 					val fileCache = DocCache(mdFile.absolutePath, fileLastModifiedDateTime, mdFile.length())
 
-					docCacheMap[fileCache.filePath]?.let {
-						val (destination, lastModified, fileSize) = it
-						if (lastModified == fileLastModifiedDateTime && fileSize == mdFile.length()) {
-							println.info("********* CACHE HIT for ${mdFile.name} ************")
-							// check the file actually exists
-							val genFileCheck = File(project.dirs.output,destination)
-							if(genFileCheck.exists()) {
-								cacheHits++
-								return@forEach // skip this one
+					if (docCacheMap.containsKey(fileCache.filePath)) {
+						docCacheMap[fileCache.filePath]?.let {
+							val (destination, lastModified, fileSize) = it
+							if (lastModified == fileLastModifiedDateTime && fileSize == mdFile.length()) {
+								walkProgressBar.progress(mdIdx,"Cache hit for ${mdFile.name}")
+								val genFileCheck = File(project.dirs.output, destination)
+								if (genFileCheck.exists()) {
+									cacheHits++
+									return@forEachIndexed // skip this one
+								} else {
+									walkProgressBar.progress(mdIdx,"Cache hit for ${mdFile.name} but generated file ${destination} not found. Regenerating.")
+								}
 							} else {
-								println.error("Cache hit for ${mdFile.name} but generated file ${destination} not found. Regenerating.")
+								// cache miss
+								walkProgressBar.progress(mdIdx,"File ${mdFile.name} not found in cache; generating file")
 							}
-						} else {
-							// cache miss
-							println.debug("******* CACHE MISS for ${mdFile.name} (cache value ${it} != ${fileCache})")
 						}
 					}
-
 
 					val inputStream = mdFile.inputStream()
 					val document = parseMarkdown(inputStream)
@@ -144,11 +137,14 @@ class FolderWalker(val project: Project) : KoinComponent {
 						}
 					}
 				} else {
-					println.error("skipping file '${mdFile.name}' as it does not have the required '.md' file extension.")
+					walkProgressBar.progress(mdIdx,"Skipping file ${mdFile.name} as it does not have the required '.md' file extension")
 				}
 			}
-			info("Cached content for $cacheHits files found; skipping generation")
-			info("Parsed $numPosts files, ready to generate content (sortedSetOfPosts contains ${sortedSetOfPosts.size} files)")
+			if (!project.clean) {
+				info("Cached content for $cacheHits files found; skipping generation")
+			}
+
+			debug("Parsed $numPosts files, ready to generate content (sortedSetOfPosts contains ${sortedSetOfPosts.size} files)")
 
 			// create next/previous links
 			// TODO: horrible hack to only generate next/previous "post"s.  .filter { basculePost -> basculePost.layout.equals("post")  }
@@ -176,18 +172,17 @@ class FolderWalker(val project: Project) : KoinComponent {
 							t.postCount++
 							t.hasPosts = true
 							postTag.postCount = t.postCount
-						} else {
-							debug("Tag $t found")
 						}
 					}
 				}
 			}
 			var generated = 0
-			completeList.forEach { post ->
-				render(siteModel, post)
+			info("Rending HTML files")
+			completeList.forEachIndexed { idx, post ->
+				render(siteModel, post, idx)
 				generated++
 			}
-			info("Rendered html files: ${generated}")
+			info("${generated} HTML files rendered")
 
 		}
 		info("${timeTaken}ms to generate $numPosts files")
@@ -200,15 +195,12 @@ class FolderWalker(val project: Project) : KoinComponent {
 			println.error("These pages and posts will be missing from your site until you correct the errors and re-run generate.")
 		}
 
-
 		writePostCache(docCacheMap)
-
-
 		return sortedSetOfPosts.toList()
 	}
 
 	// no performance improvement by making this a suspending function
-	private fun render(siteModel: Map<String, Any>, basculePost: BasculePost) {
+	private fun render(siteModel: Map<String, Any>, basculePost: BasculePost, count: Int) {
 		val model = mutableMapOf<String, Any?>()
 		model.putAll(siteModel)
 		model.putAll(basculePost.toModel())
@@ -224,7 +216,9 @@ class FolderWalker(val project: Project) : KoinComponent {
 		val renderedContent = renderer.render(model, templateFromYaml)
 		basculePost.content = renderedMarkdown
 
-		info("Generating html file ${basculePost.url}")
+		val renderProgressBar = ProgressBar(label = "Rendering",animated = true,messageLine = "${basculePost.url}")
+		renderProgressBar.progress(count)
+
 		fileHandler.createDirectories(basculePost.destinationFolder!!)
 		fileHandler.writeFile(project.dirs.output.absoluteFile, basculePost.url, renderedContent)
 	}
@@ -258,6 +252,11 @@ class FolderWalker(val project: Project) : KoinComponent {
 	@UnstableDefault
 	private fun loadCacheMap(): MutableMap<String, DocCache> {
 		val emptyMap = mutableMapOf<String, DocCache>()
+		if (project.clean) {
+			// TODO: wipe the generated directory?
+			// TODO: delete the cache file too?
+			return emptyMap
+		}
 		try {
 			val cacheStream: String? = fileHandler.getFileStream(project.dirs.sources, "__buildcache.tmp").bufferedReader().readText()
 			if (cacheStream == null) {

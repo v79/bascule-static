@@ -2,13 +2,13 @@ package println
 
 import org.fusesource.jansi.Ansi
 
-val debug = true
+val debug = false
 
 /**
  * Prints text in a nice yellow colour
  */
 fun info(string: String) {
-	println(Ansi.ansi().fgBrightYellow().a(string).reset())
+	println(Ansi.ansi().eraseLine().fgBrightYellow().a(string).reset())
 }
 
 /**
@@ -19,7 +19,7 @@ fun error(string: String) {
 }
 
 fun debug(string: String) {
-	if(debug) {
+	if (debug) {
 		println(Ansi.ansi().fgCyan().a("DEBUG: $string").reset())
 	}
 }

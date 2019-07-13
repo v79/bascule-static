@@ -8,6 +8,10 @@ buildscript {
 	ext.picocli_version = '3.8.2'
 	ext.jansi_version = '1.17.1'
 	ext.snakeyaml_version = '1.23'
+
+	dependencies {
+		classpath "org.jetbrains.kotlin:kotlin-serialization:$kotlin_version"
+	}
 }
 
 plugins {
@@ -16,8 +20,10 @@ plugins {
 }
 
 apply plugin: 'maven-publish'
+apply plugin: 'kotlinx-serialization'
+
 group 'org.liamjd'
-version '0.0.15'
+version '0.0.16'
 
 repositories {
 	mavenCentral()
@@ -31,7 +37,7 @@ dependencies {
 	compile group: 'org.jetbrains.kotlinx', name: 'kotlinx-coroutines-core', version: '1.0.1'
 	
 	// bascule library
-	compile group: 'org.liamjd.bascule-lib', name: 'bascule-lib', version: '0.0.15'
+	compile group: 'org.liamjd.bascule-lib', name: 'bascule-lib', version: '0.0.16'
 
 	// handlebars templating
 	compile group: 'com.github.jknack', name: 'handlebars', version: "$handlebars_version"
@@ -52,6 +58,12 @@ dependencies {
 
 	// Koin for Kotlin apps
 	compile 'org.koin:koin-core:1.0.0-RC-3'
+	
+	// kotlinx serialization, for document caching
+	compile 'org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.11.1'
+
+	// for console progress bar?
+	compile 'com.vdurmont:etaprinter:1.0.0'
 	
 	// Testing
 	testCompile 'org.koin:koin-test:1.0.0-RC-3'

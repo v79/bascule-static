@@ -1,7 +1,7 @@
 package org.liamjd.bascule
 
 import org.liamjd.bascule.lib.FileHandler
-import println.info
+import println.debug
 import java.io.File
 import java.io.InputStream
 import java.nio.file.FileSystems
@@ -99,7 +99,7 @@ class BasculeFileHandler : FileHandler {
 	 * @param[fileType] the type of file to delete, e.g. ".html"
 	 */
 	override fun emptyFolder(folder: File, fileType: String) {
-		info("Purging folder ${folder.name} of '$fileType' files")
+		debug("Purging folder ${folder.name} of '$fileType' files")
 		folder.walk().forEach {
 			if (it != folder && it.name.endsWith(fileType)) {
 				it.delete()
@@ -112,12 +112,12 @@ class BasculeFileHandler : FileHandler {
 	 * @param[folder] the folder to empty recursively
 	 */
 	override fun emptyFolder(folder: File) {
-		info("Purging folder ${folder.name}")
+		debug("Purging folder ${folder.name}")
 		folder.deleteRecursively()
 	}
 
 	override fun copyFile(source: File, destination: File): File {
-		info("Copying '${source.path}' to '${destination.path}'")
+		debug("Copying '${source.path}' to '${destination.path}'")
 		return source.copyTo(destination, overwrite = true)
 	}
 
