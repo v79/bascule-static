@@ -40,8 +40,8 @@ val DEFAULT_PROCESSORS = arrayOf("org.liamjd.bascule.pipeline.IndexPageGenerator
 @CommandLine.Command(name = "generate", description = ["Generate your static website"])
 class Generator : Runnable, KoinComponent {
 
-	@CommandLine.Option(names = ["-c", "--clean"], description = ["do not use caching; clears generation directory for a clean build"])
-	var clean: Boolean = false
+	@CommandLine.Option(names = ["-c", "--clean"], description = ["do not use caching; clears generation directory for a clean build - BROKEN!!!!"])
+	var clean: Boolean = true
 
 	private val fileHandler: BasculeFileHandler by inject(parameters = { ParameterList() })
 	private val renderer by inject<Renderer> { parametersOf(project) }

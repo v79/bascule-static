@@ -21,7 +21,7 @@ import println.info
 		subcommands = [Generator::class, Themes::class])
 class Bascule : Runnable, KoinComponent {
 
-	@CommandLine.Option(names = ["-n", "--new"], description = ["name of static site"])
+	@CommandLine.Option(names = ["-n", "--new"], description = ["generate a new website with the given name"])
 	var siteName: String = ""
 
 	@CommandLine.Option(names = ["--theme"], description = ["in-built theme to base your site on (run 'bascule themes' to see a list of options)"])
