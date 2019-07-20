@@ -15,7 +15,8 @@ import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.lib.render.Renderer
 import org.liamjd.bascule.model.BasculePost
 import org.liamjd.bascule.random
-import org.liamjd.bascule.scanner.FolderWalker
+import org.liamjd.bascule.render.HTMLRenderer
+import org.liamjd.bascule.scanner.MarkdownScanner
 import picocli.CommandLine
 import println.debug
 import println.info
@@ -85,10 +86,24 @@ class Generator : Runnable, KoinComponent {
 		// unless I cache all content externally
 //		fileHandler.emptyFolder(project.dirs.output, OUTPUT_SUFFIX)
 //		fileHandler.emptyFolder(File(project.dirs.output, "tags"))
-		val walker = FolderWalker(project)
+//		val walker = FolderWalker(project)
 
-		val postList = walker.generate()
-		val sortedPosts = postList.sortedByDescending { it.date }
+		val walker = MarkdownScanner(project)
+
+//		val postList = walker.generate()
+
+		val pageList = walker.calculateRenderSet()
+
+		val htmlRenderer = HTMLRenderer(project)
+
+		var generated = 0
+		pageList.forEachIndexed { index, item ->
+			htmlRenderer.generateHtml(item.post, item.mdCacheItem, index)
+			generated++
+		}
+		info("${generated} HTML files rendered")
+
+		//	val sortedPosts = postList.sortedByDescending { it.date }
 		val generators = mutableListOf<String>()
 
 		if (project.generators.isNullOrEmpty()) {
@@ -128,7 +143,7 @@ class Generator : Runnable, KoinComponent {
 			myArray.add(kClass as KClass<GeneratorPipeline>)
 		}
 
-		sortedPosts.process(myArray, project, renderer, fileHandler)
+		//sortedPosts.process(myArray, project, renderer, fileHandler)
 
 
 		//TODO: come up with a better asset copying pipeline stage thingy
