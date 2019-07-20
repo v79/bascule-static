@@ -2,7 +2,7 @@ package println
 
 import org.fusesource.jansi.Ansi
 
-val debug = false
+val debug = true
 
 /**
  * Prints text in a nice yellow colour

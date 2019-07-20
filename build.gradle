@@ -51,6 +51,7 @@ dependencies {
 
 	// sl4j logging
 	compile group: 'org.slf4j', name: 'slf4j-simple', version: "$slf4j_version"
+	compile 'io.github.microutils:kotlin-logging:1.6.26'
 
 	// command line parsing
 	compile group: 'info.picocli', name: 'picocli', version: "$picocli_version"

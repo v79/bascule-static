@@ -16,7 +16,6 @@ import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.lib.render.Renderer
 import org.liamjd.bascule.model.BasculePost
 import org.liamjd.bascule.scanner.MDCacheItem
-import println.ProgressBar
 
 class HTMLRenderer(val project: Project) : KoinComponent {
 
@@ -36,7 +35,7 @@ class HTMLRenderer(val project: Project) : KoinComponent {
 	}
 
 	fun generateHtml(post: BasculePost, mdCacheItem: MDCacheItem, itemCount: Int ) {
-		println("Rendering post $post")
+		println("Rendering post ${post.sourceFileName}")
 		render(project.model,post,itemCount)
 	}
 
@@ -44,14 +43,7 @@ class HTMLRenderer(val project: Project) : KoinComponent {
 	// no performance improvement by making this a suspending function
 	private fun render(siteModel: Map<String, Any>, basculePost: BasculePost, count: Int) {
 
-
 		// DEBUGGING: post is missing...
-		// sourceFileName
-		// content (expected)
-		// rawContent
-		// newer
-		// older
-		// destinationFolder
 		// tag post count is 0
 
 		val model = mutableMapOf<String, Any?>()
@@ -69,8 +61,8 @@ class HTMLRenderer(val project: Project) : KoinComponent {
 		val renderedContent = renderer.render(model, templateFromYaml)
 		basculePost.content = renderedMarkdown
 
-		val renderProgressBar = ProgressBar(label = "Rendering", animated = true, messageLine = basculePost.url)
-		renderProgressBar.progress(count)
+	/*	val renderProgressBar = ProgressBar(label = "Rendering", animated = true, messageLine = basculePost.url)
+		renderProgressBar.progress(count)*/
 
 		fileHandler.createDirectories(basculePost.destinationFolder!!)
 		fileHandler.writeFile(project.dirs.output.absoluteFile, basculePost.url, renderedContent)

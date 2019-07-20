@@ -13,9 +13,9 @@ import org.liamjd.bascule.lib.generators.GeneratorPipeline
 import org.liamjd.bascule.lib.model.Post
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.lib.render.Renderer
-import org.liamjd.bascule.model.BasculePost
 import org.liamjd.bascule.random
 import org.liamjd.bascule.render.HTMLRenderer
+import org.liamjd.bascule.scanner.CacheAndPost
 import org.liamjd.bascule.scanner.MarkdownScanner
 import picocli.CommandLine
 import println.debug
@@ -143,11 +143,18 @@ class Generator : Runnable, KoinComponent {
 			myArray.add(kClass as KClass<GeneratorPipeline>)
 		}
 
-		//sortedPosts.process(myArray, project, renderer, fileHandler)
+
+		getPostsFromCacheAndPost(pageList).process(myArray, project, renderer, fileHandler)
 
 
 		//TODO: come up with a better asset copying pipeline stage thingy
 		assetsProcessor.copyStatics()
+	}
+
+	private fun getPostsFromCacheAndPost(cacheSet: Set<CacheAndPost>): List<Post> {
+		val postList = mutableListOf<Post>()
+		cacheSet.forEach { postList.add(it.post)}
+		return postList
 	}
 
 	private fun loadPlugins(plugins: ArrayList<String>?): ClassLoader? {
@@ -177,7 +184,7 @@ class Generator : Runnable, KoinComponent {
  * @param[renderer] the renderer which converts model map into a string
  * @param[fileHandler] file handler for writing output to disc
  */
-private fun List<BasculePost>.process(pipeline: ArrayList<KClass<GeneratorPipeline>>, project: Project, renderer: Renderer, fileHandler: BasculeFileHandler) {
+private fun List<Post>.process(pipeline: ArrayList<KClass<GeneratorPipeline>>, project: Project, renderer: Renderer, fileHandler: BasculeFileHandler) {
 
 	val processors = mutableMapOf<KClass<*>, KFunction<*>>()
 

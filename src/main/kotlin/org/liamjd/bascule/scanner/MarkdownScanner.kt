@@ -19,6 +19,7 @@ import org.liamjd.bascule.cache.LocalDateTimeSerializer
 import org.liamjd.bascule.flexmark.hyde.HydeExtension
 import org.liamjd.bascule.lib.model.PostLink
 import org.liamjd.bascule.lib.model.Project
+import org.liamjd.bascule.lib.model.Tag
 import org.liamjd.bascule.model.BasculePost
 import org.liamjd.bascule.model.PostGenError
 import org.liamjd.bascule.slug
@@ -77,6 +78,7 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 
 		val errorMap = mutableMapOf<String, Any>()
 		val allSources = mutableSetOf<CacheAndPost>()
+		var markdownSourceCount = 0
 
 		val timeTaken = measureTimeMillis {
 			val markdownScannerProgressBar = ProgressBar("Reading markdown files", animated = true, asPercentage = false)
@@ -93,7 +95,7 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 				}
 
 				if (mdFile.extension.toLowerCase() != "md") {
-					markdownScannerProgressBar.progress(index, "Skipping file ${mdFile.name} as extension does not match '.md'")
+					markdownScannerProgressBar.progress(markdownSourceCount, "Skipping file ${mdFile.name} as extension does not match '.md'")
 					return@forEachIndexed
 				} else {
 					info("Processing file ${index} ${mdFile.name}...")
@@ -130,15 +132,32 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 							post.rawContent = mdFile.readText() // TODO: this still contains the yaml front matter :(
 
 							allSources.add(CacheAndPost(mdItem,post))
+							markdownSourceCount++
 						}
 					}
 				}
 
 			}
 
-			markdownScannerProgressBar.progress(1,"Cache items found for all files.")
+			markdownScannerProgressBar.progress(markdownSourceCount,"Cache items found for all files.")
+
+			// build the set of taxonomy tags (somehow this gets it wrong)
+			val allTags = mutableSetOf<Tag>()
+			allSources.forEach { cacheAndPost ->
+				allTags.addAll(cacheAndPost.post.tags)
+				cacheAndPost.post.tags.forEach { postTag ->
+					val t = allTags.find { it.equals(postTag)}
+					if(t != null) {
+						t.postCount++
+						t.hasPosts = true
+						postTag.postCount = t.postCount
+						cacheAndPost.mdCacheItem.tags.add(t.label)
+					}
+				}
+			}
+
 		}
-		info("Time taken to calculate set: ${timeTaken}ms")
+		info("Time taken to calculate set of ${markdownSourceCount} files: ${timeTaken}ms")
 		if(errorMap.isNotEmpty()) {
 			println.error("Errors found in calculations:")
 			errorMap.forEach { t, u ->
@@ -169,7 +188,7 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 	private fun orderPosts(posts:Set<CacheAndPost>): Set<CacheAndPost> {
 		info("sorting")
 		val sortedSet = posts.toSortedSet(compareBy({ cacheAndPost -> cacheAndPost.mdCacheItem.link.date}))
-		println("sorted set size: ${sortedSet.size}")
+		info("${sortedSet.size} markdown files sorted")
 		info("building next and previous links")
 
 		val filteredList = sortedSet.filter { cacheAndPost -> cacheAndPost.mdCacheItem.layout.equals(BLOG_POST) }.toList()
@@ -186,7 +205,7 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 			}
 		}
 
-		println("filteredList size: ${filteredList.size}")
+		info("Excluding non-post items leaves ${filteredList.size}")
 
 		return sortedSet
 	}
@@ -198,8 +217,7 @@ class MDCacheItem(val sourceFileSize: Long, val sourceFilePath: String, @Seriali
 	@Serializable(with = PostLinkSerializer::class)
 	lateinit var link: PostLink
 
-	@Transient // don't know if I need the tags or not
-	val tags: Set<String> = mutableSetOf()
+	val tags: MutableSet<String> = mutableSetOf()
 
 	@Serializable(with = PostLinkSerializer::class)
 	var previous: PostLink? = null
@@ -208,6 +226,9 @@ class MDCacheItem(val sourceFileSize: Long, val sourceFilePath: String, @Seriali
 	var next: PostLink? = null
 
 	var layout: String? = null
+
+	//@Transient
+	var rerender = true
 
 	override fun toString(): String {
 		return "$link [older=${previous}] [newer=${next}]"
