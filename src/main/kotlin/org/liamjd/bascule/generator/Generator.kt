@@ -2,6 +2,7 @@ package org.liamjd.bascule.generator
 
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import mu.KotlinLogging
 import org.koin.core.parameter.ParameterList
 import org.koin.core.parameter.parametersOf
 import org.koin.standalone.KoinComponent
@@ -40,6 +41,8 @@ val DEFAULT_PROCESSORS = arrayOf("org.liamjd.bascule.pipeline.IndexPageGenerator
  */
 @CommandLine.Command(name = "generate", description = ["Generate your static website"])
 class Generator : Runnable, KoinComponent {
+
+	private val logger = KotlinLogging.logger {}
 
 	@CommandLine.Option(names = ["-c", "--clean"], description = ["do not use caching; clears generation directory for a clean build - BROKEN!!!!"])
 	var clean: Boolean = true
@@ -101,6 +104,7 @@ class Generator : Runnable, KoinComponent {
 			htmlRenderer.generateHtml(item.post, item.mdCacheItem, index)
 			generated++
 		}
+		logger.info {"${generated} HTML files rendered"}
 		info("${generated} HTML files rendered")
 
 		//	val sortedPosts = postList.sortedByDescending { it.date }
@@ -127,13 +131,16 @@ class Generator : Runnable, KoinComponent {
 					println.debug("Adding $kClass to the generator pipeline")
 					processorPipeline.add(kClass)
 				} else {
+					logger.error {"Pipeline class ${kClass.simpleName} is not an instance of GeneratorPipeline!"}
 					println.error("Pipeline class ${kClass.simpleName} is not an instance of GeneratorPipeline!")
 				}
 			} catch (cnfe: java.lang.ClassNotFoundException) {
+				logger.error {"Unable to load class '$className' - is it defined in the classpath or provided in a jar? The full package name must be provided."}
 				println.error("Unable to load class '$className' - is it defined in the classpath or provided in a jar? The full package name must be provided.")
 			}
 		}
 		if (processorPipeline.size == 0) {
+			logger.error {"No generators found in the pipeline. Aborting execution!"}
 			error("No generators found in the pipeline. Aborting execution!")
 		}
 
@@ -164,7 +171,7 @@ class Generator : Runnable, KoinComponent {
 			pluginFolder.walk().forEach {
 				if (it.extension.equals("jar")) {
 					jars.add(it.toURI().toURL())
-					println.debug(it.toURI().toURL().toString())
+					logger.debug {it.toURI().toURL().toString() }
 				}
 			}
 
@@ -186,6 +193,8 @@ class Generator : Runnable, KoinComponent {
  */
 private fun List<Post>.process(pipeline: ArrayList<KClass<GeneratorPipeline>>, project: Project, renderer: Renderer, fileHandler: BasculeFileHandler) {
 
+	val logger = KotlinLogging.logger { "listPost.process"}
+
 	val processors = mutableMapOf<KClass<*>, KFunction<*>>()
 
 	for (p in pipeline) {
@@ -199,6 +208,7 @@ private fun List<Post>.process(pipeline: ArrayList<KClass<GeneratorPipeline>>, p
 		launch {
 			for (clazz in processors) {
 				val func = clazz.value
+				logger.debug {"Calling function ${func.name} for pipeline ${clazz.key.simpleName}"}
 				debug("Calling function ${func.name} for pipeline ${clazz.key.simpleName}")
 				@Suppress("UNCHECKED_CAST")
 				func.callSuspend(constructPipeline(
@@ -210,6 +220,7 @@ private fun List<Post>.process(pipeline: ArrayList<KClass<GeneratorPipeline>>, p
 		}
 	}
 	if (progress.isCompleted) {
+		logger.info { "Generation complete. HTML files are stored in folder ${project.dirs.output}" }
 		info("Generation complete. HTML files are stored in folder ${project.dirs.output}")
 	}
 

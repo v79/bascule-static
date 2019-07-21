@@ -11,6 +11,7 @@ import kotlinx.serialization.*
 import kotlinx.serialization.internal.SerialClassDescImpl
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
+import mu.KotlinLogging
 import org.koin.core.parameter.ParameterList
 import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
@@ -39,6 +40,8 @@ import kotlin.system.measureTimeMillis
 class MarkdownScanner(val project: Project) : KoinComponent {
 
 	private val fileHandler: BasculeFileHandler by inject(parameters = { ParameterList() })
+	private val logger = KotlinLogging.logger {}
+
 	val BLOG_POST = "post"
 
 	val mdOptions = MutableDataSet()
@@ -75,6 +78,7 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 
 	private fun calculateUncachedSet() : Set<CacheAndPost> {
 		info("Scanning ${project.dirs.sources.absolutePath} for markdown files")
+		logger.info { "Scanning ${project.dirs.sources.absolutePath} for markdown files" }
 
 		val errorMap = mutableMapOf<String, Any>()
 		val allSources = mutableSetOf<CacheAndPost>()
@@ -85,8 +89,15 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 
 			project.dirs.sources.walk().forEachIndexed { index, mdFile ->
 
+				if(mdFile.parentFile.name.startsWith(".") || mdFile.parentFile.name.startsWith("__")) {
+					logger.warn {"Skipping file ${mdFile.name} in draft folder '${mdFile.parentFile.name}' "}
+					return@forEachIndexed // skip this one
+				}
+
 				if (mdFile.name.startsWith(".") || mdFile.name.startsWith("__")) {
 					markdownScannerProgressBar.progress(index, "Skipping draft file/folder '${mdFile.name}'")
+					logger.warn {"Skipping draft file '${mdFile.name}' "}
+					// TODO: this isn't skipping a directory whose name begins with "__" or "."
 					return@forEachIndexed // skip this one
 				}
 
@@ -95,10 +106,12 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 				}
 
 				if (mdFile.extension.toLowerCase() != "md") {
+					logger.warn {"Skipping file ${mdFile.name} as extension does not match '.md'"}
 					markdownScannerProgressBar.progress(markdownSourceCount, "Skipping file ${mdFile.name} as extension does not match '.md'")
 					return@forEachIndexed
 				} else {
 					info("Processing file ${index} ${mdFile.name}...")
+					logger.debug {"Processing file ${index} ${mdFile.name}..."}
 
 					// construct MDCacheItem for this file, and compare it with the cache file
 					val fileLastModifiedDateTimeLong = mdFile.lastModified();
@@ -140,6 +153,7 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 			}
 
 			markdownScannerProgressBar.progress(markdownSourceCount,"Cache items found for all files.")
+			logger.info {"Cache items found for all $markdownSourceCount files."}
 
 			// build the set of taxonomy tags (somehow this gets it wrong)
 			val allTags = mutableSetOf<Tag>()
@@ -158,9 +172,12 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 
 		}
 		info("Time taken to calculate set of ${markdownSourceCount} files: ${timeTaken}ms")
+		logger.info {"Time taken to calculate set of ${markdownSourceCount} files: ${timeTaken}ms" }
 		if(errorMap.isNotEmpty()) {
+			logger.error {"Errors found in calculations:"  }
 			println.error("Errors found in calculations:")
 			errorMap.forEach { t, u ->
+				logger.error {"$t -> $u" }
 				println.error("$t -> $u")
 			}
 		}
@@ -188,6 +205,7 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 	private fun orderPosts(posts:Set<CacheAndPost>): Set<CacheAndPost> {
 		info("sorting")
 		val sortedSet = posts.toSortedSet(compareBy({ cacheAndPost -> cacheAndPost.mdCacheItem.link.date}))
+		logger.info {"${sortedSet.size} markdown files sorted" }
 		info("${sortedSet.size} markdown files sorted")
 		info("building next and previous links")
 
@@ -206,6 +224,7 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 		}
 
 		info("Excluding non-post items leaves ${filteredList.size}")
+		logger.info {"Excluding non-post items leaves ${filteredList.size}"}
 
 		return sortedSet
 	}

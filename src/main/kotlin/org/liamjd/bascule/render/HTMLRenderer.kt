@@ -7,6 +7,7 @@ import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.ast.Document
 import com.vladsch.flexmark.util.options.MutableDataSet
+import mu.KotlinLogging
 import org.koin.core.parameter.ParameterList
 import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
@@ -18,6 +19,8 @@ import org.liamjd.bascule.model.BasculePost
 import org.liamjd.bascule.scanner.MDCacheItem
 
 class HTMLRenderer(val project: Project) : KoinComponent {
+
+	private val logger = KotlinLogging.logger {}
 
 	private val fileHandler: BasculeFileHandler by inject(parameters = { ParameterList() })
 	private val renderer by inject<Renderer> { ParameterList(project) }
@@ -36,6 +39,7 @@ class HTMLRenderer(val project: Project) : KoinComponent {
 
 	fun generateHtml(post: BasculePost, mdCacheItem: MDCacheItem, itemCount: Int ) {
 		println("Rendering post ${post.sourceFileName}")
+		logger.info {"Rendering post ${post.sourceFileName}"  }
 		render(project.model,post,itemCount)
 	}
 

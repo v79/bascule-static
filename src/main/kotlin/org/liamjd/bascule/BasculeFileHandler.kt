@@ -1,7 +1,7 @@
 package org.liamjd.bascule
 
+import mu.KotlinLogging
 import org.liamjd.bascule.lib.FileHandler
-import println.debug
 import java.io.File
 import java.io.InputStream
 import java.nio.file.FileSystems
@@ -11,6 +11,7 @@ import java.nio.file.FileSystems
  */
 class BasculeFileHandler : FileHandler {
 
+	private val logger = KotlinLogging.logger {}
 	override val pathSeparator = FileSystems.getDefault().separator!!
 
 	override fun createDirectories(path: String): Boolean {
@@ -39,6 +40,7 @@ class BasculeFileHandler : FileHandler {
 		} else {
 			return folder
 		}
+		logger.error {"Could not create directory $parentPath$pathSeparator$folderName"}
 		throw Exception("Could not create directory $parentPath$pathSeparator$folderName")
 	}
 
@@ -51,6 +53,7 @@ class BasculeFileHandler : FileHandler {
 		} else {
 			return folder
 		}
+		logger.error {"Could not create directories $parentPath\$folderName"}
 		throw Exception("Could not create directories $parentPath\$folderName")
 	}
 
@@ -99,7 +102,7 @@ class BasculeFileHandler : FileHandler {
 	 * @param[fileType] the type of file to delete, e.g. ".html"
 	 */
 	override fun emptyFolder(folder: File, fileType: String) {
-		debug("Purging folder ${folder.name} of '$fileType' files")
+		logger.debug {"Purging folder ${folder.name} of '$fileType' files" }
 		folder.walk().forEach {
 			if (it != folder && it.name.endsWith(fileType)) {
 				it.delete()
@@ -112,12 +115,12 @@ class BasculeFileHandler : FileHandler {
 	 * @param[folder] the folder to empty recursively
 	 */
 	override fun emptyFolder(folder: File) {
-		debug("Purging folder ${folder.name}")
+		logger.debug {"Purging folder ${folder.name}" }
 		folder.deleteRecursively()
 	}
 
 	override fun copyFile(source: File, destination: File): File {
-		debug("Copying '${source.path}' to '${destination.path}'")
+		logger.debug {"Copying '${source.path}' to '${destination.path}'" }
 		return source.copyTo(destination, overwrite = true)
 	}
 
