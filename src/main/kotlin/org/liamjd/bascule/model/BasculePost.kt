@@ -136,7 +136,7 @@ class BasculePost(val document: Document) : Post, PostStatus() {
 							}
 							PostMetaData.tags -> {
 								// split string [tagA, tagB, tagC] into a list of three tags, removing spaces
-								post.tags.addAll(value.trim().drop(1).dropLast(1).split(",").map { Tag(it.trim(), it.trim().slug()) })
+								post.tags.addAll(value.trim().drop(1).dropLast(1).split(",").map { label ->  Tag(label.trim(), label.trim().slug()) })
 							}
 							else -> {
 								println("How did i get here?")

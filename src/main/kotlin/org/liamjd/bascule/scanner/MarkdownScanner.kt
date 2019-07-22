@@ -57,10 +57,17 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 	}
 
 
-	// this method is called by
+	// this method is called by the Generator
 	fun calculateRenderSet() : Set<CacheAndPost> {
+
+		logger.debug{"Calculate render set!!!!"}
+
 		val uncachedSet = calculateUncachedSet()
+
+		logger.debug { "Uncached set size: ${uncachedSet.size}"}
 		val sorted = orderPosts(uncachedSet)
+
+		logger.debug {"Ordered set size: ${sorted.size}"}
 		// urgh. can't kotlin do this for me?
 		val toBeCached = mutableSetOf<MDCacheItem>()
 		sorted.forEach { cacheAndPost ->
@@ -149,27 +156,44 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 						}
 					}
 				}
-
 			}
 
 			markdownScannerProgressBar.progress(markdownSourceCount,"Cache items found for all files.")
+
+			if(markdownSourceCount != allSources.size) {
+				logger.error { "Markdown source count ($markdownSourceCount) != all sources size (${allSources.size}"}
+			}
+
+
 			logger.info {"Cache items found for all $markdownSourceCount files."}
 
 			// build the set of taxonomy tags (somehow this gets it wrong)
+			logger.info("Building the set of tags")
 			val allTags = mutableSetOf<Tag>()
 			allSources.forEach { cacheAndPost ->
-				allTags.addAll(cacheAndPost.post.tags)
-				cacheAndPost.post.tags.forEach { postTag ->
-					val t = allTags.find { it.equals(postTag)}
-					if(t != null) {
-						t.postCount++
-						t.hasPosts = true
-						postTag.postCount = t.postCount
-						cacheAndPost.mdCacheItem.tags.add(t.label)
-					}
-				}
-			}
+				logger.info("calculateCachedSet: cacheAndPost ${cacheAndPost.mdCacheItem.link.title} has tags: ${cacheAndPost.post.tags}")
 
+
+
+				cacheAndPost.post.tags.forEach { postTag ->
+					if(allTags.contains(postTag)) {
+						allTags.elementAt(allTags.indexOf(postTag)).let {
+							it.postCount++
+							it.hasPosts = true
+							cacheAndPost.mdCacheItem.tags.add(it.label)
+							postTag.hasPosts = true
+							postTag.postCount = it.postCount
+						}
+					} else {
+						allTags.add(postTag)
+					}
+
+				}
+
+
+			}
+			// debugging tags
+			logger.info { "All tags calculated"}
 		}
 		info("Time taken to calculate set of ${markdownSourceCount} files: ${timeTaken}ms")
 		logger.info {"Time taken to calculate set of ${markdownSourceCount} files: ${timeTaken}ms" }
@@ -204,7 +228,7 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 	 */
 	private fun orderPosts(posts:Set<CacheAndPost>): Set<CacheAndPost> {
 		info("sorting")
-		val sortedSet = posts.toSortedSet(compareBy({ cacheAndPost -> cacheAndPost.mdCacheItem.link.date}))
+		val sortedSet = posts.toSortedSet(compareBy({ cacheAndPost -> cacheAndPost.mdCacheItem.link.date}, { cacheAndPost -> cacheAndPost.mdCacheItem.link.url}))
 		logger.info {"${sortedSet.size} markdown files sorted" }
 		info("${sortedSet.size} markdown files sorted")
 		info("building next and previous links")

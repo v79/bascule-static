@@ -1,5 +1,6 @@
 package org.liamjd.bascule.pipeline
 
+import mu.KotlinLogging
 import org.liamjd.bascule.lib.FileHandler
 import org.liamjd.bascule.lib.generators.AbstractPostListGenerator
 import org.liamjd.bascule.lib.generators.GeneratorPipeline
@@ -14,17 +15,23 @@ import kotlin.math.roundToInt
 
 class TaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int = 1, postsPerPage: Int) : GeneratorPipeline, AbstractPostListGenerator(posts, numPosts, postsPerPage) {
 
+	private val logger = KotlinLogging.logger {}
+
 	val FOLDER_NAME = "tags"
 	override val TEMPLATE = "tag"
 
 	override suspend fun process(project: Project, renderer: Renderer, fileHandler: FileHandler) {
 		info("Building tag navigation pages")
+
 		val tagsFolder = fileHandler.createDirectory(project.dirs.output.absolutePath, FOLDER_NAME)
-		val tagSet = getAllTags(posts)
+		val tagSet = getAllTagsFromPosts(posts)
 
 		tagSet.forEach { tag ->
 			val taggedPosts = getPostsWithTag(posts, tag)
 			val numPosts = tag.postCount
+			if(numPosts != taggedPosts.size) {
+				logger.error("${tag} has a mismatch between tag.postCount (${tag.postCount}) and the count of posts with that tag (${taggedPosts.size})")
+			}
 			val totalPages = ceil(numPosts.toDouble() / postsPerPage).roundToInt()
 
 			// only create tagged index pages if there's more than one page with the tag
@@ -48,6 +55,7 @@ class TaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int = 1, p
 		model.putAll(project.model)
 		model.put("title", "List of tags")
 		model.put("tags", tagSet.filter { it.postCount > 1 }.sortedBy { it.postCount }.reversed())
+		logger.info("Tag model now $tagSet")
 
 		val renderedContent = renderer.render(model, "taglist")
 
@@ -59,19 +67,63 @@ class TaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int = 1, p
 	 */
 	private fun getPostsWithTag(posts: List<Post>, tag: Tag): List<Post> {
 		val taggedPosts = mutableListOf<Post>()
-		posts.forEach {
-			it.tags.forEach { t -> if (t.label.equals(tag.label)) taggedPosts.add(it) }
+		posts.forEach { post ->
+			post.tags.forEach { t -> if (t.label.equals(tag.label)) {
+				taggedPosts.add(post)
+			} }
 		}
+
+
+	/*	posts.forEach { post ->
+			logger.info { "Checking post ${post.title} for its tags"}
+			if(post.title=="Upgraded to Grails 2.3.7") {
+				logger.warn{"*** Found 'Upgraded to Grails 2.3.7'"}
+				logger.warn{"Tags are:"}
+				post.tags.forEach { t ->
+					logger.warn{"\t$t" }
+				}
+			*//*post.tags.forEach { t -> if (t.label.equals(tag.label)) {
+				logger.info("Found post ${post.title} with tag ${tag.label}")
+			} }*//*
+		}}*/
 		return taggedPosts.toList()
 	}
 
 	/**
 	 * Get a set of all the unique tags across the site
 	 */
-	private fun getAllTags(posts: List<Post>): Set<Tag> {
+	private fun getAllTagsFromPosts(posts: List<Post>): Set<Tag> {
+
+		logger.info { "Taxonomy generation tag status:"}
+
+		// this is failing because a Tag has label, count, boolean values
+		// the addAll isn't always picking the "correct" Tag, as this is derived from pages, not a separate set
+
 		val tagSet = mutableSetOf<Tag>()
-		posts.forEach {
+		posts.forEach { post ->
+			post.tags.forEach { tag ->
+				if(tagSet.contains(tag)) {
+					tagSet.elementAt(tagSet.indexOf(tag)).let {
+						if(it.postCount < tag.postCount) {
+							logger.info("${it.label}: resetting count from ${it.postCount} to ${tag.postCount}")
+							it.postCount = tag.postCount
+						}
+						it.hasPosts = true
+					}
+				} else {
+					tagSet.add(tag)
+				}
+			}
+		}
+
+
+/*		posts.forEach {
 			tagSet.addAll(it.tags)
+			logger.info{"${it.tags}"}
+		}*/
+		logger.info { "Tag set is now..."}
+		tagSet.forEach {
+			logger.info{ it }
 		}
 		return tagSet.toSet()
 	}
