@@ -2,6 +2,7 @@ package org.liamjd.bascule
 
 import mu.KotlinLogging
 import org.liamjd.bascule.lib.FileHandler
+import java.io.BufferedReader
 import java.io.File
 import java.io.InputStream
 import java.nio.file.FileSystems
@@ -60,6 +61,11 @@ class BasculeFileHandler : FileHandler {
 	override fun getFileStream(folder: File, fileName: String): InputStream {
 		val file = File(folder, fileName)
 		return file.inputStream()
+	}
+
+	override fun readFileAsString(folder: File, fileName: String): String {
+		val fileStream = getFileStream(folder,fileName)
+		return fileStream.bufferedReader().use(BufferedReader::readText)
 	}
 
 	/**

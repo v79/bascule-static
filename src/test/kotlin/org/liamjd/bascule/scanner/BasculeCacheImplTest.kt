@@ -22,7 +22,7 @@ internal class BasculeCacheImplTest : Spek({
 	val mDirectories = mockk<Directories>()
 	val mFileHandler = mockk<FileHandler>()
 	val mSourceFile = mockk<File>()
-	val mJsonStream = mockk<InputStream>()
+	val mJsonStream = mockk<InputStream>(relaxed = true)
 
 	describe("Read a json string and return it as a Set of MDCacheItems") {
 
@@ -31,12 +31,9 @@ internal class BasculeCacheImplTest : Spek({
 
 		it("creates single item for Review of Big Bang") {
 
-			every { mFileHandler.getFileStream(any(), "${TEST_DATA.test_project_name}.cache.json") } returns mJsonStream
-
-			every { mJsonStream.toString() } returns TEST_DATA.big_bang_json
+			every { mFileHandler.readFileAsString(any(), "${TEST_DATA.test_project_name}.cache.json") } returns TEST_DATA.big_bang_json
 
 			val cacher = BasculeCacheImpl(mProject, mFileHandler)
-
 			val result = cacher.loadCacheFile()
 
 			assertNotNull(result, "Cache returned non-null object")

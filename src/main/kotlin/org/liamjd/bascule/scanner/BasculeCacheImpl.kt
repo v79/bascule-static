@@ -6,7 +6,6 @@ import kotlinx.serialization.set
 import org.liamjd.bascule.lib.FileHandler
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.slug
-import java.io.BufferedReader
 
 class BasculeCacheImpl(val project: Project, val fileHandler: FileHandler) : BasculeCache {
 
@@ -17,8 +16,7 @@ class BasculeCacheImpl(val project: Project, val fileHandler: FileHandler) : Bas
 	}
 
 	override fun loadCacheFile(): Set<MDCacheItem> {
-		val cacheFile = fileHandler.getFileStream(project.dirs.sources, getCacheFileName())
-		val jsonString = cacheFile.bufferedReader().use(BufferedReader::readText)
+		val jsonString = fileHandler.readFileAsString(project.dirs.sources,getCacheFileName())
 		val json = Json(JsonConfiguration(prettyPrint = true))
 		val cacheItems: Set<MDCacheItem> = json.parse(MDCacheItem.serializer().set, jsonString)
 		return cacheItems
