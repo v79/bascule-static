@@ -7,16 +7,12 @@ import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.ast.Document
 import com.vladsch.flexmark.util.options.MutableDataSet
-import kotlinx.serialization.*
-import kotlinx.serialization.internal.SerialClassDescImpl
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
+import kotlinx.serialization.UnstableDefault
 import mu.KotlinLogging
 import org.koin.core.parameter.ParameterList
 import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
 import org.liamjd.bascule.BasculeFileHandler
-import org.liamjd.bascule.cache.LocalDateTimeSerializer
 import org.liamjd.bascule.flexmark.hyde.HydeExtension
 import org.liamjd.bascule.lib.model.PostLink
 import org.liamjd.bascule.lib.model.Project
@@ -29,9 +25,7 @@ import println.info
 import java.io.File
 import java.io.InputStream
 import java.time.Instant
-import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.ZoneId
 import java.util.*
 import kotlin.system.measureTimeMillis
 
@@ -42,10 +36,13 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 	private val fileHandler: BasculeFileHandler by inject(parameters = { ParameterList() })
 	private val logger = KotlinLogging.logger {}
 
-	val BLOG_POST = "post"
+	private val BLOG_POST = "post"
+	private val cacheFileName: String
 
 	val mdOptions = MutableDataSet()
 	val mdParser: Parser
+
+	val cache: BasculeCache
 
 	init {
 		// TODO: move this into another class? Configure externally?
@@ -54,6 +51,9 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 		mdOptions.set(HtmlRenderer.INDENT_SIZE, 2) // prettier HTML
 		mdOptions.set(HydeExtension.SOURCE_FOLDER, project.dirs.sources.toString())
 		mdParser = Parser.builder(mdOptions).build()
+		cacheFileName = "${project.name.slug()}.cache.json"
+
+		cache = BasculeCacheImpl(project,fileHandler) // TODO: use DI
 	}
 
 
@@ -61,6 +61,8 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 	fun calculateRenderSet() : Set<CacheAndPost> {
 
 		logger.debug{"Calculate render set!!!!"}
+
+		val cachedSet = cache.loadCacheFile()
 
 		val uncachedSet = calculateUncachedSet()
 
@@ -73,14 +75,9 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 		sorted.forEach { cacheAndPost ->
 			toBeCached.add(cacheAndPost.mdCacheItem)
 		}
-		writeCache(toBeCached)
-		return sorted
-	}
 
-	private fun writeCache(setToCache: Set<MDCacheItem>) {
-		val json = Json(JsonConfiguration(prettyPrint = true))
-		val jsonData = json.stringify(MDCacheItem.serializer().set, setToCache)
-		fileHandler.writeFile(project.dirs.sources,"${project.name.slug()}.cache.json",jsonData)
+		cache.writeCacheFile(toBeCached)
+		return sorted
 	}
 
 	private fun calculateUncachedSet() : Set<CacheAndPost> {
@@ -172,11 +169,8 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 			val allTags = mutableSetOf<Tag>()
 			allSources.forEach { cacheAndPost ->
 				logger.info("calculateCachedSet: cacheAndPost ${cacheAndPost.mdCacheItem.link.title} has tags: ${cacheAndPost.post.tags}")
-
-
-
 				cacheAndPost.post.tags.forEach { postTag ->
-					if(allTags.contains(postTag)) {
+					if (allTags.contains(postTag)) {
 						allTags.elementAt(allTags.indexOf(postTag)).let {
 							it.postCount++
 							it.hasPosts = true
@@ -187,10 +181,7 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 					} else {
 						allTags.add(postTag)
 					}
-
 				}
-
-
 			}
 			// debugging tags
 			logger.info { "All tags calculated"}
@@ -254,64 +245,4 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 	}
 }
 
-@Serializable
-class MDCacheItem(val sourceFileSize: Long, val sourceFilePath: String, @Serializable(with = LocalDateTimeSerializer::class) val sourceModificationDate: LocalDateTime) {
-
-	@Serializable(with = PostLinkSerializer::class)
-	lateinit var link: PostLink
-
-	val tags: MutableSet<String> = mutableSetOf()
-
-	@Serializable(with = PostLinkSerializer::class)
-	var previous: PostLink? = null
-
-	@Serializable(with = PostLinkSerializer::class)
-	var next: PostLink? = null
-
-	var layout: String? = null
-
-	//@Transient
-	var rerender = true
-
-	override fun toString(): String {
-		return "$link [older=${previous}] [newer=${next}]"
-	}
-
-}
-
-object PostLinkSerializer : KSerializer<PostLink> {
-	override fun deserialize(decoder: Decoder): PostLink {
-		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-	}
-
-	override fun serialize(encoder: Encoder, obj: PostLink) {
-		val compositeOutput = encoder.beginStructure(descriptor)
-		compositeOutput.encodeStringElement(descriptor, 0, obj.title)
-		compositeOutput.encodeStringElement(descriptor, 1, obj.url)
-		compositeOutput.encodeLongElement(descriptor, 2, localDateToLong(obj.date))
-		compositeOutput.endStructure(descriptor)
-	}
-
-	override val descriptor: SerialDescriptor = object : SerialClassDescImpl("postLink") {
-		init {
-			addElement("title") // req will have index 0
-			addElement("url") // res will have index 1
-			addElement("date")
-		}
-	}
-
-	private fun localDateToLong(date: LocalDate): Long {
-		val zoneId = ZoneId.systemDefault() // or: ZoneId.of("Europe/Oslo");
-		return date.atStartOfDay(zoneId).toEpochSecond()
-
-	}
-
-}
-
 class CacheAndPost(val mdCacheItem: MDCacheItem,val post:BasculePost)
-
-//public final val date: java.time.LocalDate /* compiled code */
-
-//public final val title: kotlin.String /* compiled code */
-
-//public final val url: kotlin.String /* compiled code */
