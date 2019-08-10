@@ -38,7 +38,7 @@ import java.time.ZoneId
 import java.util.*
 import kotlin.system.measureTimeMillis
 
-
+@Deprecated("Obsolete",ReplaceWith("org.liamjd.bascule.scanner.MarkdownScanner"))
 class FolderWalker(val project: Project) : KoinComponent {
 
 	private val renderer by inject<Renderer> { ParameterList(project) }

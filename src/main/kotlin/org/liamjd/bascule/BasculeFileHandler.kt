@@ -4,6 +4,7 @@ import mu.KotlinLogging
 import org.liamjd.bascule.lib.FileHandler
 import java.io.BufferedReader
 import java.io.File
+import java.io.FileNotFoundException
 import java.io.InputStream
 import java.nio.file.FileSystems
 
@@ -58,8 +59,10 @@ class BasculeFileHandler : FileHandler {
 		throw Exception("Could not create directories $parentPath\$folderName")
 	}
 
+	@Throws(FileNotFoundException::class)
 	override fun getFileStream(folder: File, fileName: String): InputStream {
 		val file = File(folder, fileName)
+		if(!file.exists() || !file.canRead()) throw FileNotFoundException("Could not find (or read) file ${folder.name}/$fileName")
 		return file.inputStream()
 	}
 

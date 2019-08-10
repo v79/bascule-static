@@ -2,19 +2,17 @@ package org.liamjd.bascule.scanner
 
 import io.mockk.every
 import io.mockk.mockk
-import org.jetbrains.spek.api.Spek
-import org.jetbrains.spek.api.dsl.describe
-import org.jetbrains.spek.api.dsl.it
 import org.liamjd.bascule.lib.FileHandler
 import org.liamjd.bascule.lib.model.Directories
 import org.liamjd.bascule.lib.model.Project
+import org.spekframework.spek2.Spek
+import org.spekframework.spek2.style.specification.describe
 import java.io.File
-import java.io.InputStream
+import java.io.FileNotFoundException
 import java.time.LocalDate
 import java.time.Month
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-
 
 internal class BasculeCacheImplTest : Spek({
 
@@ -22,7 +20,24 @@ internal class BasculeCacheImplTest : Spek({
 	val mDirectories = mockk<Directories>()
 	val mFileHandler = mockk<FileHandler>()
 	val mSourceFile = mockk<File>()
-	val mJsonStream = mockk<InputStream>(relaxed = true)
+
+	describe("Creating a cache file when no cache exists") {
+
+		every { mFileHandler.readFileAsString(any(), "${TEST_DATA.test_project_name}.cache.json")} throws (FileNotFoundException())
+
+		it("will return an empty set when no cache file exists") {
+
+			val cacher = BasculeCacheImpl(mProject, mFileHandler)
+
+			val result = cacher.loadCacheFile()
+
+			assertNotNull(result) {
+				assertEquals(0,it.size)
+			}
+//			verify { mFileHandler.writeFile(any(),"test-data.cache.json",any())}
+		}
+
+	}
 
 	describe("Read a json string and return it as a Set of MDCacheItems") {
 
