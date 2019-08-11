@@ -2,6 +2,7 @@ package org.liamjd.bascule.scanner
 
 import mu.KotlinLogging
 import org.koin.core.parameter.ParameterList
+import org.koin.core.parameter.parametersOf
 import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
 import org.liamjd.bascule.BasculeFileHandler
@@ -21,8 +22,8 @@ import kotlin.system.measureTimeMillis
 class ChangeSetCalculator(val project: Project) : KoinComponent {
 
 	private val fileHandler: BasculeFileHandler by inject(parameters = { ParameterList() })
+	private val postBuilder: PostBuilder by inject { parametersOf(project) }
 
-	private val postBuilder: PostBuilder by inject { ParameterList() }
 	private val logger = KotlinLogging.logger {}
 
 	fun calculateUncachedSet(cachedSet: Set<MDCacheItem>): Set<CacheAndPost> {
@@ -145,10 +146,6 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 						mdItem.link = PostLink(post.title, post.url, post.date)
 
 						post.sourceFileName = mdFile.canonicalPath
-
-						println("project.dirs.output: ${project.dirs.output}")
-						println("sourcePath: ${sourcePath}")
-
 						post.destinationFolder = fileHandler.getFile(project.dirs.output, sourcePath)
 						post.rawContent = fileHandler.readFileAsString(mdFile.parentFile, mdFile.name) // TODO: this still contains the yaml front matter :(
 
