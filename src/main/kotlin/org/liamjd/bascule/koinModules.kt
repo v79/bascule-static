@@ -9,15 +9,17 @@ import org.liamjd.bascule.render.HandlebarsRenderer
 import org.liamjd.bascule.scanner.BasculeCache
 import org.liamjd.bascule.scanner.BasculeCacheImpl
 import org.liamjd.bascule.scanner.ChangeSetCalculator
+import org.liamjd.bascule.scanner.PostBuilder
 
 /**
  * Declares modules for Dependency Injection via Koin
  */
 val generationModule = module {
 	factory { AbstractYamlFrontMatterVisitor() }
-	factory { (project : Project, fileHandler: FileHandler) -> BasculeCacheImpl(project, fileHandler) as BasculeCache }
-	factory { (project : Project) -> HandlebarsRenderer(project) as Renderer }
-	factory { (project: Project) -> ChangeSetCalculator(project)}
+	factory { (project: Project, fileHandler: FileHandler) -> BasculeCacheImpl(project, fileHandler) as BasculeCache }
+	factory { (project: Project) -> HandlebarsRenderer(project) as Renderer }
+	factory { (project: Project) -> ChangeSetCalculator(project) }
+	factory { (project: Project) -> PostBuilder(project) }
 }
 
 val fileModule = module {

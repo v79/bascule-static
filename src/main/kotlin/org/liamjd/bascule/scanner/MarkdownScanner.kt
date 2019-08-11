@@ -29,7 +29,7 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 
 		val cachedSet = cache.loadCacheFile()
 
-		val uncachedSet = changeSetCalculator.calculateUncachedSet()
+		val uncachedSet = changeSetCalculator.calculateUncachedSet(cachedSet)
 
 		logger.debug { "Uncached set size: ${uncachedSet.size}" }
 		val sorted = orderPosts(uncachedSet)

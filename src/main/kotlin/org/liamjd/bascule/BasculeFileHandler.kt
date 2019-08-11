@@ -133,4 +133,8 @@ class BasculeFileHandler : FileHandler {
 		return source.copyTo(destination, overwrite = true)
 	}
 
+	fun getFile(folder: File, fileName: String) : File {
+		return File(folder,fileName)
+	}
+
 }

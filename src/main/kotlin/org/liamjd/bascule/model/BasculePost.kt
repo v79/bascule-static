@@ -180,6 +180,10 @@ class BasculePost(val document: Document) : Post, PostStatus() {
 		}
 
 	}
+
+	override fun toString(): String {
+		return "BasculePost: ${this.title}, slug:${this.slug}, layout:${this.layout}"
+	}
 }
 
 /**

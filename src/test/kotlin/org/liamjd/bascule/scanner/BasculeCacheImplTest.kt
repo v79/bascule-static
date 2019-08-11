@@ -9,8 +9,6 @@ import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
 import java.io.File
 import java.io.FileNotFoundException
-import java.time.LocalDate
-import java.time.Month
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
@@ -63,34 +61,3 @@ internal class BasculeCacheImplTest : Spek({
 
 })
 
-object TEST_DATA {
-	val test_project_name = "test-project"
-
-	val big_bang_title = "Review of Big Bang by Simon Singh"
-	val big_bang_url = "2005/review-of-big-bang.html"
-	val big_bang_date = LocalDate.of(2005, Month.OCTOBER,8)
-	val big_bang_json = """
-	[
-		{
-			"sourceFileSize": 1061,
-			"sourceFilePath": "D:\\Development\\liamjdavison\\sources\\2005\\Review of Big Bang.md",
-			"sourceModificationDate": "2018-09-11T21:32:30.342",
-			"link": {
-				"title": "Review of Big Bang by Simon Singh",
-				"url": "2005/review-of-big-bang.html",
-				"date": 1128726000
-			},
-			"tags": [
-			],
-			"previous": null,
-			"next": {
-				"title": "Single Syllable Story",
-				"url": "2005/single-syllable-story.html",
-				"date": 1128726000
-			},
-			"layout": "post",
-			"rerender": true
-		}
-	]
-	""".trimIndent()
-}
