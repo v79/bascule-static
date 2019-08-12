@@ -44,6 +44,34 @@ object TEST_DATA {
 	val singleFileList = arrayOf<File>()
 }
 
+object REVIEW_BIG_BANG_CACHE {
+
+	val json = """
+		[
+    {
+        "sourceFileSize": 1061,
+        "sourceFilePath": "D:\\Development\\liamjdavison\\sources\\2005\\Review of Big Bang.md",
+        "sourceModificationDate": "2018-09-11T21:32:30.342",
+        "link": {
+            "title": "Review of Big Bang by Simon Singh",
+            "url": "2005/review-of-big-bang.html",
+            "date": 1128726000
+        },
+        "tags": [
+        ],
+        "previous": null,
+        "next": {
+            "title": "Single Syllable Story",
+            "url": "2005/single-syllable-story.html",
+            "date": 1128726000
+        },
+        "layout": "post",
+        "rerender": true
+    }
+	]
+	""".trimIndent()
+}
+
 object REVIEW_BIG_BANG {
 	val markDownSource = """
 		---

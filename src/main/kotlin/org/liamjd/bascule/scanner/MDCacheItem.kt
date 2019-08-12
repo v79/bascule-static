@@ -21,11 +21,22 @@ class MDCacheItem(val sourceFileSize: Long, val sourceFilePath: String, @Seriali
 
 	var layout: String? = null
 
-	//@Transient
+	@Transient
 	var rerender = true
 
 	override fun toString(): String {
-		return "$link [older=${previous}] [newer=${next}]"
+		val stringBuilder = StringBuilder()
+		stringBuilder.append("MDCacheItem: [source=$sourceFilePath], [size=$sourceFileSize], [date=${sourceModificationDate}]")
+		return stringBuilder.toString()
+	}
+
+	// radical idea - hashCode is only based on the sourceFilePath! Useful for the caching sets
+	override fun hashCode(): Int {
+		return this.sourceFilePath.hashCode()
+	}
+
+	override fun equals(other: Any?): Boolean {
+		return other != null && other is MDCacheItem && this.sourceFilePath.equals(this.sourceFilePath)
 	}
 
 }

@@ -23,7 +23,6 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 
 	private val fileHandler: BasculeFileHandler by inject(parameters = { ParameterList() })
 	private val postBuilder: PostBuilder by inject { parametersOf(project) }
-
 	private val logger = KotlinLogging.logger {}
 
 	fun calculateUncachedSet(cachedSet: Set<MDCacheItem>): Set<CacheAndPost> {
@@ -37,8 +36,7 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 		val timeTaken = measureTimeMillis {
 			val markdownScannerProgressBar = ProgressBar("Reading markdown files", animated = true, asPercentage = false)
 
-
-			markdownSourceCount = walkFolder(project.dirs.sources, markdownScannerProgressBar, markdownSourceCount, errorMap, allSources)
+			markdownSourceCount = walkFolder(project.dirs.sources, markdownScannerProgressBar, markdownSourceCount, errorMap, allSources, cachedSet)
 
 			markdownScannerProgressBar.progress(markdownSourceCount, "Cache items found for all files.")
 
@@ -84,11 +82,11 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 		return allSources
 	}
 
-	private fun walkFolder(folder: File, markdownScannerProgressBar: ProgressBar, markdownSourceCount: Int, errorMap: MutableMap<String, Any>, allSources: MutableSet<CacheAndPost>): Int {
+	// TODO: tidy up this recursive function
+	private fun walkFolder(folder: File, markdownScannerProgressBar: ProgressBar, markdownSourceCount: Int, errorMap: MutableMap<String, Any>, allSources: MutableSet<CacheAndPost>, cachedSet: Set<MDCacheItem>): Int {
 		var index = 0
 		var markdownSourceCount1 = markdownSourceCount
-		for (mdFile in folder.listFiles()) {
-			println("Processing file $index: ${mdFile.name}")
+		fileLoop@ for (mdFile in folder.listFiles()) {
 			index++
 			// walker starts with the current director, which we don't need
 			if (mdFile.absolutePath.equals(project.dirs.sources.absolutePath)) {
@@ -96,7 +94,7 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 			}
 
 			if (mdFile.isDirectory) {
-				walkFolder(mdFile, markdownScannerProgressBar, markdownSourceCount1, errorMap, allSources)
+				walkFolder(mdFile, markdownScannerProgressBar, markdownSourceCount1, errorMap, allSources, cachedSet)
 			}
 
 			if (mdFile.parentFile.name.startsWith(".") || mdFile.parentFile.name.startsWith("__")) {
@@ -111,8 +109,6 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 				continue // skip this one
 			}
 
-
-
 			if (mdFile.extension.toLowerCase() != "md") {
 				logger.warn { "Skipping file ${mdFile.name} as extension does not match '.md'" }
 				markdownScannerProgressBar.progress(markdownSourceCount1, "Skipping file ${mdFile.name} as extension does not match '.md'")
@@ -120,10 +116,7 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 			} else {
 
 				/** Finally, we have something we can parse as a BasculePost!!! **/
-
-
 				val post = postBuilder.buildPost(mdFile)
-
 
 				info("Processing file ${index} ${mdFile.name}...")
 				logger.debug { "Processing file ${index} ${mdFile.name}..." }
@@ -134,12 +127,21 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 						.getDefault().toZoneId())
 				val mdItem = MDCacheItem(mdFile.length(), mdFile.absolutePath, fileLastModifiedDateTime)
 
+
 				// check for errors
 				when (post) {
 					is PostGenError -> {
 						errorMap.put(mdFile.name, post.errorMessage)
 					}
 					is BasculePost -> {
+
+						// if we have a cache hit (the item is recorded correctly in the cache, then skip it
+						if(!project.clean) {
+							if (cacheContainsItem(mdItem, cachedSet)) {
+								continue@fileLoop
+							}
+						}
+
 						val sourcePath = mdFile.parentFile.absolutePath.toString().removePrefix(project.dirs.sources.absolutePath.toString())
 						mdItem.layout = post.layout
 						post.url = calculateUrl(post.slug, sourcePath)
@@ -158,6 +160,18 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 		return markdownSourceCount1
 	}
 
+	private fun cacheContainsItem(mdItem: MDCacheItem, cachedSet: Set<MDCacheItem>): Boolean {
+		var cacheFound = false;
+
+		for(c in cachedSet) {
+			if(c.sourceFilePath.equals(mdItem.sourceFilePath) && c.sourceModificationDate.equals(mdItem.sourceModificationDate) && c.sourceFileSize.equals(mdItem.sourceFileSize)) {
+				logger.info{"Cache match found for ${mdItem.sourceFilePath}"}
+				cacheFound = true
+			}
+		}
+
+		return cacheFound
+	}
 
 	private fun calculateUrl(slug: String, sourcePath: String): String {
 		val url: String = if (sourcePath.isEmpty()) {

@@ -45,7 +45,7 @@ class Generator : Runnable, KoinComponent {
 	private val logger = KotlinLogging.logger {}
 
 	@CommandLine.Option(names = ["-c", "--clean"], description = ["do not use caching; clears generation directory for a clean build - BROKEN!!!!"])
-	var clean: Boolean = true
+	var clean: Boolean = false
 
 	private val fileHandler: BasculeFileHandler by inject(parameters = { ParameterList() })
 	private val renderer by inject<Renderer> { parametersOf(project) }
