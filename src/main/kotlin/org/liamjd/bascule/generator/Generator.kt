@@ -2,6 +2,7 @@ package org.liamjd.bascule.generator
 
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import mu.KotlinLogging
 import org.koin.core.parameter.ParameterList
 import org.koin.core.parameter.parametersOf
 import org.koin.standalone.KoinComponent
@@ -9,13 +10,14 @@ import org.koin.standalone.inject
 import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.Constants
 import org.liamjd.bascule.assets.AssetsProcessor
+import org.liamjd.bascule.cache.CacheAndPost
 import org.liamjd.bascule.lib.generators.GeneratorPipeline
 import org.liamjd.bascule.lib.model.Post
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.lib.render.Renderer
-import org.liamjd.bascule.model.BasculePost
 import org.liamjd.bascule.random
-import org.liamjd.bascule.scanner.FolderWalker
+import org.liamjd.bascule.render.HTMLRenderer
+import org.liamjd.bascule.scanner.MarkdownScanner
 import picocli.CommandLine
 import println.debug
 import println.info
@@ -40,8 +42,10 @@ val DEFAULT_PROCESSORS = arrayOf("org.liamjd.bascule.pipeline.IndexPageGenerator
 @CommandLine.Command(name = "generate", description = ["Generate your static website"])
 class Generator : Runnable, KoinComponent {
 
-	@CommandLine.Option(names = ["-c", "--clean"], description = ["do not use caching; clears generation directory for a clean build - BROKEN!!!!"])
-	var clean: Boolean = true
+	private val logger = KotlinLogging.logger {}
+
+	@CommandLine.Option(names = ["-c", "--clean"], description = ["do not use caching; clears generation directory for a clean build"])
+	var clean: Boolean = false
 
 	private val fileHandler: BasculeFileHandler by inject(parameters = { ParameterList() })
 	private val renderer by inject<Renderer> { parametersOf(project) }
@@ -85,23 +89,34 @@ class Generator : Runnable, KoinComponent {
 		// unless I cache all content externally
 //		fileHandler.emptyFolder(project.dirs.output, OUTPUT_SUFFIX)
 //		fileHandler.emptyFolder(File(project.dirs.output, "tags"))
-		val walker = FolderWalker(project)
+//		val walker = FolderWalker(project)
 
-		val postList = walker.generate()
-		val sortedPosts = postList.sortedByDescending { it.date }
-		val generators = mutableListOf<String>()
+		val walker = MarkdownScanner(project)
+
+		val pageList = walker.calculateRenderSet()
+
+		val htmlRenderer = HTMLRenderer(project)
+
+		var generated = 0
+		pageList.forEachIndexed { index, item ->
+			htmlRenderer.renderHTML(item.post, index)
+			generated++
+		}
+		logger.info {"${generated} HTML files rendered"}
+		info("${generated} HTML files rendered")
+
+		val additionalGenerators = mutableListOf<String>()
 
 		if (project.generators.isNullOrEmpty()) {
-			generators.addAll(DEFAULT_PROCESSORS)
+			additionalGenerators.addAll(DEFAULT_PROCESSORS)
 		} else {
-			generators.addAll(project.generators!!)
+			additionalGenerators.addAll(project.generators!!)
 		}
 
 		val pluginLoader = loadPlugins(project.generators)
-
 		val processorPipeline = ArrayList<KClass<*>>()
 
-		for (className in generators) {
+		for (className in additionalGenerators) {
 			try {
 				val kClass = if (pluginLoader != null) {
 					pluginLoader.loadClass(className).kotlin
@@ -112,13 +127,16 @@ class Generator : Runnable, KoinComponent {
 					println.debug("Adding $kClass to the generator pipeline")
 					processorPipeline.add(kClass)
 				} else {
+					logger.error {"Pipeline class ${kClass.simpleName} is not an instance of GeneratorPipeline!"}
 					println.error("Pipeline class ${kClass.simpleName} is not an instance of GeneratorPipeline!")
 				}
 			} catch (cnfe: java.lang.ClassNotFoundException) {
+				logger.error {"Unable to load class '$className' - is it defined in the classpath or provided in a jar? The full package name must be provided."}
 				println.error("Unable to load class '$className' - is it defined in the classpath or provided in a jar? The full package name must be provided.")
 			}
 		}
 		if (processorPipeline.size == 0) {
+			logger.error {"No generators found in the pipeline. Aborting execution!"}
 			error("No generators found in the pipeline. Aborting execution!")
 		}
 
@@ -128,11 +146,18 @@ class Generator : Runnable, KoinComponent {
 			myArray.add(kClass as KClass<GeneratorPipeline>)
 		}
 
-		sortedPosts.process(myArray, project, renderer, fileHandler)
+
+		getPostsFromCacheAndPost(pageList).process(myArray, project, renderer, fileHandler)
 
 
 		//TODO: come up with a better asset copying pipeline stage thingy
 		assetsProcessor.copyStatics()
+	}
+
+	private fun getPostsFromCacheAndPost(cacheSet: Set<CacheAndPost>): List<Post> {
+		val postList = mutableListOf<Post>()
+		cacheSet.forEach { postList.add(it.post)}
+		return postList
 	}
 
 	private fun loadPlugins(plugins: ArrayList<String>?): ClassLoader? {
@@ -142,7 +167,7 @@ class Generator : Runnable, KoinComponent {
 			pluginFolder.walk().forEach {
 				if (it.extension.equals("jar")) {
 					jars.add(it.toURI().toURL())
-					println.debug(it.toURI().toURL().toString())
+					logger.debug {it.toURI().toURL().toString() }
 				}
 			}
 
@@ -162,7 +187,9 @@ class Generator : Runnable, KoinComponent {
  * @param[renderer] the renderer which converts model map into a string
  * @param[fileHandler] file handler for writing output to disc
  */
-private fun List<BasculePost>.process(pipeline: ArrayList<KClass<GeneratorPipeline>>, project: Project, renderer: Renderer, fileHandler: BasculeFileHandler) {
+private fun List<Post>.process(pipeline: ArrayList<KClass<GeneratorPipeline>>, project: Project, renderer: Renderer, fileHandler: BasculeFileHandler) {
+
+	val logger = KotlinLogging.logger { "listPost.process"}
 
 	val processors = mutableMapOf<KClass<*>, KFunction<*>>()
 
@@ -177,6 +204,7 @@ private fun List<BasculePost>.process(pipeline: ArrayList<KClass<GeneratorPipeli
 		launch {
 			for (clazz in processors) {
 				val func = clazz.value
+				logger.debug {"Calling function ${func.name} for pipeline ${clazz.key.simpleName}"}
 				debug("Calling function ${func.name} for pipeline ${clazz.key.simpleName}")
 				@Suppress("UNCHECKED_CAST")
 				func.callSuspend(constructPipeline(
@@ -188,6 +216,7 @@ private fun List<BasculePost>.process(pipeline: ArrayList<KClass<GeneratorPipeli
 		}
 	}
 	if (progress.isCompleted) {
+		logger.info { "Generation complete. HTML files are stored in folder ${project.dirs.output}" }
 		info("Generation complete. HTML files are stored in folder ${project.dirs.output}")
 	}
 

@@ -1,5 +1,6 @@
 package org.liamjd.bascule.assets
 
+import mu.KotlinLogging
 import org.koin.core.parameter.ParameterList
 import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
@@ -16,12 +17,14 @@ import java.nio.file.FileSystems
  */
 class AssetsProcessor(val project: Project) : KoinComponent {
 
+	private val logger = KotlinLogging.logger {}
+
 	private val fileHandler: BasculeFileHandler by inject(parameters = { ParameterList() })
 	val pathSeparator = FileSystems.getDefault().separator!!
 
 	fun copyStatics() {
 
-		println("Copying asset files through processor")
+		logger.info {"Copying asset files through processor" }
 		val destinationDir = project.dirs.output.path + pathSeparator + "assets" + pathSeparator
 		copyDirectory(project.dirs.assets, destinationDir)
 	}

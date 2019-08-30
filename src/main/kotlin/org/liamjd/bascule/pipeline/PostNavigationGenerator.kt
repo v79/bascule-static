@@ -16,7 +16,7 @@ class PostNavigationGenerator(posts: List<Post>, numPosts: Int = 1, postsPerPage
 
 	override suspend fun process(project: Project, renderer: Renderer, fileHandler: FileHandler) {
 		val totalPages = ceil(numPosts.toDouble() / postsPerPage).roundToInt()
-		val listPages = posts.withIndex()
+		val listPages = posts.reversed().withIndex()
 				.groupBy { it.index / postsPerPage }
 				.map { it.value.map { it.value } }
 
