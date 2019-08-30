@@ -7,11 +7,17 @@ import org.koin.core.parameter.parametersOf
 import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
 import org.liamjd.bascule.BasculeFileHandler
+import org.liamjd.bascule.cache.BasculeCache
+import org.liamjd.bascule.cache.CacheAndPost
+import org.liamjd.bascule.cache.MDCacheItem
 import org.liamjd.bascule.lib.model.Project
-import org.liamjd.bascule.model.BasculePost
 import println.info
 
-
+/**
+ * The primary class for calculating which files need to be rendered to build the website.
+ * @param project the bascule project
+ * Call [MarkdownScanner.calculateRenderSet] to get the set of posts which need to be rerendered
+ */
 @UnstableDefault
 class MarkdownScanner(val project: Project) : KoinComponent {
 
@@ -54,7 +60,7 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 
 	/**
 	 * Sorts posts according to the date in the PostLink property (user provided via yaml)
-	 * Then creates the navigation links between each post (
+	 * Then creates the navigation links between each post
 	 */
 	private fun orderPosts(posts: Set<CacheAndPost>): Set<CacheAndPost> {
 		info("sorting")
@@ -84,4 +90,3 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 	}
 }
 
-class CacheAndPost(val mdCacheItem: MDCacheItem, val post: BasculePost)

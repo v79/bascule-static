@@ -4,6 +4,7 @@ import io.mockk.every
 import io.mockk.mockk
 import org.koin.dsl.module.module
 import org.koin.standalone.StandAloneContext
+import org.liamjd.bascule.cache.MDCacheItem
 import org.liamjd.bascule.lib.model.Directories
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.model.BasculePost
@@ -97,7 +98,7 @@ internal class ChangeSetCalculatorTest : Spek({
 		// setting up the cache object means recreating the mdItem exactly from the source file
 		val mPost = mockk<BasculePost>(relaxed = true)
 		var bigBangTestSource_lastModified = reviewOfBigBangContent.lastModified()
-		var cacheItem = MDCacheItem(reviewOfBigBangContent.length(),reviewOfBigBangContent.absolutePath,  LocalDateTime.ofInstant(Instant.ofEpochMilli(bigBangTestSource_lastModified), TimeZone
+		var cacheItem = MDCacheItem(reviewOfBigBangContent.length(), reviewOfBigBangContent.absolutePath, LocalDateTime.ofInstant(Instant.ofEpochMilli(bigBangTestSource_lastModified), TimeZone
 				.getDefault().toZoneId()))
 		val cacheSet = setOf(cacheItem)
 

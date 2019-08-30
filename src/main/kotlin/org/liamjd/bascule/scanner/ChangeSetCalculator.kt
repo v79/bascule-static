@@ -6,6 +6,8 @@ import org.koin.core.parameter.parametersOf
 import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
 import org.liamjd.bascule.BasculeFileHandler
+import org.liamjd.bascule.cache.CacheAndPost
+import org.liamjd.bascule.cache.MDCacheItem
 import org.liamjd.bascule.lib.model.PostLink
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.lib.model.Tag
@@ -19,12 +21,26 @@ import java.time.LocalDateTime
 import java.util.*
 import kotlin.system.measureTimeMillis
 
+/**
+ * Calculates which source files need to be regenerated in order to rebuild the project.
+ * It compares each markdown file with its corresponding cache item (if it exists) and works out which files have changed.
+ *
+ * Call [ChangeSetCalculator.calculateUncachedSet] to generate the set of items which need to be regenerated
+ *
+ * @param project the bascule project
+ *
+ */
 class ChangeSetCalculator(val project: Project) : KoinComponent {
 
 	private val fileHandler: BasculeFileHandler by inject(parameters = { ParameterList() })
 	private val postBuilder: PostBuilder by inject { parametersOf(project) }
 	private val logger = KotlinLogging.logger {}
 
+	/**
+	 * Calculate which markdown source files have changed or are new relative to the cache set. Recursively walks the project sources directory to find markdown files
+	 * @param cachedSet the known set of [MDCacheItem]s loaded from a cache file; may be empty but not null
+	 * @return a set of [CacheAndPost]
+	 */
 	fun calculateUncachedSet(cachedSet: Set<MDCacheItem>): Set<CacheAndPost> {
 		info("Scanning ${project.dirs.sources.absolutePath} for markdown files")
 		logger.info { "Scanning ${project.dirs.sources.absolutePath} for markdown files" }
@@ -43,7 +59,6 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 			if (markdownSourceCount != allSources.size) {
 				logger.error { "Markdown source count ($markdownSourceCount) != all sources size (${allSources.size}" }
 			}
-
 
 			logger.info { "Cache items found for all $markdownSourceCount files." }
 
@@ -69,8 +84,10 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 			// debugging tags
 			logger.info { "All tags calculated" }
 		}
+
 		info("Time taken to calculate set of ${markdownSourceCount} files: ${timeTaken}ms")
 		logger.info { "Time taken to calculate set of ${markdownSourceCount} files: ${timeTaken}ms" }
+
 		if (errorMap.isNotEmpty()) {
 			logger.error { "Errors found in calculations:" }
 			println.error("Errors found in calculations:")

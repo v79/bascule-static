@@ -1,4 +1,4 @@
-package org.liamjd.bascule.scanner
+package org.liamjd.bascule.cache
 
 import kotlinx.serialization.*
 import kotlinx.serialization.internal.SerialClassDescImpl
@@ -7,6 +7,10 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
+/**
+ * Used by kotlinx.serialization in order to write the [PostLink] class to a Json file.
+ *
+ */
 object PostLinkSerializer : KSerializer<PostLink> {
 	override fun deserialize(decoder: Decoder): PostLink {
 		val dec: CompositeDecoder = decoder.beginStructure(descriptor)
@@ -18,7 +22,7 @@ object PostLinkSerializer : KSerializer<PostLink> {
 				CompositeDecoder.READ_DONE -> break@loop
 				0 -> title = dec.decodeStringElement(descriptor,i)
 				1 -> url = dec.decodeStringElement(descriptor,i)
-				2 -> date = longToLocalDate(dec.decodeLongElement(descriptor,i))
+				2 -> date = longToLocalDate(dec.decodeLongElement(descriptor, i))
 				else -> throw SerializationException("Unknown index $i")
 			}
 		}

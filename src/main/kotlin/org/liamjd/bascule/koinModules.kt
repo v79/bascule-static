@@ -2,12 +2,12 @@ package org.liamjd.bascule
 
 import com.vladsch.flexmark.ext.yaml.front.matter.AbstractYamlFrontMatterVisitor
 import org.koin.dsl.module.module
+import org.liamjd.bascule.cache.BasculeCache
+import org.liamjd.bascule.cache.BasculeCacheImpl
 import org.liamjd.bascule.lib.FileHandler
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.lib.render.Renderer
 import org.liamjd.bascule.render.HandlebarsRenderer
-import org.liamjd.bascule.scanner.BasculeCache
-import org.liamjd.bascule.scanner.BasculeCacheImpl
 import org.liamjd.bascule.scanner.ChangeSetCalculator
 import org.liamjd.bascule.scanner.PostBuilder
 

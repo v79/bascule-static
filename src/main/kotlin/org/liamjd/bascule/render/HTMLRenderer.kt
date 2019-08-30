@@ -16,7 +16,6 @@ import org.liamjd.bascule.flexmark.hyde.HydeExtension
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.lib.render.Renderer
 import org.liamjd.bascule.model.BasculePost
-import org.liamjd.bascule.scanner.MDCacheItem
 
 class HTMLRenderer(val project: Project) : KoinComponent {
 
@@ -37,7 +36,7 @@ class HTMLRenderer(val project: Project) : KoinComponent {
 		mdParser = Parser.builder(mdOptions).build()
 	}
 
-	fun generateHtml(post: BasculePost, mdCacheItem: MDCacheItem, itemCount: Int ) {
+	fun renderHTML(post: BasculePost, itemCount: Int ) {
 		println("Rendering post ${post.sourceFileName}")
 		logger.info {"Rendering post ${post.sourceFileName}"  }
 		render(project.model,post,itemCount)
@@ -46,9 +45,6 @@ class HTMLRenderer(val project: Project) : KoinComponent {
 
 	// no performance improvement by making this a suspending function
 	private fun render(siteModel: Map<String, Any>, basculePost: BasculePost, count: Int) {
-
-		// DEBUGGING: post is missing...
-		// tag post count is 0
 
 		val model = mutableMapOf<String, Any?>()
 		model.putAll(siteModel)

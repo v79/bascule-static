@@ -2,6 +2,7 @@ package org.liamjd.bascule.scanner
 
 import io.mockk.every
 import io.mockk.mockk
+import org.liamjd.bascule.cache.BasculeCacheImpl
 import org.liamjd.bascule.lib.FileHandler
 import org.liamjd.bascule.lib.model.Directories
 import org.liamjd.bascule.lib.model.Project

@@ -10,13 +10,13 @@ import org.koin.standalone.inject
 import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.Constants
 import org.liamjd.bascule.assets.AssetsProcessor
+import org.liamjd.bascule.cache.CacheAndPost
 import org.liamjd.bascule.lib.generators.GeneratorPipeline
 import org.liamjd.bascule.lib.model.Post
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.lib.render.Renderer
 import org.liamjd.bascule.random
 import org.liamjd.bascule.render.HTMLRenderer
-import org.liamjd.bascule.scanner.CacheAndPost
 import org.liamjd.bascule.scanner.MarkdownScanner
 import picocli.CommandLine
 import println.debug
@@ -44,7 +44,7 @@ class Generator : Runnable, KoinComponent {
 
 	private val logger = KotlinLogging.logger {}
 
-	@CommandLine.Option(names = ["-c", "--clean"], description = ["do not use caching; clears generation directory for a clean build - BROKEN!!!!"])
+	@CommandLine.Option(names = ["-c", "--clean"], description = ["do not use caching; clears generation directory for a clean build"])
 	var clean: Boolean = false
 
 	private val fileHandler: BasculeFileHandler by inject(parameters = { ParameterList() })
@@ -93,34 +93,30 @@ class Generator : Runnable, KoinComponent {
 
 		val walker = MarkdownScanner(project)
 
-//		val postList = walker.generate()
-
 		val pageList = walker.calculateRenderSet()
 
 		val htmlRenderer = HTMLRenderer(project)
 
 		var generated = 0
 		pageList.forEachIndexed { index, item ->
-			htmlRenderer.generateHtml(item.post, item.mdCacheItem, index)
+			htmlRenderer.renderHTML(item.post, index)
 			generated++
 		}
 		logger.info {"${generated} HTML files rendered"}
 		info("${generated} HTML files rendered")
 
-		//	val sortedPosts = postList.sortedByDescending { it.date }
-		val generators = mutableListOf<String>()
+		val additionalGenerators = mutableListOf<String>()
 
 		if (project.generators.isNullOrEmpty()) {
-			generators.addAll(DEFAULT_PROCESSORS)
+			additionalGenerators.addAll(DEFAULT_PROCESSORS)
 		} else {
-			generators.addAll(project.generators!!)
+			additionalGenerators.addAll(project.generators!!)
 		}
 
 		val pluginLoader = loadPlugins(project.generators)
-
 		val processorPipeline = ArrayList<KClass<*>>()
 
-		for (className in generators) {
+		for (className in additionalGenerators) {
 			try {
 				val kClass = if (pluginLoader != null) {
 					pluginLoader.loadClass(className).kotlin
