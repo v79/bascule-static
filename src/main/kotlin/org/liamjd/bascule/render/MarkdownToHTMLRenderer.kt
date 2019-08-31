@@ -14,15 +14,15 @@ import org.koin.standalone.inject
 import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.flexmark.hyde.HydeExtension
 import org.liamjd.bascule.lib.model.Project
-import org.liamjd.bascule.lib.render.Renderer
+import org.liamjd.bascule.lib.render.TemplatePageRenderer
 import org.liamjd.bascule.model.BasculePost
 
-class HTMLRenderer(val project: Project) : KoinComponent {
+class MarkdownToHTMLRenderer(val project: Project) : KoinComponent, MarkdownRenderer {
 
 	private val logger = KotlinLogging.logger {}
 
 	private val fileHandler: BasculeFileHandler by inject(parameters = { ParameterList() })
-	private val renderer by inject<Renderer> { ParameterList(project) }
+	private val renderer by inject<TemplatePageRenderer> { ParameterList(project) }
 
 	// TODO: this is duplicated so move it to injections somehow
 	val mdOptions = MutableDataSet()
@@ -36,7 +36,7 @@ class HTMLRenderer(val project: Project) : KoinComponent {
 		mdParser = Parser.builder(mdOptions).build()
 	}
 
-	fun renderHTML(post: BasculePost, itemCount: Int ) {
+	override fun renderHTML(post: BasculePost, itemCount: Int ) {
 		println("Rendering post ${post.sourceFileName}")
 		logger.info {"Rendering post ${post.sourceFileName}"  }
 		render(project.model,post,itemCount)
@@ -69,9 +69,8 @@ class HTMLRenderer(val project: Project) : KoinComponent {
 
 	}
 
-	private fun renderMarkdown(document: Document): String {
+	override fun renderMarkdown(document: Document): String {
 		val mdRender = HtmlRenderer.builder(mdOptions).build()
-
 		return mdRender.render(document)
 	}
 }

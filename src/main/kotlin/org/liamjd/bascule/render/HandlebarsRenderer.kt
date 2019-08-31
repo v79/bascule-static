@@ -9,9 +9,9 @@ import com.github.jknack.handlebars.context.MethodValueResolver
 import com.github.jknack.handlebars.helper.StringHelpers
 import com.github.jknack.handlebars.io.FileTemplateLoader
 import org.liamjd.bascule.lib.model.Project
-import org.liamjd.bascule.lib.render.Renderer
+import org.liamjd.bascule.lib.render.TemplatePageRenderer
 
-class HandlebarsRenderer(val project: Project) : Renderer {
+class HandlebarsRenderer(val project: Project) : TemplatePageRenderer {
 
 	val TEMPLATE_SUFFIX = ".hbs"
 	val hbRenderer: Handlebars

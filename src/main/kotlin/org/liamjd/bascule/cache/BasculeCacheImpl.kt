@@ -4,6 +4,7 @@ package org.liamjd.bascule.cache
 
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
+import kotlinx.serialization.set
 import org.liamjd.bascule.lib.FileHandler
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.slug

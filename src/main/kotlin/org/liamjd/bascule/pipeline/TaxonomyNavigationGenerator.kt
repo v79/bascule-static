@@ -7,7 +7,7 @@ import org.liamjd.bascule.lib.generators.GeneratorPipeline
 import org.liamjd.bascule.lib.model.Post
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.lib.model.Tag
-import org.liamjd.bascule.lib.render.Renderer
+import org.liamjd.bascule.lib.render.TemplatePageRenderer
 import org.liamjd.bascule.model.BasculePost
 import println.info
 import kotlin.math.ceil
@@ -20,7 +20,7 @@ class TaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int = 1, p
 	val FOLDER_NAME = "tags"
 	override val TEMPLATE = "tag"
 
-	override suspend fun process(project: Project, renderer: Renderer, fileHandler: FileHandler) {
+	override suspend fun process(project: Project, renderer: TemplatePageRenderer, fileHandler: FileHandler) {
 		info("Building tag navigation pages")
 
 		val tagsFolder = fileHandler.createDirectory(project.dirs.output.absolutePath, FOLDER_NAME)

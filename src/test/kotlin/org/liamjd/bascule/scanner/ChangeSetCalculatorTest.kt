@@ -15,7 +15,9 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.util.*
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 internal class ChangeSetCalculatorTest : Spek({
 
@@ -63,7 +65,6 @@ internal class ChangeSetCalculatorTest : Spek({
 
 		fileList.add(reviewOfBigBangContent)
 
-
 		val mPost = mockk<BasculePost>(relaxed = true)
 
 		beforeEachTest {
@@ -77,13 +78,16 @@ internal class ChangeSetCalculatorTest : Spek({
 			every { mOutputDirectory.absolutePath } returns "scannertests/bigBang/"
 		}
 
-		it("should return a change set with a single file") {
+		it("should return a change set with a single file; rerender is true") {
 
 			val calculator = ChangeSetCalculator(mProject)
 			val result = calculator.calculateUncachedSet(TEST_DATA.mdCacheItemEmptySet)
 
 			assertNotNull(result) {
 				assertEquals(1, it.size)
+				assertNotNull(it.first()) {
+					assertTrue(it.mdCacheItem.rerender)
+				}
 			}
 		}
 	}
@@ -113,12 +117,15 @@ internal class ChangeSetCalculatorTest : Spek({
 			every { mOutputDirectory.absolutePath } returns "scannertests/bigBang/"
 		}
 
-		it("will return an empty change set when the source matches the cache") {
+		it("will return a set of items with the rerender flag set to false when the source matches the cache") {
 			val calculator = ChangeSetCalculator(mProject)
 			val result = calculator.calculateUncachedSet(cacheSet)
 
 			assertNotNull(result) {
-				assertEquals(0, it.size)
+				assertEquals(1, it.size)
+				assertNotNull(it.first()) {
+					assertFalse(it.mdCacheItem.rerender)
+				}
 			}
 		}
 	}

@@ -133,9 +133,13 @@ class BasculeFileHandler : FileHandler {
 		return source.copyTo(destination, overwrite = true)
 	}
 
-	// TODO: move to the interface
-	fun getFile(folder: File, fileName: String) : File {
+	override fun getFile(folder: File, fileName: String) : File {
 		return File(folder,fileName)
+	}
+
+	override fun readFileAsString(fileName: String) : String {
+		val file = File(fileName)
+		return readFileAsString(file.parentFile,file.name)
 	}
 
 }

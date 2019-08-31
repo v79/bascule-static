@@ -28,22 +28,33 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 	private val BLOG_POST = "post"
 
 	// this method is called by the Generator
+	/**
+	 * Build a set of CacheAndPost items
+	 * This will be the complete set of all pages in the site, sorted
+	 * Only those with a [MDCacheItem.rerender] flag will need to be re-rendered as HTML
+	 */
 	fun calculateRenderSet(): Set<CacheAndPost> {
 
 		logger.debug { "Calculate render set!!!!" }
 
+		// this is everything we know from the cache. it might even be empty!
 		val cachedSet = cache.loadCacheFile()
 
-		// if there are no changes, this set could be empty
+		// if there are no changes, this set could be empty - but if the cachedSet is empty, this must be full
 		val uncachedSet = changeSetCalculator.calculateUncachedSet(cachedSet)
 		logger.debug { "Uncached set size: ${uncachedSet.size}" }
 		val sorted = orderPosts(uncachedSet)
-		logger.debug { "Ordered set size: ${sorted.size}" }
+		logger.debug { "Sorted uncached set size: ${sorted.size}" }
+
+		// for every item in the cached set, if a corresponding entry exists in the uncached set, flag it for rerendering
 
 		val toBeCached = mutableSetOf<MDCacheItem>()
 		// put all the existing cache items in this set, except in clean generation mode
 		if(!project.clean) toBeCached.addAll(cachedSet)
 		// then add all the new cache items, regardless
+
+
+
 		sorted.forEach { cacheAndPost ->
 			if(cachedSet.contains(cacheAndPost.mdCacheItem)) {
 				// we need to update the cache with the latest version of this item
@@ -55,7 +66,9 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 			}
 		}
 		cache.writeCacheFile(toBeCached)
-		return sorted
+//		return sorted
+
+		return uncachedSet
 	}
 
 	/**
@@ -74,12 +87,12 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 			if (index != 0) {
 				val olderPost = filteredList.get(index - 1).mdCacheItem
 				cacheAndPost.mdCacheItem.previous = olderPost.link
-				cacheAndPost.post.older = olderPost.link
+				cacheAndPost.post?.older = olderPost.link
 			}
 			if (index != filteredList.size - 1) {
 				val newerPost = filteredList.get(index + 1).mdCacheItem
 				cacheAndPost.mdCacheItem.next = newerPost.link
-				cacheAndPost.post.newer = newerPost.link
+				cacheAndPost.post?.newer = newerPost.link
 			}
 		}
 
