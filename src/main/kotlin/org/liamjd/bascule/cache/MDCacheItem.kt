@@ -29,7 +29,7 @@ class MDCacheItem(val sourceFileSize: Long, val sourceFilePath: String, @Seriali
 	var layout: String? = null
 
 	@Transient
-	var rerender = true
+	var rerender = false
 
 	override fun toString(): String {
 		val stringBuilder = StringBuilder()

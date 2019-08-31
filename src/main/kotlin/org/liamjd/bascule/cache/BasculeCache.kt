@@ -23,5 +23,5 @@ interface BasculeCache {
 /**
  * Simple class to represent both a cache item and its corresponding rendered Post
  */
-class CacheAndPost(val mdCacheItem: MDCacheItem, val post: BasculePost)
+class CacheAndPost(val mdCacheItem: MDCacheItem, val post: BasculePost?)
 

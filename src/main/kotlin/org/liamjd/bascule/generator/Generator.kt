@@ -1,5 +1,10 @@
 package org.liamjd.bascule.generator
 
+import com.vladsch.flexmark.ext.attributes.AttributesExtension
+import com.vladsch.flexmark.ext.tables.TablesExtension
+import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
+import com.vladsch.flexmark.html.HtmlRenderer
+import com.vladsch.flexmark.parser.Parser
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
@@ -11,12 +16,13 @@ import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.Constants
 import org.liamjd.bascule.assets.AssetsProcessor
 import org.liamjd.bascule.cache.CacheAndPost
+import org.liamjd.bascule.flexmark.hyde.HydeExtension
 import org.liamjd.bascule.lib.generators.GeneratorPipeline
 import org.liamjd.bascule.lib.model.Post
 import org.liamjd.bascule.lib.model.Project
-import org.liamjd.bascule.lib.render.Renderer
+import org.liamjd.bascule.lib.render.TemplatePageRenderer
 import org.liamjd.bascule.random
-import org.liamjd.bascule.render.HTMLRenderer
+import org.liamjd.bascule.render.MarkdownToHTMLRenderer
 import org.liamjd.bascule.scanner.MarkdownScanner
 import picocli.CommandLine
 import println.debug
@@ -33,8 +39,8 @@ import kotlin.reflect.full.callSuspend
 import kotlin.reflect.full.declaredFunctions
 import kotlin.reflect.full.isSubclassOf
 
-
 val DEFAULT_PROCESSORS = arrayOf("org.liamjd.bascule.pipeline.IndexPageGenerator", "org.liamjd.bascule.pipeline.PostNavigationGenerator", "org.liamjd.bascule.pipeline.TaxonomyNavigationGenerator")
+
 
 /**
  * Starts the post and page generation process. Must be run from inside the project folder
@@ -48,15 +54,13 @@ class Generator : Runnable, KoinComponent {
 	var clean: Boolean = false
 
 	private val fileHandler: BasculeFileHandler by inject(parameters = { ParameterList() })
-	private val renderer by inject<Renderer> { parametersOf(project) }
+	private val renderer by inject<TemplatePageRenderer> { parametersOf(project) }
 	private val assetsProcessor: AssetsProcessor
 
 	private val currentDirectory = System.getProperty("user.dir")!!
 	private val yamlConfig: String
 	private val parentFolder: File
 	private val project: Project
-
-	private val OUTPUT_SUFFIX = ".html"
 
 	val loader = this.javaClass.classLoader
 
@@ -65,7 +69,14 @@ class Generator : Runnable, KoinComponent {
 		yamlConfig = "${parentFolder.name}.yaml"
 
 		val configText = File(parentFolder.absolutePath, yamlConfig).readText()
+
 		project = Project(configText)
+
+		// configure the markdown processor
+		project.markdownOptions.set(Parser.EXTENSIONS, arrayListOf(AttributesExtension.create(), YamlFrontMatterExtension.create(), TablesExtension.create(), HydeExtension.create()))
+		project.markdownOptions.set(HtmlRenderer.GENERATE_HEADER_ID, true).set(HtmlRenderer.RENDER_HEADER_ID, true) // to give headings IDs
+		project.markdownOptions.set(HtmlRenderer.INDENT_SIZE, 2) // prettier HTML
+		project.markdownOptions.set(HydeExtension.SOURCE_FOLDER, project.dirs.sources.toString())
 
 		assetsProcessor = AssetsProcessor(project)
 
@@ -94,14 +105,30 @@ class Generator : Runnable, KoinComponent {
 		val walker = MarkdownScanner(project)
 
 		val pageList = walker.calculateRenderSet()
+		println("walker.calculateRenderSet() has returned ${pageList.size} CacheAndPost items")
 
-		val htmlRenderer = HTMLRenderer(project)
+		val markdownRenderer = MarkdownToHTMLRenderer(project)
 
 		var generated = 0
-		pageList.forEachIndexed { index, item ->
-			htmlRenderer.renderHTML(item.post, index)
-			generated++
+		if(clean) {
+			pageList.forEachIndexed { index, cacheAndPost ->
+				cacheAndPost.post?.let {
+					it.rawContent = fileHandler.readFileAsString(cacheAndPost.post.sourceFileName) // TODO: this still contains the yaml front matter :(
+					markdownRenderer.renderHTML(cacheAndPost.post, index)
+					generated++
+				}
+			}
+		} else {
+
+			pageList.filter { item -> item.mdCacheItem.rerender }.forEachIndexed { index, cacheAndPost ->
+				cacheAndPost.post?.let {
+					it.rawContent = fileHandler.readFileAsString(cacheAndPost.post.sourceFileName) // TODO: this still contains the yaml front matter :(
+					markdownRenderer.renderHTML(cacheAndPost.post, index)
+				}
+				generated++
+			}
 		}
+
 		logger.info {"${generated} HTML files rendered"}
 		info("${generated} HTML files rendered")
 
@@ -124,7 +151,7 @@ class Generator : Runnable, KoinComponent {
 					Class.forName(className).kotlin
 				}
 				if (kClass.isSubclassOf(GeneratorPipeline::class)) {
-					println.debug("Adding $kClass to the generator pipeline")
+					debug("Adding $kClass to the generator pipeline")
 					processorPipeline.add(kClass)
 				} else {
 					logger.error {"Pipeline class ${kClass.simpleName} is not an instance of GeneratorPipeline!"}
@@ -146,7 +173,7 @@ class Generator : Runnable, KoinComponent {
 			myArray.add(kClass as KClass<GeneratorPipeline>)
 		}
 
-
+		// TODO: this still doesn't work with the CACHE!
 		getPostsFromCacheAndPost(pageList).process(myArray, project, renderer, fileHandler)
 
 
@@ -156,7 +183,7 @@ class Generator : Runnable, KoinComponent {
 
 	private fun getPostsFromCacheAndPost(cacheSet: Set<CacheAndPost>): List<Post> {
 		val postList = mutableListOf<Post>()
-		cacheSet.forEach { postList.add(it.post)}
+		cacheSet.forEach { if(it.post != null) postList.add(it.post)}
 		return postList
 	}
 
@@ -187,7 +214,7 @@ class Generator : Runnable, KoinComponent {
  * @param[renderer] the renderer which converts model map into a string
  * @param[fileHandler] file handler for writing output to disc
  */
-private fun List<Post>.process(pipeline: ArrayList<KClass<GeneratorPipeline>>, project: Project, renderer: Renderer, fileHandler: BasculeFileHandler) {
+private fun List<Post>.process(pipeline: ArrayList<KClass<GeneratorPipeline>>, project: Project, renderer: TemplatePageRenderer, fileHandler: BasculeFileHandler) {
 
 	val logger = KotlinLogging.logger { "listPost.process"}
 

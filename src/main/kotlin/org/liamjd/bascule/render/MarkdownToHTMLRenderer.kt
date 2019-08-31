@@ -1,42 +1,30 @@
 package org.liamjd.bascule.render
 
-import com.vladsch.flexmark.ext.attributes.AttributesExtension
-import com.vladsch.flexmark.ext.tables.TablesExtension
-import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.ast.Document
-import com.vladsch.flexmark.util.options.MutableDataSet
 import mu.KotlinLogging
 import org.koin.core.parameter.ParameterList
 import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
 import org.liamjd.bascule.BasculeFileHandler
-import org.liamjd.bascule.flexmark.hyde.HydeExtension
 import org.liamjd.bascule.lib.model.Project
-import org.liamjd.bascule.lib.render.Renderer
+import org.liamjd.bascule.lib.render.TemplatePageRenderer
 import org.liamjd.bascule.model.BasculePost
 
-class HTMLRenderer(val project: Project) : KoinComponent {
+class MarkdownToHTMLRenderer(val project: Project) : KoinComponent, MarkdownRenderer {
 
 	private val logger = KotlinLogging.logger {}
 
 	private val fileHandler: BasculeFileHandler by inject(parameters = { ParameterList() })
-	private val renderer by inject<Renderer> { ParameterList(project) }
+	private val renderer by inject<TemplatePageRenderer> { ParameterList(project) }
 
-	// TODO: this is duplicated so move it to injections somehow
-	val mdOptions = MutableDataSet()
 	val mdParser: Parser
 	init {
-		// TODO: move this into another class? Configure externally?
-		mdOptions.set(Parser.EXTENSIONS, arrayListOf(AttributesExtension.create(), YamlFrontMatterExtension.create(), TablesExtension.create(), HydeExtension.create()))
-		mdOptions.set(HtmlRenderer.GENERATE_HEADER_ID, true).set(HtmlRenderer.RENDER_HEADER_ID, true) // to give headings IDs
-		mdOptions.set(HtmlRenderer.INDENT_SIZE, 2) // prettier HTML
-		mdOptions.set(HydeExtension.SOURCE_FOLDER, project.dirs.sources.toString())
-		mdParser = Parser.builder(mdOptions).build()
+		mdParser = Parser.builder(project.markdownOptions).build()
 	}
 
-	fun renderHTML(post: BasculePost, itemCount: Int ) {
+	override fun renderHTML(post: BasculePost, itemCount: Int ) {
 		println("Rendering post ${post.sourceFileName}")
 		logger.info {"Rendering post ${post.sourceFileName}"  }
 		render(project.model,post,itemCount)
@@ -69,9 +57,8 @@ class HTMLRenderer(val project: Project) : KoinComponent {
 
 	}
 
-	private fun renderMarkdown(document: Document): String {
-		val mdRender = HtmlRenderer.builder(mdOptions).build()
-
+	override fun renderMarkdown(document: Document): String {
+		val mdRender = HtmlRenderer.builder(project.markdownOptions).build()
 		return mdRender.render(document)
 	}
 }

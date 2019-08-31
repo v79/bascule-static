@@ -24,7 +24,7 @@ apply plugin: 'maven-publish'
 apply plugin: 'kotlinx-serialization'
 
 group 'org.liamjd'
-version '0.0.18'
+version '0.0.19'
 
 repositories {
 	mavenCentral()
@@ -38,7 +38,7 @@ dependencies {
 	compile group: 'org.jetbrains.kotlinx', name: 'kotlinx-coroutines-core', version: '1.0.1'
 	
 	// bascule library
-	compile group: 'org.liamjd.bascule-lib', name: 'bascule-lib', version: '0.0.17'
+	compile group: 'org.liamjd.bascule-lib', name: 'bascule-lib', version: '0.0.19'
 
 	// handlebars templating
 	compile group: 'com.github.jknack', name: 'handlebars', version: "$handlebars_version"

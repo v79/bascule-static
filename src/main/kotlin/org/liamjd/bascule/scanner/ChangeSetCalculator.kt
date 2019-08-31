@@ -62,12 +62,12 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 
 			logger.info { "Cache items found for all $markdownSourceCount files." }
 
-			// build the set of taxonomy tags (somehow this gets it wrong)
+			// build the set of taxonomy tags
 			logger.info("Building the set of tags")
 			val allTags = mutableSetOf<Tag>()
 			allSources.forEach { cacheAndPost ->
-				logger.info("calculateCachedSet: cacheAndPost ${cacheAndPost.mdCacheItem.link.title} has tags: ${cacheAndPost.post.tags}")
-				cacheAndPost.post.tags.forEach { postTag ->
+				logger.info("calculateCachedSet: cacheAndPost ${cacheAndPost.mdCacheItem.link.title} has tags: ${cacheAndPost.post?.tags}")
+				cacheAndPost.post?.tags?.forEach { postTag ->
 					if (allTags.contains(postTag)) {
 						allTags.elementAt(allTags.indexOf(postTag)).let {
 							it.postCount++
@@ -152,12 +152,26 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 					}
 					is BasculePost -> {
 
-						// if we have a cache hit (the item is recorded correctly in the cache, then skip it
+						// if we have a cache hit (the item is recorded correctly in the cache), then skip it
 						if(!project.clean) {
 							if (cacheContainsItem(mdItem, cachedSet)) {
+								mdItem.rerender = false // unnecessary, should be true
+
+								// TODO:  all this duplication!
+								val sourcePath = mdFile.parentFile.absolutePath.toString().removePrefix(project.dirs.sources.absolutePath.toString())
+								mdItem.layout = post.layout
+								post.url = calculateUrl(post.slug, sourcePath)
+								mdItem.link = PostLink(post.title, post.url, post.date)
+
+								post.sourceFileName = mdFile.canonicalPath
+								post.destinationFolder = fileHandler.getFile(project.dirs.output, sourcePath)
+
+								allSources.add(CacheAndPost(mdItem,post))
 								continue@fileLoop
 							}
 						}
+						// else, build the post and flag it for rerendering
+						mdItem.rerender = true
 
 						val sourcePath = mdFile.parentFile.absolutePath.toString().removePrefix(project.dirs.sources.absolutePath.toString())
 						mdItem.layout = post.layout
@@ -176,6 +190,7 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 		}
 		return markdownSourceCount1
 	}
+
 
 	private fun cacheContainsItem(mdItem: MDCacheItem, cachedSet: Set<MDCacheItem>): Boolean {
 		var cacheFound = false;
