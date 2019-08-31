@@ -25,7 +25,7 @@ class PostGenError(val errorMessage: String, val fileName: String, var field: St
 sealed class PostStatus
 
 /**
- * Class representing an individual BasculePost.
+ * Class representing an individual BasculePost. This significantly extends the [Post] base class, and its companion is a builder pattern
  */
 class BasculePost(val document: Document) : Post, PostStatus() {
 

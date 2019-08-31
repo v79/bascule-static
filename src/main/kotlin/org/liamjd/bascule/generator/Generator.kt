@@ -1,5 +1,10 @@
 package org.liamjd.bascule.generator
 
+import com.vladsch.flexmark.ext.attributes.AttributesExtension
+import com.vladsch.flexmark.ext.tables.TablesExtension
+import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
+import com.vladsch.flexmark.html.HtmlRenderer
+import com.vladsch.flexmark.parser.Parser
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
@@ -11,6 +16,7 @@ import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.Constants
 import org.liamjd.bascule.assets.AssetsProcessor
 import org.liamjd.bascule.cache.CacheAndPost
+import org.liamjd.bascule.flexmark.hyde.HydeExtension
 import org.liamjd.bascule.lib.generators.GeneratorPipeline
 import org.liamjd.bascule.lib.model.Post
 import org.liamjd.bascule.lib.model.Project
@@ -33,8 +39,8 @@ import kotlin.reflect.full.callSuspend
 import kotlin.reflect.full.declaredFunctions
 import kotlin.reflect.full.isSubclassOf
 
-
 val DEFAULT_PROCESSORS = arrayOf("org.liamjd.bascule.pipeline.IndexPageGenerator", "org.liamjd.bascule.pipeline.PostNavigationGenerator", "org.liamjd.bascule.pipeline.TaxonomyNavigationGenerator")
+
 
 /**
  * Starts the post and page generation process. Must be run from inside the project folder
@@ -56,8 +62,6 @@ class Generator : Runnable, KoinComponent {
 	private val parentFolder: File
 	private val project: Project
 
-	private val OUTPUT_SUFFIX = ".html"
-
 	val loader = this.javaClass.classLoader
 
 	init {
@@ -65,7 +69,14 @@ class Generator : Runnable, KoinComponent {
 		yamlConfig = "${parentFolder.name}.yaml"
 
 		val configText = File(parentFolder.absolutePath, yamlConfig).readText()
+
 		project = Project(configText)
+
+		// configure the markdown processor
+		project.markdownOptions.set(Parser.EXTENSIONS, arrayListOf(AttributesExtension.create(), YamlFrontMatterExtension.create(), TablesExtension.create(), HydeExtension.create()))
+		project.markdownOptions.set(HtmlRenderer.GENERATE_HEADER_ID, true).set(HtmlRenderer.RENDER_HEADER_ID, true) // to give headings IDs
+		project.markdownOptions.set(HtmlRenderer.INDENT_SIZE, 2) // prettier HTML
+		project.markdownOptions.set(HydeExtension.SOURCE_FOLDER, project.dirs.sources.toString())
 
 		assetsProcessor = AssetsProcessor(project)
 
@@ -108,9 +119,6 @@ class Generator : Runnable, KoinComponent {
 				}
 			}
 		} else {
-
-			// ONLY RENDER THOSE FLAGGED RERENDER
-			// HOWEVER, ALSO NEED TO RENDER ANY POST WHICH APPEARS ON THE HOME PAGE - how will I know what those are?
 
 			pageList.filter { item -> item.mdCacheItem.rerender }.forEachIndexed { index, cacheAndPost ->
 				cacheAndPost.post?.let {
