@@ -5,6 +5,9 @@ import kotlinx.serialization.internal.StringDescriptor
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
+/**
+ * This serializer only works to ISO_DATE_TIME; nanoseconds are lost?
+ */
 @Serializer(forClass = LocalDateTime::class)
 object LocalDateTimeSerializer: KSerializer<LocalDateTime> {
 	override val descriptor: SerialDescriptor =

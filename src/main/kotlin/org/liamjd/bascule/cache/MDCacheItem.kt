@@ -47,3 +47,9 @@ class MDCacheItem(val sourceFileSize: Long, val sourceFilePath: String, @Seriali
 	}
 
 }
+
+/**
+* Simple class to represent a handlebars template cache item
+*/
+@Serializable
+class HandlebarsTemplateCacheItem(val layoutName: String, val layoutFilePath: String, val layoutFileSize: Long, @Serializable(with = LocalDateTimeSerializer::class) val layoutModificationDate: LocalDateTime)

@@ -7,6 +7,7 @@ import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
 import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.cache.CacheAndPost
+import org.liamjd.bascule.cache.HandlebarsTemplateCacheItem
 import org.liamjd.bascule.cache.MDCacheItem
 import org.liamjd.bascule.lib.model.PostLink
 import org.liamjd.bascule.lib.model.Project
@@ -14,10 +15,12 @@ import org.liamjd.bascule.lib.model.Tag
 import org.liamjd.bascule.model.BasculePost
 import org.liamjd.bascule.model.PostGenError
 import println.ProgressBar
+import println.debug
 import println.info
 import java.io.File
-import java.time.Instant
-import java.time.LocalDateTime
+import java.io.FileFilter
+import java.io.FilenameFilter
+import java.time.*
 import java.util.*
 import kotlin.system.measureTimeMillis
 
@@ -39,9 +42,10 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 	/**
 	 * Calculate which markdown source files have changed or are new relative to the cache set. Recursively walks the project sources directory to find markdown files
 	 * @param cachedSet the known set of [MDCacheItem]s loaded from a cache file; may be empty but not null
+	 * @param layoutSet the known set of [HandlebarsTemplateCacheItem] representing each of the handlebars templates
 	 * @return a set of [CacheAndPost]
 	 */
-	fun calculateUncachedSet(cachedSet: Set<MDCacheItem>): Set<CacheAndPost> {
+	fun calculateUncachedSet(cachedSet: Set<MDCacheItem>, layoutSet: Set<HandlebarsTemplateCacheItem>): Set<CacheAndPost> {
 		info("Scanning ${project.dirs.sources.absolutePath} for markdown files")
 		logger.info { "Scanning ${project.dirs.sources.absolutePath} for markdown files" }
 
@@ -52,7 +56,10 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 		val timeTaken = measureTimeMillis {
 			val markdownScannerProgressBar = ProgressBar("Reading markdown files", animated = true, asPercentage = false)
 
-			markdownSourceCount = walkFolder(project.dirs.sources, markdownScannerProgressBar, markdownSourceCount, errorMap, allSources, cachedSet)
+			/** recursively walk the source folder for files
+			 * allSources is updated when a source markdown file is found
+			 **/
+			markdownSourceCount = walkFolder(project.dirs.sources, markdownScannerProgressBar, markdownSourceCount, errorMap, allSources, cachedSet, layoutSet)
 
 			markdownScannerProgressBar.progress(markdownSourceCount, "Cache items found for all files.")
 
@@ -100,18 +107,18 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 	}
 
 	// TODO: tidy up this recursive function
-	private fun walkFolder(folder: File, markdownScannerProgressBar: ProgressBar, markdownSourceCount: Int, errorMap: MutableMap<String, Any>, allSources: MutableSet<CacheAndPost>, cachedSet: Set<MDCacheItem>): Int {
+	private fun walkFolder(folder: File, markdownScannerProgressBar: ProgressBar, markdownSourceCount: Int, errorMap: MutableMap<String, Any>, allSources: MutableSet<CacheAndPost>, cachedSet: Set<MDCacheItem>, layoutSet: Set<HandlebarsTemplateCacheItem>): Int {
 		var index = 0
 		var markdownSourceCount1 = markdownSourceCount
 		fileLoop@ for (mdFile in folder.listFiles()) {
 			index++
-			// walker starts with the current director, which we don't need
+			// walker starts with the current directory, which we don't need
 			if (mdFile.absolutePath.equals(project.dirs.sources.absolutePath)) {
 				continue
 			}
 
 			if (mdFile.isDirectory) {
-				walkFolder(mdFile, markdownScannerProgressBar, markdownSourceCount1, errorMap, allSources, cachedSet)
+				walkFolder(mdFile, markdownScannerProgressBar, markdownSourceCount1, errorMap, allSources, cachedSet, layoutSet)
 			}
 
 			if (mdFile.parentFile.name.startsWith(".") || mdFile.parentFile.name.startsWith("__")) {
@@ -151,23 +158,35 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 						errorMap.put(mdFile.name, post.errorMessage)
 					}
 					is BasculePost -> {
-
 						// if we have a cache hit (the item is recorded correctly in the cache), then skip it
-						if(!project.clean) {
+						if (!project.clean) {
 							if (cacheContainsItem(mdItem, cachedSet)) {
-								mdItem.rerender = false // unnecessary, should be true
+								// check the template. If it has been updated, the post must be re-rerendered regardless of the cache content
+								val htTemplateFile: File = getTemplate(project.dirs.templates, post.layout)
+								val templateCacheItem = layoutSet.find { it.layoutName == post.layout }
+								if (templateCacheItem != null) {
+									if (localDateTimeToLong(templateCacheItem.layoutModificationDate) != htTemplateFile.lastModified()/1000) {
+										info("Template '${post.layout}' has been modified; this post needs regenerated even though markdown source has not been changed since last generation.")
+										// should fall to end of if statements now
+									} else {
+										mdItem.rerender = false // unnecessary, should be true
 
-								// TODO:  all this duplication!
-								val sourcePath = mdFile.parentFile.absolutePath.toString().removePrefix(project.dirs.sources.absolutePath.toString())
-								mdItem.layout = post.layout
-								post.url = calculateUrl(post.slug, sourcePath)
-								mdItem.link = PostLink(post.title, post.url, post.date)
+										// TODO:  all this duplication!
+										val sourcePath = mdFile.parentFile.absolutePath.toString().removePrefix(project.dirs.sources.absolutePath.toString())
+										mdItem.layout = post.layout
+										post.url = calculateUrl(post.slug, sourcePath)
+										mdItem.link = PostLink(post.title, post.url, post.date)
 
-								post.sourceFileName = mdFile.canonicalPath
-								post.destinationFolder = fileHandler.getFile(project.dirs.output, sourcePath)
+										post.sourceFileName = mdFile.canonicalPath
+										post.destinationFolder = fileHandler.getFile(project.dirs.output, sourcePath)
 
-								allSources.add(CacheAndPost(mdItem,post))
-								continue@fileLoop
+										allSources.add(CacheAndPost(mdItem, post))
+										continue@fileLoop
+									}
+								} else {
+									println.error("Template ${post.layout} not found in template cache. Odd.")
+								}
+
 							}
 						}
 						// else, build the post and flag it for rerendering
@@ -195,9 +214,9 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 	private fun cacheContainsItem(mdItem: MDCacheItem, cachedSet: Set<MDCacheItem>): Boolean {
 		var cacheFound = false;
 
-		for(c in cachedSet) {
-			if(c.sourceFilePath.equals(mdItem.sourceFilePath) && c.sourceModificationDate.equals(mdItem.sourceModificationDate) && c.sourceFileSize.equals(mdItem.sourceFileSize)) {
-				logger.info{"Cache match found for ${mdItem.sourceFilePath}"}
+		for (c in cachedSet) {
+			if (c.sourceFilePath.equals(mdItem.sourceFilePath) && c.sourceModificationDate.equals(mdItem.sourceModificationDate) && c.sourceFileSize.equals(mdItem.sourceFileSize)) {
+				logger.info { "Cache match found for ${mdItem.sourceFilePath}" }
 				cacheFound = true
 			}
 		}
@@ -212,5 +231,37 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 			"${sourcePath.removePrefix("\\")}\\$slug.html".replace("\\", "/")
 		}
 		return url
+	}
+
+	/**
+	 * Read the existing templates from file and create HandlebarsTemplateCacheItem cache items for each of them
+	 */
+	// TODO: move to interface
+	fun getTemplates(templateDir: File): Set<HandlebarsTemplateCacheItem> {
+		val templateSet = mutableSetOf<HandlebarsTemplateCacheItem>()
+		val templates = templateDir.listFiles(FileFilter { it.extension.toLowerCase() == "hbs" })
+		if (templates != null) {
+			templates.forEach { file ->
+				debug("Loading template details for ${file.name}")
+				val hbCacheItem = HandlebarsTemplateCacheItem(file.name.substringBeforeLast("."), file.absolutePath, file.length(), LocalDateTime.ofInstant(Instant.ofEpochMilli(file.lastModified()), TimeZone
+						.getDefault().toZoneId()))
+				templateSet.add(hbCacheItem)
+			}
+		}
+		return templateSet
+	}
+
+	// TODO: move to interface
+	/**
+	 * Load the Handlebars template file with the given @param layoutName
+	 */
+	fun getTemplate(templateDir: File, layoutName: String): File {
+		return fileHandler.getFile(templateDir, layoutName + ".hbs")
+	}
+
+	// TODO: duplicated function
+	private fun localDateTimeToLong(date: LocalDateTime): Long {
+		val zoneId = ZoneId.systemDefault() // or: ZoneId.of("Europe/Oslo");
+		return date.toEpochSecond(zoneId.rules.getOffset(LocalDateTime.now()))
 	}
 }

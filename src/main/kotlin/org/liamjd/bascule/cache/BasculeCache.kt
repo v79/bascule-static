@@ -1,6 +1,8 @@
 package org.liamjd.bascule.cache
 
+import kotlinx.serialization.Serializable
 import org.liamjd.bascule.model.BasculePost
+import java.time.LocalDateTime
 
 // TODO: move to the library
 /**
@@ -8,6 +10,7 @@ import org.liamjd.bascule.model.BasculePost
  */
 interface BasculeCache {
 
+	// TODO: extend this cache to include basic information about the markdown templates
 	/**
 	 * Write a set of [MDCacheItem] to a cache file
 	 */
@@ -17,6 +20,11 @@ interface BasculeCache {
 	 * Load from the cache file into a set of [MDCacheItem]
 	 */
 	fun loadCacheFile(): Set<MDCacheItem>
+
+	/**
+	 * Load the handlebars template information, so we know if we need to trigger a clean generation regardless
+	 */
+	fun loadTemplates(): Set<HandlebarsTemplateCacheItem>
 
 }
 

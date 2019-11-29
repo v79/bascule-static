@@ -39,9 +39,10 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 
 		// this is everything we know from the cache. it might even be empty!
 		val cachedSet = cache.loadCacheFile()
+		val templateSet = cache.loadTemplates()
 
 		// if there are no changes, this set could be empty - but if the cachedSet is empty, this must be full
-		val uncachedSet = changeSetCalculator.calculateUncachedSet(cachedSet)
+		val uncachedSet = changeSetCalculator.calculateUncachedSet(cachedSet, templateSet)
 		logger.debug { "Uncached set size: ${uncachedSet.size}" }
 		val sorted = orderPosts(uncachedSet)
 		logger.debug { "Sorted uncached set size: ${sorted.size}" }

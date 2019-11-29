@@ -25,9 +25,11 @@ internal class ChangeSetCalculatorTest : Spek({
 	val mDirectories = mockk<Directories>()
 	val mSourceDirectory = mockk<File>(name = "mSourceDirectory", relaxed = true)
 	val mOutputDirectory = mockk<File>(name = "mOutputDirectory")
+	val mTemplatesDirectory = mockk<File>(name = "mTemplateDirectory")
 	val mockFileHandler = mockk<org.liamjd.bascule.BasculeFileHandler>(relaxed = true)
 	val mPostBuilder = mockk<PostBuilder>()
 	val mParent = mockk<File>(relaxed = true)
+	val mHBTemplateFile = mockk<File>(relaxed = true)
 
 	val koinModule = module {
 		single(override = true) { mockFileHandler }
@@ -40,6 +42,7 @@ internal class ChangeSetCalculatorTest : Spek({
 	every { mProject.clean } returns false
 	every { mDirectories.sources } returns mSourceDirectory
 	every { mDirectories.output } returns mOutputDirectory
+	every { mDirectories.templates} returns mTemplatesDirectory
 
 	describe("Given no cache file and no source files") {
 		beforeEachTest {
@@ -50,7 +53,7 @@ internal class ChangeSetCalculatorTest : Spek({
 		}
 		it("should return an empty change set") {
 			val calculator = ChangeSetCalculator(mProject)
-			val result = calculator.calculateUncachedSet(TEST_DATA.mdCacheItemSet)
+			val result = calculator.calculateUncachedSet(TEST_DATA.mdCacheItemSet, TEST_DATA.hbTemplateCacheEmptySet)
 
 			assertNotNull(result) {
 				assertEquals(0, it.size)
@@ -81,7 +84,7 @@ internal class ChangeSetCalculatorTest : Spek({
 		it("should return a change set with a single file; rerender is true") {
 
 			val calculator = ChangeSetCalculator(mProject)
-			val result = calculator.calculateUncachedSet(TEST_DATA.mdCacheItemEmptySet)
+			val result = calculator.calculateUncachedSet(TEST_DATA.mdCacheItemEmptySet, setOf(TEST_DATA.hbTemplatePostItem))
 
 			assertNotNull(result) {
 				assertEquals(1, it.size)
@@ -107,19 +110,22 @@ internal class ChangeSetCalculatorTest : Spek({
 		val cacheSet = setOf(cacheItem)
 
 		beforeEachTest {
+			every { mPost.layout } returns TEST_DATA.hbTemplatePostItem.layoutName
 			every { mockFileHandler.getFile(any(), any()) } returns mOutputDirectory
 			every { mockFileHandler.readFileAsString(reviewOfBigBangContent.parentFile, reviewOfBigBangContent.name) } returns reviewOfBigBangContent.readText()
+			every { mockFileHandler.getFile(any(), any())} returns mHBTemplateFile
 			every { mPostBuilder.buildPost(reviewOfBigBangContent) } returns mPost
 			every { mSourceDirectory.listFiles() } returns fileList.toTypedArray()
 			every { mSourceDirectory.parentFile } returns mParent
 			every { mParent.path } returns "scannertests"
 			every { mOutputDirectory.parent } returns "scannertests"
 			every { mOutputDirectory.absolutePath } returns "scannertests/bigBang/"
+			every { mHBTemplateFile.lastModified()} returns TEST_DATA.post_template_modification_date_MILLIS
 		}
 
 		it("will return a set of items with the rerender flag set to false when the source matches the cache") {
 			val calculator = ChangeSetCalculator(mProject)
-			val result = calculator.calculateUncachedSet(cacheSet)
+			val result = calculator.calculateUncachedSet(cacheSet,setOf(TEST_DATA.hbTemplatePostItem))
 
 			assertNotNull(result) {
 				assertEquals(1, it.size)
