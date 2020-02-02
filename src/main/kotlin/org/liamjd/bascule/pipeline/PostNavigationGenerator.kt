@@ -16,7 +16,7 @@ class PostNavigationGenerator(posts: List<Post>, numPosts: Int = 1, postsPerPage
 
 	// TODO: extend this interface to take an optional filter predicate
 	// TODO: extend this interface to specify the sorting order
-	override suspend fun process(project: Project, renderer: TemplatePageRenderer, fileHandler: FileHandler) {
+	override suspend fun process(project: Project, renderer: TemplatePageRenderer, fileHandler: FileHandler, clean: Boolean) {
 		val totalPages = ceil(numPosts.toDouble() / postsPerPage).roundToInt()
 		val listPages = posts.reversed().withIndex()
 				.filter { indexedValue: IndexedValue<Post> -> indexedValue.value.layout.equals("post") }

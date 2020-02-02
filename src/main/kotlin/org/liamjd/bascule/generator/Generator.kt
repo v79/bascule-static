@@ -238,7 +238,7 @@ private fun List<Post>.process(pipeline: ArrayList<KClass<GeneratorPipeline>>, p
 						clazz.key as KClass<out GeneratorPipeline>,
 						project,
 						this@process
-				), project, renderer, fileHandler)
+				), project, renderer, fileHandler, project.clean)
 			}
 		}
 	}

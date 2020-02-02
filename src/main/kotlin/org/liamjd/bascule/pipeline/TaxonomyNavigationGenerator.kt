@@ -20,7 +20,7 @@ class TaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int = 1, p
 	val FOLDER_NAME = "tags"
 	override val TEMPLATE = "tag"
 
-	override suspend fun process(project: Project, renderer: TemplatePageRenderer, fileHandler: FileHandler) {
+	override suspend fun process(project: Project, renderer: TemplatePageRenderer, fileHandler: FileHandler, clean: Boolean) {
 		info("Building tag navigation pages")
 
 		val tagsFolder = fileHandler.createDirectory(project.dirs.output.absolutePath, FOLDER_NAME)

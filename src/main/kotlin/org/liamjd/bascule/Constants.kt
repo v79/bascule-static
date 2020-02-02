@@ -21,7 +21,7 @@ fun String.slug() : String {
  * Various final values. Extension functions. Plus logos :)
  */
 object Constants {
-	const val VERSION_STRING = "v0.0.18"
+	const val VERSION_STRING = "v0.0.19"
 
 	// TODO: these will all be parameterised
 	val SOURCE_DIR = "sources"
@@ -69,5 +69,14 @@ object Constants {
 
 	""".trimIndent()
 
-	val logos = arrayOf(basculeLogo, logo2, logo5)
+	val logo3 = """
+.______        ___           _______.  ______  __    __   __       _______ 
+|   _  \      /   \         /       | /      ||  |  |  | |  |     |   ____|
+|  |_)  |    /  ^  \       |   (----`|  ,----'|  |  |  | |  |     |  |__   
+|   _  <    /  /_\  \       \   \    |  |     |  |  |  | |  |     |   __|  
+|  |_)  |  /  _____  \  .----)   |   |  `----.|  `--'  | |  `----.|  |____ 
+|______/  /__/     \__\ |_______/     \______| \______/  |_______||_______| $VERSION_STRING
+	""".trimIndent()
+
+	val logos = arrayOf(basculeLogo, logo2, logo5, logo3)
 }

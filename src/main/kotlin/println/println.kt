@@ -18,6 +18,9 @@ fun error(string: String) {
 	println(Ansi.ansi().fgBrightRed().a("ERROR: $string").reset())
 }
 
+/**
+ * Prints text in a cyan colour
+ */
 fun debug(string: String) {
 	if (debug) {
 		println(Ansi.ansi().fgCyan().a("DEBUG: $string").reset())
