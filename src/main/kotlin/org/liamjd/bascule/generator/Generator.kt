@@ -54,23 +54,21 @@ class Generator : Runnable, KoinComponent {
 	var clean: Boolean = false
 
 	private val fileHandler: BasculeFileHandler by inject(parameters = { ParameterList() })
-	private val renderer by inject<TemplatePageRenderer> { parametersOf(project) }
-	private val assetsProcessor: AssetsProcessor
-
 	private val currentDirectory = System.getProperty("user.dir")!!
 	private val yamlConfig: String
 	private val parentFolder: File
-	private val project: Project
 
 	val loader = this.javaClass.classLoader
 
 	init {
 		parentFolder = File(currentDirectory)
 		yamlConfig = "${parentFolder.name}.yaml"
+	}
 
+	override fun run() {
+		// build the basic project from the default configuration file
 		val configText = File(parentFolder.absolutePath, yamlConfig).readText()
-
-		project = Project(configText)
+		val project = Project(configText)
 
 		// configure the markdown processor
 		project.markdownOptions.set(Parser.EXTENSIONS, arrayListOf(AttributesExtension.create(), YamlFrontMatterExtension.create(), TablesExtension.create(), HydeExtension.create()))
@@ -78,7 +76,7 @@ class Generator : Runnable, KoinComponent {
 		project.markdownOptions.set(HtmlRenderer.INDENT_SIZE, 2) // prettier HTML
 		project.markdownOptions.set(HydeExtension.SOURCE_FOLDER, project.dirs.sources.toString())
 
-		assetsProcessor = AssetsProcessor(project)
+		val assetsProcessor = AssetsProcessor(project)
 
 		// suppress apache FOP logging to a log file
 		// TODO: do this we a better logger?
@@ -86,9 +84,8 @@ class Generator : Runnable, KoinComponent {
 		val errorOutStream = FileOutputStream(errDumpFile)
 		val printStream = PrintStream(errorOutStream)
 		System.setErr(printStream);
-	}
 
-	override fun run() {
+
 		project.clean = clean
 		info(Constants.logos[(0 until Constants.logos.size).random()])
 		info("Generating your website")
@@ -140,8 +137,9 @@ class Generator : Runnable, KoinComponent {
 			additionalGenerators.addAll(project.generators!!)
 		}
 
-		val pluginLoader = loadPlugins(project.generators)
+		val pluginLoader = loadPlugins(project.generators, File(project.parentFolder,"plugins"))
 		val processorPipeline = ArrayList<KClass<*>>()
+		val renderer by inject<TemplatePageRenderer> { parametersOf(project) }
 
 		for (className in additionalGenerators) {
 			try {
@@ -187,9 +185,8 @@ class Generator : Runnable, KoinComponent {
 		return postList
 	}
 
-	private fun loadPlugins(plugins: ArrayList<String>?): ClassLoader? {
+	private fun loadPlugins(plugins: ArrayList<String>?, pluginFolder: File): ClassLoader? {
 		if (plugins != null) {
-			val pluginFolder = File(project.parentFolder, "plugins")
 			val jars = ArrayList<URL>()
 			pluginFolder.walk().forEach {
 				if (it.extension.equals("jar")) {
@@ -246,7 +243,6 @@ private fun List<Post>.process(pipeline: ArrayList<KClass<GeneratorPipeline>>, p
 		logger.info { "Generation complete. HTML files are stored in folder ${project.dirs.output}" }
 		info("Generation complete. HTML files are stored in folder ${project.dirs.output}")
 	}
-
 
 }
 
