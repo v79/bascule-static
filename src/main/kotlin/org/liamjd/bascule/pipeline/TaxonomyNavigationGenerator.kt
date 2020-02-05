@@ -20,14 +20,18 @@ class TaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int = 1, p
 	val FOLDER_NAME = "tags"
 	override val TEMPLATE = "tag"
 
-	override suspend fun process(project: Project, renderer: TemplatePageRenderer, fileHandler: FileHandler) {
+	override suspend fun process(project: Project, renderer: TemplatePageRenderer, fileHandler: FileHandler, clean: Boolean) {
 		info("Building tag navigation pages")
 
 		val tagsFolder = fileHandler.createDirectory(project.dirs.output.absolutePath, FOLDER_NAME)
-		val tagSet = getAllTagsFromPosts(posts)
+
+		// filter out unwanted items
+		val filteredPosts = posts.filter { it.layout.equals("post") }.sortedByDescending { it.date }
+
+		val tagSet = getAllTagsFromPosts(filteredPosts)
 
 		tagSet.forEach { tag ->
-			val taggedPosts = getPostsWithTag(posts, tag)
+			val taggedPosts = getPostsWithTag(filteredPosts, tag)
 			val numPosts = tag.postCount
 			if(numPosts != taggedPosts.size) {
 				logger.error("${tag} has a mismatch between tag.postCount (${tag.postCount}) and the count of posts with that tag (${taggedPosts.size})")

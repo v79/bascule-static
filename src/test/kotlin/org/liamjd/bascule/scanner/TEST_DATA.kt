@@ -1,11 +1,16 @@
 package org.liamjd.bascule.scanner
 
+import org.liamjd.bascule.cache.HandlebarsTemplateCacheItem
 import org.liamjd.bascule.cache.MDCacheItem
 import java.io.File
-import java.time.LocalDate
-import java.time.Month
+import java.time.*
+import java.time.temporal.TemporalUnit
+
 
 object TEST_DATA {
+	val post_template_modification_date = LocalDateTime.of(2019,Month.NOVEMBER,28,16,50,0)
+	val post_template_modification_date_MILLIS = post_template_modification_date.toInstant(ZoneId.systemDefault().rules.getOffset(LocalDateTime.now())).toEpochMilli()
+
 	val sources_absolute_path: String = "test/sources/path"
 	val test_project_name = "test-project"
 
@@ -13,8 +18,17 @@ object TEST_DATA {
 	val big_bang_url = "2005/review-of-big-bang.html"
 	val big_bang_date = LocalDate.of(2005, Month.OCTOBER, 8)
 	val big_bang_json = """
-	[
-		{
+	{
+		"layouts": [
+			{
+				"layoutName": "post",
+				"layoutFilePath": "D:\\Development\\liamjdavison\\liamjd-theme\\templates\\post.hbs",
+				"layoutFileSize": 3464,
+				"layoutModificationDate": "2019-11-24T10:25:10.335"
+			}
+		],
+		"items": [
+			{
 			"sourceFileSize": 1061,
 			"sourceFilePath": "D:\\Development\\liamjdavison\\sources\\2005\\Review of Big Bang.md",
 			"sourceModificationDate": "2018-09-11T21:32:30.342",
@@ -34,13 +48,17 @@ object TEST_DATA {
 			"layout": "post",
 			"rerender": true
 		}
-	]
+		]
+	}
 	""".trimIndent()
 
 	val bigBangItem = MDCacheItem(12345L, big_bang_url, big_bang_date.atStartOfDay())
 
 	val mdCacheItemSet = setOf(bigBangItem)
 	val mdCacheItemEmptySet = emptySet<MDCacheItem>()
+
+	val hbTemplateCacheEmptySet = emptySet<HandlebarsTemplateCacheItem>()
+	val hbTemplatePostItem = HandlebarsTemplateCacheItem("post","D:\\post.hbs",234L, post_template_modification_date)
 
 	val singleFileList = arrayOf<File>()
 }
@@ -71,6 +89,11 @@ object REVIEW_BIG_BANG_CACHE {
     }
 	]
 	""".trimIndent()
+}
+
+fun millsToLocalDateTime(millis: Long): LocalDateTime {
+	val instant: Instant = Instant.ofEpochMilli(millis)
+	return instant.atZone(ZoneId.systemDefault()).toLocalDateTime()
 }
 
 object REVIEW_BIG_BANG {

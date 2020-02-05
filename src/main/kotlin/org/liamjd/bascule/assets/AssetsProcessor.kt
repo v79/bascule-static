@@ -29,8 +29,8 @@ class AssetsProcessor(val project: Project) : KoinComponent {
 		copyDirectory(project.dirs.assets, destinationDir)
 	}
 
-	private fun copyFile(idx: Int, file: File, destinationDir: String) {
-		val res = fileHandler.copyFile(file, File(destinationDir + pathSeparator + file.name))
+	private fun copyFile(file: File, destinationDir: String) {
+		fileHandler.copyFile(file, File(destinationDir + pathSeparator + file.name))
 	}
 
 	private fun copyDirectory(dir: File, destination: String) {
@@ -43,7 +43,7 @@ class AssetsProcessor(val project: Project) : KoinComponent {
 				copyDirectory(file, destination + pathSeparator + file.name)
 			} else {
 				copyDirProgress.progress(idx,"Copying ${file.name} to $destination")
-				copyFile(idx, file, destination)
+				copyFile(file, destination)
 			}
 		}
 		copyDirProgress.clear()
