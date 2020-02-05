@@ -14,7 +14,16 @@
 			{{ title }}
 		</h1>
 		<p class="subtitle">
-			by {{ author }} <span class="date"> {{ date }}</span> - {{#each tags }}<span class="tag is-primary">{{ this }}</span> {{/each}}
+			by {{ author }} <span class="date"> {{ date }}</span> - {{#each tags }}
+            {{#if this.hasPosts }}
+                <span class="tag is-primary is-right"><a
+                        class="has-text-white"
+                        href="/tags/{{this.url}}/{{this.url}}1.html"
+                        title="All {{ this.postCount}} posts tagged '{{this.label}}'">{{ this.label }}</a></span>
+            {{else}}
+                <span class="tag is-primary is-right">{{ this.label }}</span>
+            {{/if}}
+        {{/each}}
 		</p>
 		<div class="content">
 			{{{ content }}}

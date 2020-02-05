@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="author" content="{{author}}">
+	<meta name="generator" content="bascule">
+	<title>{{title }} - {{ siteName }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.1/css/bulma.min.css">
+    <script defer src="https://use.fontawesome.com/releases/v5.1.0/js/all.js"></script>
+</head>
+
+<body>
+
+<section class="hero">
+	<div class="hero-body">
+		<h1 class="title is-size-1"><span class="title-wrapper"><a href="/" title="Home">{{upper siteName }}</a></span></h1>
+	</div>
+</section>
+
+<div class="container">
+	<!-- START LIST OF POSTS -->
+	<section class="pageList">
+		<div class="columns">
+			<div class="column is-7">
+
+				<nav class="pagination" role="navigation" aria-label="pagination">
+					<a class="pagination-previous"
+						{{#if isFirst}}disabled {{else}} href="list{{previousPage}}.html"{{/if}}>Previous</a>
+					<a class="pagination-next"
+						{{#if isLast}}disabled {{else}} href="list{{nextPage}}.html" {{/if}}>Next
+						page</a>
+
+					<ul class="pagination-list">
+						{{#paginate pagination currentPage totalPages }}
+
+							{{#if @current}}
+								<li>
+									<a class="pagination-link is-current"
+									   aria-current="Page {{currentPage}}">{{currentPage}}</a>
+								</li>
+							{{/if}}
+							{{#if @page}}
+								<li>
+									<a class="pagination-link" aria-label="Goto page {{@page}}"
+									   href="list{{@page}}.html">{{@page}}</a>
+								</li>
+							{{/if}}
+							{{#if @ellipsis}}
+								<li>
+									<span class="pagination-ellipsis">&hellip;</span>
+								</li>
+							{{/if}}
+
+						{{/paginate}}
+					</ul>
+
+				</nav>
+
+				<div class="card article">
+					<div class="card-content">
+						<div class="media">
+							<div class="media-content">
+								<ul>
+									{{#forEach posts }}
+										<li>
+											<div class="level">
+												<div class="level-left">
+													<div class="level-item article-title">
+														<a href="/{{this.url}}"
+														   title="{{this.title}}">{{this.title}}</a>
+													</div>
+												</div>
+												<div class="level-right">
+													<div class="level-item">
+														<small>{{localDate this.date}}</small>
+													</div>
+												</div>
+											</div>
+										</li>
+									{{/forEach}}
+								</ul>
+								<div class="is-pulled-right">
+									<small><em>{{totalPosts}} posts</em></small>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<nav class="pagination" role="navigation" aria-label="pagination">
+
+					<a class="pagination-previous"
+						{{#if isFirst}}disabled {{else}} href="list{{previousPage}}.html"{{/if}} >Previous</a>
+					<a class="pagination-next"
+						{{#if isLast}}disabled {{else}} href="list{{nextPage}}.html" {{/if}}>Next
+						page</a>
+
+					<ul class="pagination-list">
+						{{#paginate pagination currentPage totalPages }}
+
+							{{#if @current}}
+								<li>
+									<a class="pagination-link is-current"
+									   aria-current="Page {{currentPage}}">{{currentPage}}</a>
+								</li>
+							{{/if}}
+							{{#if @page}}
+								<li>
+									<a class="pagination-link" aria-label="Goto page {{@page}}"
+									   href="list{{@page}}.html">{{@page}}</a>
+								</li>
+							{{/if}}
+							{{#if @ellipsis}}
+								<li>
+									<span class="pagination-ellipsis">&hellip;</span>
+								</li>
+							{{/if}}
+
+						{{/paginate}}
+
+					</ul>
+
+				</nav>
+
+			</div>
+
+		</div>
+	</section>
+
+</div>
+<!-- END ARTICLE FEED -->
+
+</body>
+
+</html>

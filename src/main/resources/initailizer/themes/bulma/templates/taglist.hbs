@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="author" content="{{author}}">
+	<meta name="generator" content="bascule">
+	<title>{{title }} - {{ siteName }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.1/css/bulma.min.css">
+    <script defer src="https://use.fontawesome.com/releases/v5.1.0/js/all.js"></script>
+</head>
+
+<body>
+
+<section class="hero">
+	<div class="hero-body">
+		<h1 class="title is-size-1"><span class="title-wrapper"><a href="/" title="Home">{{upper siteName }}</a></span></h1>
+	</div>
+</section>
+
+<div class="container">
+	<!-- START LIST OF POSTS -->
+	<section class="pageList">
+		<div class="columns">
+			<div class="column is-7">
+
+				<div class="card article">
+					<div class="card-header">
+						<div class="card-header-title">
+							All tags
+						</div>
+					</div>
+					<div class="card-content">
+						<div class="media">
+							<div class="media-content">
+								<ul>
+									{{#forEach tags }}
+										<li>
+											<div class="level">
+												<div class="level-left">
+													<div class="level-item article-title">
+													<span class="tag is-primary is-right"><a
+															class="has-text-white"
+															href="../tags/{{this.url}}/{{this.url}}1.html"
+															title="All {{ this.postCount}} posts tagged '{{this.label}}'">{{ this.label }}</a></span>
+
+													</div>
+												</div>
+												<div class="level-right">
+													<div class="level-item">
+														<small>{{this.postCount}}</small>
+													</div>
+												</div>
+											</div>
+										</li>
+									{{/forEach}}
+								</ul>
+								<div class="is-pulled-right">
+									<small><em>{{tags.size}} tags</em></small>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+
+			</div>
+
+		</div>
+	</section>
+
+</div>
+<!-- END ARTICLE FEED -->
+
+</body>
+
+</html>

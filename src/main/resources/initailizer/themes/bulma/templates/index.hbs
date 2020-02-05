@@ -1,25 +1,33 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>{{ site.siteName }}</title>
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.1/css/bulma.min.css">
-	<script defer src="https://use.fontawesome.com/releases/v5.1.0/js/all.js"></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ siteName }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.1/css/bulma.min.css">
+    <script defer src="https://use.fontawesome.com/releases/v5.1.0/js/all.js"></script>
 </head>
 <body>
 <section class="section">
-	<div class="container">
-		<h1 class="title">
-			{{ site.siteName }}
-		</h1>
+    <div class="container">
+        <h1 class="title">
+            {{ siteName }}
+        </h1>
 
-		<div class="content">
-			{{#each site.basculePosts }}
-				{{ this }}
-			{{/each}}
-		</div>
-	</div>
+    <div class="content">
+        <!-- START ARTICLES -->
+        {{#forEach posts "2"}}
+            <h2 class="title article-title">{{this.title}}</h2>
+            <div class="tags has-addons">
+                <span class="tag is-rounded is-info">{{this.author}}</span>
+                <span class="tag is-rounded"><time datetime="{{localDate this.date "ISO_LOCAL_DATE"}}"> {{ localDate this.date }}</time></span>
+            </div>
+            <div class="content article-body">
+                {{{ this.content }}}
+            </div>
+        </div>
+        {{/forEach}}
+    </div>
 </section>
 </body>
 </html>
