@@ -5,8 +5,7 @@ import com.vladsch.flexmark.ext.tables.TablesExtension
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import com.vladsch.flexmark.util.builder.Extension
 import mu.KotlinLogging
 import org.koin.core.parameter.ParameterList
 import org.koin.core.parameter.parametersOf
@@ -17,12 +16,12 @@ import org.liamjd.bascule.Constants
 import org.liamjd.bascule.assets.AssetsProcessor
 import org.liamjd.bascule.cache.CacheAndPost
 import org.liamjd.bascule.flexmark.hyde.HydeExtension
-import org.liamjd.bascule.flexmark.spotify.SpotifyExtension
 import org.liamjd.bascule.lib.generators.GeneratorPipeline
 import org.liamjd.bascule.lib.model.Post
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.lib.render.TemplatePageRenderer
 import org.liamjd.bascule.plugins.GeneratorPluginLoader
+import org.liamjd.bascule.plugins.HandlebarPluginLoader
 import org.liamjd.bascule.random
 import org.liamjd.bascule.render.MarkdownToHTMLRenderer
 import org.liamjd.bascule.scanner.MarkdownScanner
@@ -32,11 +31,7 @@ import println.info
 import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintStream
-import kotlin.reflect.KClass
-import kotlin.reflect.KFunction
-import kotlin.reflect.KParameter
-import kotlin.reflect.full.callSuspend
-import kotlin.reflect.full.declaredFunctions
+import kotlin.reflect.full.createInstance
 import kotlin.system.exitProcess
 
 val DEFAULT_PROCESSORS = arrayOf("org.liamjd.bascule.pipeline.IndexPageGenerator", "org.liamjd.bascule.pipeline.PostNavigationGenerator", "org.liamjd.bascule.pipeline.TaxonomyNavigationGenerator")
@@ -70,7 +65,24 @@ class Generator : Runnable, KoinComponent {
 
 		// configure the markdown processor
 		// TODO: load extensions from separate package as a plugin so that I don't need to include every possible markdown extension in this executable
-		project.markdownOptions.set(Parser.EXTENSIONS, arrayListOf(AttributesExtension.create(), YamlFrontMatterExtension.create(), TablesExtension.create(), HydeExtension.create(), SpotifyExtension.create()))
+
+		val handlebarExtensions = mutableListOf<Extension>()
+		handlebarExtensions.add(AttributesExtension.create())
+		handlebarExtensions.add(YamlFrontMatterExtension.create())
+		handlebarExtensions.add(TablesExtension.create())
+		handlebarExtensions.add(HydeExtension.create())
+
+		info("Constructing Handlebars extensions")
+		val handlebarPluginLoader = HandlebarPluginLoader(this.javaClass.classLoader, Extension::class, project.parentFolder)
+		if(project.extensions != null) {
+			val extensions = handlebarPluginLoader.getExtensions(project.extensions!!)
+			for(ext  in extensions) {
+				debug("Checking extension ${ext.simpleName}")
+				handlebarExtensions.add(ext.createInstance())
+			}
+		}
+
+		project.markdownOptions.set(Parser.EXTENSIONS, handlebarExtensions)
 		project.markdownOptions.set(HtmlRenderer.GENERATE_HEADER_ID, true).set(HtmlRenderer.RENDER_HEADER_ID, true) // to give headings IDs
 		project.markdownOptions.set(HtmlRenderer.INDENT_SIZE, 2) // prettier HTML
 		project.markdownOptions.set(HydeExtension.SOURCE_FOLDER, project.dirs.sources.toString())
@@ -138,8 +150,8 @@ class Generator : Runnable, KoinComponent {
 			additionalGenerators.addAll(project.generators!!)
 		}
 
-		val generatorPluginLoader = GeneratorPluginLoader(this.javaClass.classLoader, GeneratorPipeline::class)
-		val generators = generatorPluginLoader.getGenerators(additionalGenerators, project.parentFolder)
+		val generatorPluginLoader = GeneratorPluginLoader(this.javaClass.classLoader, GeneratorPipeline::class, project.parentFolder)
+		val generators = generatorPluginLoader.getGenerators(additionalGenerators)
 
 		if (generators.size == 0) {
 			logger.error { "No generators found in the pipeline. Aborting execution!" }
@@ -150,7 +162,6 @@ class Generator : Runnable, KoinComponent {
 		// TODO: this still doesn't work with the CACHE!
 		val renderer by inject<TemplatePageRenderer> { parametersOf(project) }
 		getPostsFromCacheAndPost(pageList).process(generators, project, renderer, fileHandler)
-
 
 
 	}
