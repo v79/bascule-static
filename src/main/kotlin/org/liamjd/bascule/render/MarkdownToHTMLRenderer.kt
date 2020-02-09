@@ -11,7 +11,12 @@ import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.lib.render.TemplatePageRenderer
 import org.liamjd.bascule.model.BasculePost
+import println.info
 
+/**
+ * Transforms a given [BasculePost] into the final HTML file through the Flexmark HTMLRenderer class,
+ * and writes it to disc
+ */
 class MarkdownToHTMLRenderer(val project: Project) : KoinComponent, MarkdownRenderer {
 
 	private val logger = KotlinLogging.logger {}
@@ -25,7 +30,7 @@ class MarkdownToHTMLRenderer(val project: Project) : KoinComponent, MarkdownRend
 	}
 
 	override fun renderHTML(post: BasculePost, itemCount: Int ) {
-		println("Rendering post ${post.sourceFileName}")
+		info("Rendering post ${post.sourceFileName}")
 		logger.info {"Rendering post ${post.sourceFileName}"  }
 		render(project.model,post,itemCount)
 	}

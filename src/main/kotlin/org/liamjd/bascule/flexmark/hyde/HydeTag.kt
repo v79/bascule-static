@@ -3,6 +3,9 @@ package org.liamjd.bascule.flexmark.hyde
 import com.vladsch.flexmark.util.ast.Node
 import com.vladsch.flexmark.util.sequence.BasedSequence
 
+/**
+ * This is inspired by the jekyll-extension from https://github.com/vsch/flexmark-java/tree/master/flexmark-ext-jekyll-tag - pretty much the same thing
+ */
 class HydeTag : Node {
 	var openingMarker = BasedSequence.NULL
 	var tag = BasedSequence.NULL
