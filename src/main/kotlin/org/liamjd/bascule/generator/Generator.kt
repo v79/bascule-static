@@ -3,6 +3,7 @@ package org.liamjd.bascule.generator
 import com.vladsch.flexmark.ext.attributes.AttributesExtension
 import com.vladsch.flexmark.ext.tables.TablesExtension
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
+import com.vladsch.flexmark.ext.youtube.embedded.YouTubeLinkExtension
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.builder.Extension
@@ -71,6 +72,7 @@ class Generator : Runnable, KoinComponent {
 		handlebarExtensions.add(YamlFrontMatterExtension.create())
 		handlebarExtensions.add(TablesExtension.create())
 		handlebarExtensions.add(HydeExtension.create())
+		handlebarExtensions.add(YouTubeLinkExtension.create())
 
 		info("Constructing Handlebars extensions")
 		val handlebarPluginLoader = HandlebarPluginLoader(this.javaClass.classLoader, Extension::class, project.parentFolder)
