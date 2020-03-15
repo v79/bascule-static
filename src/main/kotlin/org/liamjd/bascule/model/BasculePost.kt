@@ -37,7 +37,7 @@ class BasculePost(val document: Document) : Post, PostStatus() {
 	override var layout: String = ""
 	override var date: LocalDate = LocalDate.now()
 
-	override var tags = mutableSetOf<Tag>()
+	override var tags: MutableMap<String, MutableSet<Tag>> = mutableMapOf()
 	override var slug: String = ""
 	override var attributes: MutableMap<String, Any> = mutableMapOf()
 
@@ -87,6 +87,7 @@ class BasculePost(val document: Document) : Post, PostStatus() {
 				return buildPostWithoutYaml(file, document)
 			}
 
+			// validate the yaml for the required fields
 			val requiredFields = PostMetaData.values().toSet().filter { it.required }
 			requiredFields.forEach {
 				if (!data.containsKey(it.name)) {
@@ -97,57 +98,61 @@ class BasculePost(val document: Document) : Post, PostStatus() {
 
 			val post = BasculePost(document)
 
-			data.forEach { it ->
+			for(yamlItem in data) {
+				println("---> yamlItem: ${yamlItem}")
 				val metaData: PostMetaData?
-				if (PostMetaData.contains(it.key)) {
-					metaData = PostMetaData.valueOf(it.key)
+				if (PostMetaData.contains(yamlItem.key)) {
+					metaData = PostMetaData.valueOf(yamlItem.key)
 
 					// validate the metadata
-					if (it.value.isEmpty() || (it.value.size == 1 && it.value[0].isNullOrBlank())) {
+					if (yamlItem.value.isEmpty() || (yamlItem.value.size == 1 && yamlItem.value[0].isNullOrBlank())) {
 						if (metaData.required) {
 							// a required field exists but has no value
 							return PostGenError("Missing required field '${metaData.name}' in source file '${file.name}'", file.name, metaData.name)
 						}
 					} else {
-						val valueList = it.value // we'll have bailed by now if this is empty?
+						val valueList = yamlItem.value // we'll have bailed by now if this is empty?
 
 						if (!metaData.multipleAllowed && valueList != null && valueList.size > 1) {
-							return PostGenError("Field '${metaData.name}' is only allowed a single value; found '${it.value[0]}' in source file '$file.name'", file.name, metaData.name)
+							return PostGenError("Field '${metaData.name}' is only allowed a single value; found '${yamlItem.value[0]}' in source file '$file.name'", file.name, metaData.name)
 						}
-						val value = it.value[0]
+						val itemValue = yamlItem.value[0]
 
 						when (metaData) {
 							PostMetaData.title -> {
-								post.title = value
+								post.title = itemValue
 							}
 							PostMetaData.layout -> {
-								post.layout = value
+								post.layout = itemValue
 							}
 							PostMetaData.author -> {
-								post.author = value
+								post.author = itemValue
 							}
 							PostMetaData.slug -> {
-								post.slug = value.trim()
+								post.slug = itemValue.trim()
 							}
 							PostMetaData.date -> {
 								val dateFormat = project.model["dateFormat"] as String? ?: "dd/MM/yyyy"
 								val formatter = DateTimeFormatter.ofPattern(dateFormat)
-								post.date = LocalDate.parse(value, formatter)
-							}
-							PostMetaData.tags -> {
-								// split string [tagA, tagB, tagC] into a list of three tags, removing spaces
-								post.tags.addAll(value.trim().drop(1).dropLast(1).split(",").map { label ->  Tag(label.trim(), label.trim().slug()) })
+								post.date = LocalDate.parse(itemValue, formatter)
 							}
 							else -> {
-								println("How did i get here?")
+								println.error("Unhandled metaData object: ${metaData}, may be processed later")
 							}
 						}
 					}
-
-
 				} else {
-					val finalVal = if (it.value.size == 1) it.value[0] else it.value
-					post.attributes.put(it.key, finalVal)
+					// check for custom tagging as defined in the "tagging" attribute of the project yaml file
+					if(project.tagging.contains(yamlItem.key)) {
+						val itemValue = yamlItem.value[0]
+						// split string [tagA, tagB, tagC] into a list of three tags, removing spaces
+						val tagList = itemValue.trim().drop(1).dropLast(1).split(",").map { label -> Tag(label.trim(), label.trim().slug(), postCount = 1, hasPosts = true) }
+						post.tags.put(yamlItem.key, tagList.toSet() as MutableSet<Tag>)
+					} else {
+						// if still not found, shove it in the attributes object
+						val finalVal = if (yamlItem.value.size == 1) yamlItem.value[0] else yamlItem.value
+						post.attributes.put(yamlItem.key, finalVal)
+					}
 				}
 			} // else do nothing? depends on the key I guess...
 			return post
@@ -187,7 +192,7 @@ class BasculePost(val document: Document) : Post, PostStatus() {
 }
 
 /**
- * Enum representing all the key fields used to construct a BasculePost. Each field has it's own eligibility requirements,
+ * Enum representing all the key fields used to construct a BasculePost. Each field has its own eligibility requirements,
  * 'required' and 'multipleAllowed'. E.g. the _title_ is required, and there must only be a single title.
  */
 internal enum class PostMetaData(val required: Boolean, val multipleAllowed: Boolean) {
@@ -196,7 +201,6 @@ internal enum class PostMetaData(val required: Boolean, val multipleAllowed: Boo
 	author(false, false),
 	slug(false, false),
 	date(false, false),
-	tags(false, true),
 	custom(false, true);
 
 	companion object {

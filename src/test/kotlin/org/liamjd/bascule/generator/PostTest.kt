@@ -34,7 +34,7 @@ private val POST_DATE_VAL = "01/01/2018"
 
 class PostTest : Spek( {
 
-	var data = mutableMapOf<String,MutableList<String>>()
+	var data: MutableMap<String, MutableList<String>>
 
 	// initialize the mock yaml visitor
 	val mYamlVistor = mockk<AbstractYamlFrontMatterVisitor>()
@@ -79,7 +79,7 @@ class PostTest : Spek( {
 			assertEquals(SLUG_VAL, result.slug)
 			assertEquals(LocalDate.of(2018,Month.JANUARY,1),result.date)
 			assertEquals(1,result.tags.size)
-			assertEquals("aTag",result.tags.first().label)
+			assertEquals("aTag",result.tags["tags"]?.first()?.label)
 		}
 
 		it("builds a BasculePost with two tags") {
@@ -91,9 +91,27 @@ class PostTest : Spek( {
 			val isPost = result is BasculePost
 			assertTrue(isPost)
 			val post = result as BasculePost
+			assertEquals(1,post.tags.size)
+			assertEquals(2,post.tags["tags"]?.size)
+			assertEquals(1,post.tags["tags"]?.filter { it.label == "tagA" }?.size)
+			assertEquals(1,post.tags["tags"]?.filter { it.label == "tagB" }?.size)
+		}
+
+		it("builds a post with two different custom tags") {
+			val multiTagProject = Project(yaml.multiTag)
+			data = buildYamlData()
+			data.remove("tags")
+			data.put("genres", mutableListOf("[classical,jazz]"))
+			data.put("composers", mutableListOf("[beethoven,mahler,fitzgerald]"))
+			every { mYamlVistor.data}.returns(data)
+
+			val result = BasculePost.createPostFromYaml(mFile,mDocument,multiTagProject)
+			val isPost = result is BasculePost
+			assertTrue(isPost)
+			val post = result as BasculePost
 			assertEquals(2,post.tags.size)
-			assertEquals(1,post.tags.filter { it.label == "tagA" }.size)
-			assertEquals(1,post.tags.filter { it.label == "tagB" }.size)
+			assertEquals(2,post.tags["genres"]?.size)
+			assertEquals(3,post.tags["composers"]?.size)
 		}
 
 		it("builds a post with two custom attributes") {
@@ -202,5 +220,11 @@ object yaml {
 	val simple = """
 		sitename: simpleDoc
 		theme: simple-theme
+	""".replace("\t","  ")
+
+	val multiTag = """
+		sitename: simpleDoc
+		theme: simple-theme
+		tagging: [composers,genres]
 	""".replace("\t","  ")
 }

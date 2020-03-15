@@ -19,8 +19,9 @@ import println.debug
 import println.info
 import java.io.File
 import java.io.FileFilter
-import java.io.FilenameFilter
-import java.time.*
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
 import java.util.*
 import kotlin.system.measureTimeMillis
 
@@ -71,20 +72,23 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 
 			// build the set of taxonomy tags
 			logger.info("Building the set of tags")
-			val allTags = mutableSetOf<Tag>()
+			val allTags = mutableMapOf<String,HashSet<Tag>>()
 			allSources.forEach { cacheAndPost ->
 				logger.info("calculateCachedSet: cacheAndPost ${cacheAndPost.mdCacheItem.link.title} has tags: ${cacheAndPost.post?.tags}")
-				cacheAndPost.post?.tags?.forEach { postTag ->
-					if (allTags.contains(postTag)) {
-						allTags.elementAt(allTags.indexOf(postTag)).let {
-							it.postCount++
-							it.hasPosts = true
-							cacheAndPost.mdCacheItem.tags.add(it.label)
-							postTag.hasPosts = true
-							postTag.postCount = it.postCount
+				cacheAndPost.post?.tags?.forEach { tagName ->
+					if(allTags.containsKey(tagName.key)) {
+						val currentTags = allTags[tagName.key]
+						currentTags?.forEach { tagItem ->
+							currentTags.elementAt(currentTags.indexOf(tagItem)).let {
+								it.postCount++
+								it.hasPosts = true
+								cacheAndPost.mdCacheItem.tags.add(it.label)
+								tagItem.hasPosts = true
+								tagItem.postCount = it.postCount
+							}
 						}
 					} else {
-						allTags.add(postTag)
+						allTags.put(tagName.key, HashSet<Tag>())
 					}
 				}
 			}

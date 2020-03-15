@@ -13,6 +13,7 @@ import println.info
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
+@Deprecated("doesn't work",ReplaceWith("MultiTaxonomyNavigationGenerator"))
 class TaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int = 1, postsPerPage: Int) : GeneratorPipeline, AbstractPostListGenerator(posts, numPosts, postsPerPage) {
 
 	private val logger = KotlinLogging.logger {}
@@ -72,9 +73,9 @@ class TaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int = 1, p
 	private fun getPostsWithTag(posts: List<Post>, tag: Tag): List<Post> {
 		val taggedPosts = mutableListOf<Post>()
 		posts.forEach { post ->
-			post.tags.forEach { t -> if (t.label.equals(tag.label)) {
-				taggedPosts.add(post)
-			} }
+//			post.tags.forEach { t -> if (t.label.equals(tag.label)) {
+//				taggedPosts.add(post)
+//			} }
 		}
 
 
@@ -106,17 +107,17 @@ class TaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int = 1, p
 		val tagSet = mutableSetOf<Tag>()
 		posts.forEach { post ->
 			post.tags.forEach { tag ->
-				if(tagSet.contains(tag)) {
-					tagSet.elementAt(tagSet.indexOf(tag)).let {
-						if(it.postCount < tag.postCount) {
-							logger.info("${it.label}: resetting count from ${it.postCount} to ${tag.postCount}")
-							it.postCount = tag.postCount
-						}
-						it.hasPosts = true
-					}
-				} else {
-					tagSet.add(tag)
-				}
+//				if(tagSet.contains(tag)) {
+//					tagSet.elementAt(tagSet.indexOf(tag)).let {
+//						if(it.postCount < tag.postCount) {
+//							logger.info("${it.label}: resetting count from ${it.postCount} to ${tag.postCount}")
+//							it.postCount = tag.postCount
+//						}
+//						it.hasPosts = true
+//					}
+//				} else {
+//					tagSet.add(tag)
+//				}
 			}
 		}
 
