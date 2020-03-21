@@ -40,6 +40,7 @@ internal class ChangeSetCalculatorTest : Spek({
 	every { mProject.name } returns TEST_DATA.test_project_name
 	every { mProject.dirs } returns mDirectories
 	every { mProject.clean } returns false
+	every { mProject.tagging } returns emptySet()
 	every { mDirectories.sources } returns mSourceDirectory
 	every { mDirectories.output } returns mOutputDirectory
 	every { mDirectories.templates} returns mTemplatesDirectory

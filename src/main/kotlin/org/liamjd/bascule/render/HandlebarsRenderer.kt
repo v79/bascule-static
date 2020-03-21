@@ -29,6 +29,7 @@ class HandlebarsRenderer(val project: Project) : TemplatePageRenderer {
 		hbRenderer.registerHelper("capitalize",StringHelpers.capitalize)
 		hbRenderer.registerHelper("upper",StringHelpers.upper)
 		hbRenderer.registerHelper("slugify", StringHelpers.slugify)
+		hbRenderer.registerHelper("selectFrom",SelectFromMapHelper())
 	}
 
 	override fun render(model: Map<String, Any?>, templateName: String): String {

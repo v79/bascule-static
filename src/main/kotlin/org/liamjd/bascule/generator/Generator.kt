@@ -98,7 +98,6 @@ class Generator : Runnable, KoinComponent {
 		val printStream = PrintStream(errorOutStream)
 		System.setErr(printStream);
 
-
 		project.clean = clean
 		info(Constants.logos[(0 until Constants.logos.size).random()])
 		info("Generating your website")
@@ -110,7 +109,6 @@ class Generator : Runnable, KoinComponent {
 		// unless I cache all content externally
 //		fileHandler.emptyFolder(project.dirs.output, OUTPUT_SUFFIX)
 //		fileHandler.emptyFolder(File(project.dirs.output, "tags"))
-//		val walker = FolderWalker(project)
 
 		val walker = MarkdownScanner(project)
 

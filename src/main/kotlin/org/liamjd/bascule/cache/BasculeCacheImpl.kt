@@ -5,7 +5,6 @@ package org.liamjd.bascule.cache
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonConfiguration
-import kotlinx.serialization.set
 import org.liamjd.bascule.lib.FileHandler
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.slug
@@ -30,12 +29,6 @@ class BasculeCacheImpl(val project: Project, val fileHandler: FileHandler) : Bas
 		val cacheJsonData = json.stringify(Cache.serializer(),cache)
 
 		fileHandler.writeFile(project.dirs.sources,getCacheFileName(),cacheJsonData)
-
-//		val templateJsonData = json.stringify(HandlebarsTemplateCacheItem.serializer().set,getTemplates())
-//
-//		println(templateJsonData)
-//		val jsonData = json.stringify(MDCacheItem.serializer().set, mdCacheItems)
-//		fileHandler.writeFile(project.dirs.sources, getCacheFileName(), jsonData)
 	}
 
 	override fun loadCacheFile(): Set<MDCacheItem> {
@@ -74,7 +67,6 @@ class BasculeCacheImpl(val project: Project, val fileHandler: FileHandler) : Bas
 		val templates = templateDir.listFiles(FileFilter { it.extension.toLowerCase() == "hbs" })
 		if(templates != null) {
 			templates.forEach { file ->
-				println("Loading template details for ${file.name}")
 				val hbCacheItem = HandlebarsTemplateCacheItem(file.name.substringBeforeLast("."), file.absolutePath, file.length(), LocalDateTime.ofInstant(Instant.ofEpochMilli(file.lastModified()), TimeZone
 						.getDefault().toZoneId()))
 				templateSet.add(hbCacheItem)

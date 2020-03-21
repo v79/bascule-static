@@ -42,6 +42,7 @@ class MarkdownToHTMLRenderer(val project: Project) : KoinComponent, MarkdownRend
 		val model = mutableMapOf<String, Any?>()
 		model.putAll(siteModel)
 		model.putAll(basculePost.toModel())
+		model.putAll(basculePost.groupTagsByCategory())
 		model.put("\$currentPage", basculePost.slug)
 
 		// first, extract the content from the markdown
@@ -61,6 +62,8 @@ class MarkdownToHTMLRenderer(val project: Project) : KoinComponent, MarkdownRend
 		fileHandler.writeFile(project.dirs.output.absoluteFile, basculePost.url, renderedContent)
 
 	}
+
+
 
 	override fun renderMarkdown(document: Document): String {
 		val mdRender = HtmlRenderer.builder(project.markdownOptions).build()

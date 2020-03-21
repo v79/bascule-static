@@ -4,10 +4,7 @@ import com.vladsch.flexmark.ext.yaml.front.matter.AbstractYamlFrontMatterVisitor
 import com.vladsch.flexmark.util.ast.Document
 import org.koin.standalone.KoinComponent
 import org.koin.standalone.inject
-import org.liamjd.bascule.lib.model.Post
-import org.liamjd.bascule.lib.model.PostLink
-import org.liamjd.bascule.lib.model.Project
-import org.liamjd.bascule.lib.model.Tag
+import org.liamjd.bascule.lib.model.*
 import org.liamjd.bascule.slug
 import java.io.File
 import java.nio.file.Files
@@ -37,7 +34,7 @@ class BasculePost(val document: Document) : Post, PostStatus() {
 	override var layout: String = ""
 	override var date: LocalDate = LocalDate.now()
 
-	override var tags: MutableMap<String, MutableSet<Tag>> = mutableMapOf()
+	override var tags: MutableSet<Tag> = mutableSetOf()
 	override var slug: String = ""
 	override var attributes: MutableMap<String, Any> = mutableMapOf()
 
@@ -99,7 +96,6 @@ class BasculePost(val document: Document) : Post, PostStatus() {
 			val post = BasculePost(document)
 
 			for(yamlItem in data) {
-				println("---> yamlItem: ${yamlItem}")
 				val metaData: PostMetaData?
 				if (PostMetaData.contains(yamlItem.key)) {
 					metaData = PostMetaData.valueOf(yamlItem.key)
@@ -142,12 +138,17 @@ class BasculePost(val document: Document) : Post, PostStatus() {
 						}
 					}
 				} else {
+					// what's left is
 					// check for custom tagging as defined in the "tagging" attribute of the project yaml file
+
+
+
+
 					if(project.tagging.contains(yamlItem.key)) {
 						val itemValue = yamlItem.value[0]
 						// split string [tagA, tagB, tagC] into a list of three tags, removing spaces
-						val tagList = itemValue.trim().drop(1).dropLast(1).split(",").map { label -> Tag(label.trim(), label.trim().slug(), postCount = 1, hasPosts = true) }
-						post.tags.put(yamlItem.key, tagList.toSet() as MutableSet<Tag>)
+						val tagList = itemValue.trim().drop(1).dropLast(1).split(",").map { label -> Tag(yamlItem.key, label.trim(), label.trim().slug(), postCount = 1, hasPosts = false) }
+						post.tags.addAll(tagList.toSet() as MutableSet<Tag>)
 					} else {
 						// if still not found, shove it in the attributes object
 						val finalVal = if (yamlItem.value.size == 1) yamlItem.value[0] else yamlItem.value
@@ -188,6 +189,23 @@ class BasculePost(val document: Document) : Post, PostStatus() {
 
 	override fun toString(): String {
 		return "BasculePost: ${this.title}, slug:${this.slug}, layout:${this.layout}"
+	}
+
+	fun getTagsForCategory(category: String) : List<Tag> {
+	 	return this.tags.filter { t -> t.category.equals(category) }
+	}
+
+	private fun getCategories() : List<TagCategory> {
+		return this.tags.map { tag -> tag.category }
+	}
+
+	override fun groupTagsByCategory(): Map<out String, Set<Tag>?> {
+		val categoryTagMap = mutableMapOf<String,Set<Tag>>()
+		for(category in getCategories()) {
+			val tags = getTagsForCategory(category)
+			categoryTagMap.put(category,tags.toSet())
+		}
+		return categoryTagMap
 	}
 }
 

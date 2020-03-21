@@ -78,19 +78,6 @@ class TaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int = 1, p
 //			} }
 		}
 
-
-	/*	posts.forEach { post ->
-			logger.info { "Checking post ${post.title} for its tags"}
-			if(post.title=="Upgraded to Grails 2.3.7") {
-				logger.warn{"*** Found 'Upgraded to Grails 2.3.7'"}
-				logger.warn{"Tags are:"}
-				post.tags.forEach { t ->
-					logger.warn{"\t$t" }
-				}
-			*//*post.tags.forEach { t -> if (t.label.equals(tag.label)) {
-				logger.info("Found post ${post.title} with tag ${tag.label}")
-			} }*//*
-		}}*/
 		return taggedPosts.toList()
 	}
 

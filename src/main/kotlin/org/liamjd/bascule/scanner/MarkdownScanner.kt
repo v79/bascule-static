@@ -35,8 +35,6 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 	 */
 	fun calculateRenderSet(): Set<CacheAndPost> {
 
-		logger.debug { "Calculate render set!!!!" }
-
 		// this is everything we know from the cache. it might even be empty!
 		val cachedSet = cache.loadCacheFile()
 		val templateSet = cache.loadTemplates()
@@ -53,8 +51,6 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 		// put all the existing cache items in this set, except in clean generation mode
 		if(!project.clean) toBeCached.addAll(cachedSet)
 		// then add all the new cache items, regardless
-
-
 
 		sorted.forEach { cacheAndPost ->
 			if(cachedSet.contains(cacheAndPost.mdCacheItem)) {

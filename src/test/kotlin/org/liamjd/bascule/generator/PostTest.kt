@@ -79,7 +79,7 @@ class PostTest : Spek( {
 			assertEquals(SLUG_VAL, result.slug)
 			assertEquals(LocalDate.of(2018,Month.JANUARY,1),result.date)
 			assertEquals(1,result.tags.size)
-			assertEquals("aTag",result.tags["tags"]?.first()?.label)
+			assertEquals("aTag",result.tags?.first()?.label)
 		}
 
 		it("builds a BasculePost with two tags") {
@@ -91,10 +91,9 @@ class PostTest : Spek( {
 			val isPost = result is BasculePost
 			assertTrue(isPost)
 			val post = result as BasculePost
-			assertEquals(1,post.tags.size)
-			assertEquals(2,post.tags["tags"]?.size)
-			assertEquals(1,post.tags["tags"]?.filter { it.label == "tagA" }?.size)
-			assertEquals(1,post.tags["tags"]?.filter { it.label == "tagB" }?.size)
+			assertEquals(2,post.tags.size)
+			assertEquals(1,post.tags?.filter { it.label == "tagA" }?.size)
+			assertEquals(1,post.tags?.filter { it.label == "tagB" }?.size)
 		}
 
 		it("builds a post with two different custom tags") {
@@ -109,9 +108,9 @@ class PostTest : Spek( {
 			val isPost = result is BasculePost
 			assertTrue(isPost)
 			val post = result as BasculePost
-			assertEquals(2,post.tags.size)
-			assertEquals(2,post.tags["genres"]?.size)
-			assertEquals(3,post.tags["composers"]?.size)
+			assertEquals(5,post.tags.size)
+			assertEquals(2,post.getTagsForCategory("genres")?.size)
+			assertEquals(3,post.getTagsForCategory("composers")?.size)
 		}
 
 		it("builds a post with two custom attributes") {

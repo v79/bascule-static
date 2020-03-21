@@ -11,7 +11,6 @@ import org.liamjd.bascule.cache.HandlebarsTemplateCacheItem
 import org.liamjd.bascule.cache.MDCacheItem
 import org.liamjd.bascule.lib.model.PostLink
 import org.liamjd.bascule.lib.model.Project
-import org.liamjd.bascule.lib.model.Tag
 import org.liamjd.bascule.model.BasculePost
 import org.liamjd.bascule.model.PostGenError
 import println.ProgressBar
@@ -72,28 +71,10 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 
 			// build the set of taxonomy tags
 			logger.info("Building the set of tags")
-			val allTags = mutableMapOf<String,HashSet<Tag>>()
-			allSources.forEach { cacheAndPost ->
-				logger.info("calculateCachedSet: cacheAndPost ${cacheAndPost.mdCacheItem.link.title} has tags: ${cacheAndPost.post?.tags}")
-				cacheAndPost.post?.tags?.forEach { tagName ->
-					if(allTags.containsKey(tagName.key)) {
-						val currentTags = allTags[tagName.key]
-						currentTags?.forEach { tagItem ->
-							currentTags.elementAt(currentTags.indexOf(tagItem)).let {
-								it.postCount++
-								it.hasPosts = true
-								cacheAndPost.mdCacheItem.tags.add(it.label)
-								tagItem.hasPosts = true
-								tagItem.postCount = it.postCount
-							}
-						}
-					} else {
-						allTags.put(tagName.key, HashSet<Tag>())
-					}
-				}
-			}
-			// debugging tags
-			logger.info { "All tags calculated" }
+			println()
+
+			// I need to update the postCount and hasPosts flags for each Tag in the cacheAndPost set
+			//updateAllTagsInPosts(allSources, project.tagging)
 		}
 
 		info("Time taken to calculate set of ${markdownSourceCount} files: ${timeTaken}ms")
@@ -109,6 +90,46 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 		}
 		return allSources
 	}
+
+
+	/*private fun updateAllTagsInPosts(cacheAndPosts: MutableSet<CacheAndPost>, taxonomies: Set<String>) {
+		val tList = mutableListOf<Tag>()
+		for (cacheAndPost in cacheAndPosts) {
+			for (t in taxonomies) {
+				cacheAndPost.post.let { post ->
+					if (post != null && post.tags[t] != null) {
+						post.tags[t]?.let { tList.addAll(it) }
+					}
+				}
+			}
+		}
+		println("Counting tag usage across everything")
+		for(t in tList) {
+			println("*** $t")
+		}
+
+		val groupedList = tList.groupBy { it.label }.values.map { it.reduce { acc, item -> Tag(category = item.category, label = item.label, url =  item.url, postCount = item.postCount, hasPosts = item.postCount > 1) } }
+
+		for(t in groupedList) {
+			println("/// $t")
+		}
+
+//			val groupedList = tList.groupBy { it.label }.values.map { it.reduce { acc, item -> Tag(item.label, item.url, item.postCount, hasPosts = item.postCount > 1) } }
+		for (t in taxonomies) {
+			for (cacheAndPost in cacheAndPosts) {
+				cacheAndPost.post.let { post ->
+					post?.tags?.get(t)?.forEach { tag ->
+						val matchingTag = groupedList.first { it.label == tag.label }
+						tag.postCount = matchingTag.postCount
+						if(tag.postCount > 1) {
+							tag.hasPosts = true
+						}
+					}
+				}
+			}
+		}
+	}*/
+
 
 	// TODO: tidy up this recursive function
 	private fun walkFolder(folder: File, markdownScannerProgressBar: ProgressBar, markdownSourceCount: Int, errorMap: MutableMap<String, Any>, allSources: MutableSet<CacheAndPost>, cachedSet: Set<MDCacheItem>, layoutSet: Set<HandlebarsTemplateCacheItem>): Int {
@@ -169,7 +190,7 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 								val htTemplateFile: File = getTemplate(project.dirs.templates, post.layout)
 								val templateCacheItem = layoutSet.find { it.layoutName == post.layout }
 								if (templateCacheItem != null) {
-									if (localDateTimeToLong(templateCacheItem.layoutModificationDate) != htTemplateFile.lastModified()/1000) {
+									if (localDateTimeToLong(templateCacheItem.layoutModificationDate) != htTemplateFile.lastModified() / 1000) {
 										info("Template '${post.layout}' has been modified; this post needs regenerated even though markdown source has not been changed since last generation.")
 										// should fall to end of if statements now
 									} else {
@@ -240,7 +261,7 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 	/**
 	 * Read the existing templates from file and create HandlebarsTemplateCacheItem cache items for each of them
 	 */
-	// TODO: move to interface
+// TODO: move to interface
 	fun getTemplates(templateDir: File): Set<HandlebarsTemplateCacheItem> {
 		val templateSet = mutableSetOf<HandlebarsTemplateCacheItem>()
 		val templates = templateDir.listFiles(FileFilter { it.extension.toLowerCase() == "hbs" })
@@ -255,7 +276,7 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 		return templateSet
 	}
 
-	// TODO: move to interface
+// TODO: move to interface
 	/**
 	 * Load the Handlebars template file with the given @param layoutName
 	 */

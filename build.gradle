@@ -8,7 +8,7 @@ buildscript {
 	ext.picocli_version = '3.8.2'
 	ext.jansi_version = '1.17.1'
 	ext.snakeyaml_version = '1.23'
-	ext.bascule_lib_version = '0.0.22'
+	ext.bascule_lib_version = '0.0.23'
 
 	dependencies {
 		classpath "org.jetbrains.kotlin:kotlin-serialization:$kotlin_version"

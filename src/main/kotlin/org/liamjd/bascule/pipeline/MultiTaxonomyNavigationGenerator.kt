@@ -1,5 +1,6 @@
 package org.liamjd.bascule.pipeline
 
+import mu.KotlinLogging
 import org.liamjd.bascule.lib.FileHandler
 import org.liamjd.bascule.lib.generators.AbstractPostListGenerator
 import org.liamjd.bascule.lib.generators.GeneratorPipeline
@@ -10,9 +11,16 @@ import org.liamjd.bascule.lib.render.TemplatePageRenderer
 import org.liamjd.bascule.model.BasculePost
 import org.liamjd.bascule.slug
 import println.info
+import java.io.File
+import kotlin.math.ceil
+import kotlin.math.roundToInt
 
 class MultiTaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int = 1, postsPerPage: Int) : GeneratorPipeline, AbstractPostListGenerator(posts, numPosts, postsPerPage) {
+
+	private val logger = KotlinLogging.logger {}
+
 	override val TEMPLATE = "tag"
+	val MINIMUM_TAGGED_POSTS = 1
 
 	override suspend fun process(project: Project, renderer: TemplatePageRenderer, fileHandler: FileHandler, clean: Boolean) {
 
@@ -20,48 +28,108 @@ class MultiTaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int =
 
 		// strip out posts which don't have the basic layout "post" - tagging does not work for non-post pages
 		val filteredPosts = posts.filter { it.layout.equals("post") }.sortedByDescending { it.date }
-
-		logMessage("Create folders for each tagKey (size is ${project.tagging.size})")
-		project.tagging.forEach {tagKey ->
-			logMessage("creating folder for tagKey: $tagKey")
+		val allTags: List<Tag> = getAllTagsFromPosts(filteredPosts, project.tagging.toSet())
+		val tagKeyFolders = mutableMapOf<String, File>()
+		project.tagging.forEach { tagKey ->
 			val tagSlug = tagKey.slug()
-			fileHandler.createDirectory(project.dirs.output.absolutePath,tagSlug)
+			val tagKeyFolder = fileHandler.createDirectory(project.dirs.output.absolutePath, tagSlug)
+			tagKeyFolders.put(tagSlug, tagKeyFolder)
+		}
 
-			val allTags = getAllTagsFromPosts(posts,project.tagging.toSet())
-			logMessage("Complete map of tags and their values")
-			if(allTags.isNotEmpty()) {
-				allTags.forEach { t, u ->
-					println("Tag: ${t} -> ${u.size} : ${u}")
+		// we have a folder for each tagKey at this point, e.g. "genres", "composers"
+		// next we need to get all the posts for each tag in each tagKey
+		// and then write a folder for each tag
+		// and then write 1 or more listing pages for each tag
 
-				}
+		if (allTags.size > 0) {
+
+
+//			for (tagKey in allTags.keys) {
+//				val tags = allTags[tagKey]!!
+				for (tag in allTags) {
+					val category = tag.category
+					val tagKeyFolder = tagKeyFolders[category.slug()]!!
+					val taggedPosts = getPostsWithTagForKey(category, tag, filteredPosts)
+					val numPosts = tag.postCount
+					if (numPosts != taggedPosts.size) {
+						logger.error("${tag} has a mismatch between tag.postCount (${tag.postCount}) and the count of posts with that tag (${taggedPosts.size})")
+					}
+					val totalPages = ceil(numPosts.toDouble() / postsPerPage).roundToInt()
+
+					// only create tagged index pages if there's more than MINIMUM_TAGGED_POSTS page with the tag
+					if (taggedPosts.size > MINIMUM_TAGGED_POSTS) {
+						val thisTagFolder = fileHandler.createDirectory(tagKeyFolder.absolutePath, tag.url)
+						for (page in 1..totalPages) {
+							val startPos = postsPerPage * (page - 1)
+							val endPos = (postsPerPage * page)
+							val finalEndPos = if (endPos > taggedPosts.size) taggedPosts.size else endPos
+							val paginationModel = buildPaginationModel(projectModel = project.model, currentPage = page, totalPages = totalPages, posts = taggedPosts.subList(startPos, finalEndPos), totalPosts = numPosts, tagLabel = tag.url)
+							val model = mutableMapOf<String, Any>()
+							model.putAll(paginationModel)
+							model.put("tagKey", category)
+							model.put("tagUrl", category.slug())
+
+
+							val renderedContent = renderer.render(model, TEMPLATE)
+							fileHandler.writeFile(thisTagFolder, "${tag.url}$page.html", renderedContent)
+						}
+					}
+//				}
+				info("Building tagkey ${category} list page")
+
+				val model = mutableMapOf<String, Any>()
+				model.putAll(project.model)
+				model.put("title", "List of ${category}")
+				model.put("tagKey", category)
+				model.put("tagUrl", category.slug())
+				model.put("tags", allTags.filter { it.category == category && it.postCount > 1 }.sortedBy { it.postCount }.reversed())
+				logger.info("Tag model now $allTags")
+
+				val renderedContent = renderer.render(model, "taglist")
+				fileHandler.writeFile(tagKeyFolder, "${category.slug()}.html", renderedContent)
 			}
+
 		}
 
 	}
 
-	private fun getAllTagsFromPosts(posts: List<Post>, taxonomies: Set<String>) : Map<String,Set<Tag>> {
-		val tagSet = mutableMapOf<String,Set<Tag>>()
-		for(t in taxonomies) {
-			val tList = mutableListOf<Tag>()
-			posts.forEach {post ->
-				if(post.tags[t] != null) {
-					post.tags[t]?.toList()?.let { tList.addAll(it) }
+	private fun getAllTagsFromPosts(posts: List<Post>, taxonomies: Set<String>): List<Tag> {
+		val tagSet = mutableMapOf<String, Set<Tag>>()
+		val tList = mutableListOf<Tag>()
+		posts.forEach { post ->
+			println("post ${post.title} : tags ${post.tags}")
+			/*for (t in taxonomies) {
+				for(tag in post.tags) {
+
 				}
-			}
-			println("tList [$t]: $tList")
-
-			val groupedList = tList.groupBy { it.label }.values.map { it.reduce { acc, item -> Tag(item.label, item.url, acc.postCount + item.postCount, hasPosts = true) } }
-
-			println("groupedList [$t]: $groupedList")
-			tagSet.put(t,groupedList.toSet())
+				if (post.tags[t] != null) {
+					post.tags[t]?.toList()?.let {
+						tList.addAll(it)
+					}
+				}
+			}*/
+			tList.addAll(post.tags.toList())
 		}
-		println("FINAL tagSet: $tagSet")
+		val groupedList = tList.groupBy { it.label }.values.map { it.reduce { acc, item -> Tag(category = item.category, label = item.label, url =  item.url, postCount = item.postCount + 1, hasPosts = item.postCount > 1) } }
+//		for (t in taxonomies) {
+//////			tagSet.put(t, groupedList.toSet())
+//////		}
+		println("FINAL groupedList: $groupedList")
+		return groupedList
+	}
 
-		return tagSet
+	private fun getPostsWithTagForKey(tagKey: String, tag: Tag, posts: List<Post>): List<Post> {
+		val taggedPosts = mutableListOf<Post>()
+		posts.forEach { post ->
+			if(post.tags.contains(tag)) {
+				taggedPosts.add(post)
+			}
+		}
+		return taggedPosts.toList()
 	}
 
 	private fun logMessage(message: String) {
 		println(message)
 	}
-
 }
+
