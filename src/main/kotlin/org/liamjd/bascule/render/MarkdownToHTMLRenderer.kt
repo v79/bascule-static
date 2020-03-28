@@ -63,8 +63,6 @@ class MarkdownToHTMLRenderer(val project: Project) : KoinComponent, MarkdownRend
 
 	}
 
-
-
 	override fun renderMarkdown(document: Document): String {
 		val mdRender = HtmlRenderer.builder(project.markdownOptions).build()
 		return mdRender.render(document)

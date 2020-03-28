@@ -140,10 +140,6 @@ class BasculePost(val document: Document) : Post, PostStatus() {
 				} else {
 					// what's left is
 					// check for custom tagging as defined in the "tagging" attribute of the project yaml file
-
-
-
-
 					if(project.tagging.contains(yamlItem.key)) {
 						val itemValue = yamlItem.value[0]
 						// split string [tagA, tagB, tagC] into a list of three tags, removing spaces
@@ -177,8 +173,6 @@ class BasculePost(val document: Document) : Post, PostStatus() {
 			post.date = milliseconds.atZone(ZoneId.systemDefault()).toLocalDate()
 
 			// transform the source file name to a cleaner URL
-//			val slugRegex = Regex("[^a-zA-Z0-9-]")
-//			post.slug = slugRegex.replace(file.nameWithoutExtension.toLowerCase(), "-")
 			post.slug = file.nameWithoutExtension.slug()
 
 			// author, tags will all be empty. No custom attributes

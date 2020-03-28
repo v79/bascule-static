@@ -11,6 +11,7 @@ import org.liamjd.bascule.cache.HandlebarsTemplateCacheItem
 import org.liamjd.bascule.cache.MDCacheItem
 import org.liamjd.bascule.lib.model.PostLink
 import org.liamjd.bascule.lib.model.Project
+import org.liamjd.bascule.lib.model.Tag
 import org.liamjd.bascule.model.BasculePost
 import org.liamjd.bascule.model.PostGenError
 import println.ProgressBar
@@ -71,10 +72,9 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 
 			// build the set of taxonomy tags
 			logger.info("Building the set of tags")
-			println()
 
 			// I need to update the postCount and hasPosts flags for each Tag in the cacheAndPost set
-			//updateAllTagsInPosts(allSources, project.tagging)
+			updateAllTagsInPosts(allSources)
 		}
 
 		info("Time taken to calculate set of ${markdownSourceCount} files: ${timeTaken}ms")
@@ -91,45 +91,47 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 		return allSources
 	}
 
+	/**
+	 * given:
+	 * allTags [
+	 * 		tag { category: "genre", value: "classical", count=0, multiple=false },
+	 * 		tag { category: "genre", value: "jazz" count=0, multiple=false },
+	 * 		tag { category: "composer", value: "mahler", count=0, multiple=false },
+	 * 		tag { category: "composer", value: "bach", count=0, multiple=false },
+	 * 		tag { category: "genre", value: "classical", count=0, multiple=false },
+	 * 		tag { category: "composer", value: "bach", count=0, multiple=false }.
+	 * 		tag { category: "genre", value: "bach", count=0, multiple=false } // weird one
+	 * ]
+	 * I want:
+	 * groupedList {
+	 * 		tag { category: "genre", value: "classical", count=2, multiple=true },
+	 * 		tag { category: "genre", value: "jazz", count=1, multiple=false },
+	 * 		tag { category: "composer", value: "mahler", count=1, multiple=false },
+	 * 		tag { category: "composer", value: "bach", count=2, multiple=true },
+	 * 		tag { category: "genre", value: "bach", count=1, multiple=false }
+	 */
+	private fun updateAllTagsInPosts(cacheAndPosts: Set<CacheAndPost>) {
+		// get all the tags used in the project
+		val allTags = mutableListOf<Tag>()
+		for(cacheAndPost in cacheAndPosts) {
+			cacheAndPost.post?.tags?.toCollection(allTags)
+		}
 
-	/*private fun updateAllTagsInPosts(cacheAndPosts: MutableSet<CacheAndPost>, taxonomies: Set<String>) {
-		val tList = mutableListOf<Tag>()
+		val groupedList = allTags.groupBy { it.category }.entries.flatMap { it.value.groupBy { it.label }.values.map { it.reduce { acc, item -> Tag(item.category, item.label,item.url, acc.postCount + item.postCount, false )}}}
+
+		info("Updating tag counts on each post")
 		for (cacheAndPost in cacheAndPosts) {
-			for (t in taxonomies) {
-				cacheAndPost.post.let { post ->
-					if (post != null && post.tags[t] != null) {
-						post.tags[t]?.let { tList.addAll(it) }
+			if(cacheAndPost.post != null) {
+				cacheAndPost.post.tags.forEach { tag ->
+					val matchingTag = groupedList.first { (it == tag) }
+					tag.postCount = matchingTag.postCount
+					if(tag.postCount > 1) {
+						tag.hasPosts = true
 					}
 				}
 			}
 		}
-		println("Counting tag usage across everything")
-		for(t in tList) {
-			println("*** $t")
-		}
-
-		val groupedList = tList.groupBy { it.label }.values.map { it.reduce { acc, item -> Tag(category = item.category, label = item.label, url =  item.url, postCount = item.postCount, hasPosts = item.postCount > 1) } }
-
-		for(t in groupedList) {
-			println("/// $t")
-		}
-
-//			val groupedList = tList.groupBy { it.label }.values.map { it.reduce { acc, item -> Tag(item.label, item.url, item.postCount, hasPosts = item.postCount > 1) } }
-		for (t in taxonomies) {
-			for (cacheAndPost in cacheAndPosts) {
-				cacheAndPost.post.let { post ->
-					post?.tags?.get(t)?.forEach { tag ->
-						val matchingTag = groupedList.first { it.label == tag.label }
-						tag.postCount = matchingTag.postCount
-						if(tag.postCount > 1) {
-							tag.hasPosts = true
-						}
-					}
-				}
-			}
-		}
-	}*/
-
+	}
 
 	// TODO: tidy up this recursive function
 	private fun walkFolder(folder: File, markdownScannerProgressBar: ProgressBar, markdownSourceCount: Int, errorMap: MutableMap<String, Any>, allSources: MutableSet<CacheAndPost>, cachedSet: Set<MDCacheItem>, layoutSet: Set<HandlebarsTemplateCacheItem>): Int {
