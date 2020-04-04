@@ -17,7 +17,7 @@ class HydeTag : Node {
 		return arrayOf(openingMarker, tag, parameters, closingMarker)
 	}
 
-	override fun getAstExtra(out: StringBuilder?) {
+	override fun getAstExtra(out: StringBuilder) {
 		Node.segmentSpanChars(out, openingMarker, "open")
 		Node.segmentSpanChars(out, tag, "tag")
 		Node.segmentSpanChars(out, parameters, "parameters")
@@ -27,7 +27,7 @@ class HydeTag : Node {
 	constructor(chars: BasedSequence) : super(chars)
 
 	// can I make this more null safe
-	constructor(openingMarker: BasedSequence?, tag: BasedSequence?, parameters: BasedSequence?, closingMarker: BasedSequence) : super(openingMarker?.baseSubSequence(openingMarker.startOffset, closingMarker.endOffset)) {
+	constructor(openingMarker: BasedSequence, tag: BasedSequence?, parameters: BasedSequence?, closingMarker: BasedSequence) : super(openingMarker.baseSubSequence(openingMarker.startOffset, closingMarker.endOffset)) {
 
 		this.openingMarker = openingMarker
 		this.tag = tag

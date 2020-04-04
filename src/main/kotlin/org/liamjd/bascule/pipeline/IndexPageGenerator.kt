@@ -2,7 +2,7 @@ package org.liamjd.bascule.pipeline
 
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.util.ast.Document
-import com.vladsch.flexmark.util.options.MutableDataSet
+import com.vladsch.flexmark.util.data.MutableDataSet
 import org.liamjd.bascule.lib.FileHandler
 import org.liamjd.bascule.lib.generators.AbstractPostListGenerator
 import org.liamjd.bascule.lib.generators.GeneratorPipeline

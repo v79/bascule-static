@@ -5,12 +5,12 @@ import com.vladsch.flexmark.ast.util.Parsing
 import com.vladsch.flexmark.parser.block.*
 import com.vladsch.flexmark.util.ast.Block
 import com.vladsch.flexmark.util.ast.BlockContent
-import com.vladsch.flexmark.util.options.DataHolder
+import com.vladsch.flexmark.util.data.DataHolder
 
 class HydeTagBlockParser(options: DataHolder?) : AbstractBlockParser() {
 
 	private var block = HydeTagBlock()
-	private var content: BlockContent? = BlockContent()
+	private var content: BlockContent = BlockContent()
 
 	override fun tryContinue(state: ParserState?): BlockContinue? {
 		return BlockContinue.none()
@@ -21,12 +21,16 @@ class HydeTagBlockParser(options: DataHolder?) : AbstractBlockParser() {
 
 	override fun closeBlock(state: ParserState?) {
 		block.setContent(content)
-		content = null
+//		content = null		// cannot be null in 0.61.0
 	}
 
 	object Factory : CustomBlockParserFactory {
 		override fun getBeforeDependents(): MutableSet<out Class<Any>>? {
 			return null
+		}
+
+		override fun apply(options: DataHolder): BlockParserFactory {
+			return BlockFactory(options)
 		}
 
 		override fun getAfterDependents(): MutableSet<out Class<Any>>? {
@@ -35,9 +39,9 @@ class HydeTagBlockParser(options: DataHolder?) : AbstractBlockParser() {
 
 		override fun affectsGlobalScope() = false
 
-		override fun create(options: DataHolder?): BlockParserFactory {
+		/*override fun create(options: DataHolder?): BlockParserFactory {
 			return BlockFactory(options)
-		}
+		}*/
 	}
 
 	class BlockFactory(options: DataHolder?) : AbstractBlockParserFactory(options) {

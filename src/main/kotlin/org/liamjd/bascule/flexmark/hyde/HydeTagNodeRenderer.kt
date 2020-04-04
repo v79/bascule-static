@@ -1,12 +1,11 @@
 package org.liamjd.bascule.flexmark.hyde
 
-import com.vladsch.flexmark.html.CustomNodeRenderer
 import com.vladsch.flexmark.html.HtmlWriter
 import com.vladsch.flexmark.html.renderer.NodeRenderer
 import com.vladsch.flexmark.html.renderer.NodeRendererContext
 import com.vladsch.flexmark.html.renderer.NodeRendererFactory
 import com.vladsch.flexmark.html.renderer.NodeRenderingHandler
-import com.vladsch.flexmark.util.options.DataHolder
+import com.vladsch.flexmark.util.data.DataHolder
 import java.io.File
 import java.util.*
 
@@ -16,9 +15,9 @@ class HydeTagNodeRenderer(options: DataHolder) : NodeRenderer {
 	override fun getNodeRenderingHandlers(): MutableSet<NodeRenderingHandler<*>> {
 		val set = HashSet<NodeRenderingHandler<*>>()
 
-		set.add(NodeRenderingHandler<HydeTag>(HydeTag::class.java, CustomNodeRenderer<HydeTag>( { node, context, html -> this.render(node, context, html) })))
+		set.add(NodeRenderingHandler<HydeTag>(HydeTag::class.java, NodeRenderingHandler.CustomNodeRenderer<HydeTag>({ node, context, html -> this.render(node, context, html) })))
 
-		set.add(NodeRenderingHandler<HydeTagBlock>(HydeTagBlock::class.java, CustomNodeRenderer<HydeTagBlock>( { node, context, html -> this.render(node, context, html) })))
+		set.add(NodeRenderingHandler<HydeTagBlock>(HydeTagBlock::class.java, NodeRenderingHandler.CustomNodeRenderer<HydeTagBlock>({ node, context, html -> this.render(node, context, html) })))
 
 		return set
 	}
@@ -62,7 +61,11 @@ class HydeTagNodeRenderer(options: DataHolder) : NodeRenderer {
 	}
 
 	object Factory : NodeRendererFactory {
-		override fun create(options: DataHolder): NodeRenderer {
+	/*	override fun create(options: DataHolder): NodeRenderer {
+			return HydeTagNodeRenderer(options)
+		}*/
+
+		override fun apply(options: DataHolder): NodeRenderer {
 			return HydeTagNodeRenderer(options)
 		}
 	}

@@ -1,12 +1,13 @@
 package org.liamjd.bascule.generator
 
+import com.vladsch.flexmark.ext.admonition.AdmonitionExtension
 import com.vladsch.flexmark.ext.attributes.AttributesExtension
 import com.vladsch.flexmark.ext.tables.TablesExtension
 import com.vladsch.flexmark.ext.yaml.front.matter.YamlFrontMatterExtension
 import com.vladsch.flexmark.ext.youtube.embedded.YouTubeLinkExtension
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
-import com.vladsch.flexmark.util.builder.Extension
+import com.vladsch.flexmark.util.misc.Extension
 import mu.KotlinLogging
 import org.koin.core.parameter.ParameterList
 import org.koin.core.parameter.parametersOf
@@ -73,6 +74,7 @@ class Generator : Runnable, KoinComponent {
 		handlebarExtensions.add(TablesExtension.create())
 		handlebarExtensions.add(HydeExtension.create())
 		handlebarExtensions.add(YouTubeLinkExtension.create())
+		handlebarExtensions.add(AdmonitionExtension.create())
 
 		info("Constructing Handlebars extensions")
 		val handlebarPluginLoader = HandlebarPluginLoader(this.javaClass.classLoader, Extension::class, project.parentFolder)
@@ -162,8 +164,6 @@ class Generator : Runnable, KoinComponent {
 		// TODO: this still doesn't work with the CACHE!
 		val renderer by inject<TemplatePageRenderer> { parametersOf(project) }
 		getPostsFromCacheAndPost(pageList).process(generators, project, renderer, fileHandler)
-
-
 	}
 
 	private fun getPostsFromCacheAndPost(cacheSet: Set<CacheAndPost>): List<Post> {
