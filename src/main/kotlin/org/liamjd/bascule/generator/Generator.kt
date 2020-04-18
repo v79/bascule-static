@@ -36,7 +36,7 @@ import java.io.PrintStream
 import kotlin.reflect.full.createInstance
 import kotlin.system.exitProcess
 
-val DEFAULT_PROCESSORS = arrayOf("org.liamjd.bascule.pipeline.IndexPageGenerator", "org.liamjd.bascule.pipeline.PostNavigationGenerator", "org.liamjd.bascule.pipeline.TaxonomyNavigationGenerator")
+val DEFAULT_PROCESSORS = arrayOf("org.liamjd.bascule.pipeline.IndexPageGenerator", "org.liamjd.bascule.pipeline.PostNavigationGenerator", "org.liamjd.bascule.pipeline.MultiTaxonomyNavigationGenerator")
 
 
 /**

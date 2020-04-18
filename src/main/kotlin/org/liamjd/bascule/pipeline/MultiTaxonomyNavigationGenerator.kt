@@ -59,7 +59,7 @@ class MultiTaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int =
 						val startPos = postsPerPage * (page - 1)
 						val endPos = (postsPerPage * page)
 						val finalEndPos = if (endPos > taggedPosts.size) taggedPosts.size else endPos
-						val paginationModel = buildPaginationModel(projectModel = project.model, currentPage = page, totalPages = totalPages, posts = taggedPosts.subList(startPos, finalEndPos), totalPosts = numPosts, tagLabel = tag.url)
+						val paginationModel = buildPaginationModel(projectModel = project.model, currentPage = page, totalPages = totalPages, posts = taggedPosts.subList(startPos, finalEndPos), totalPosts = numPosts, tagLabel = tag.label)
 						val model = mutableMapOf<String, Any>()
 						model.putAll(paginationModel)
 						model.put("tagKey", category)
@@ -70,6 +70,8 @@ class MultiTaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int =
 					}
 				}
 			}
+
+			// now build the page which lists each ???
 			project.tagging.forEach { category ->
 				info("Building tagkey $category list page")
 				val tagKeyFolder = tagKeyFolders[category.slug()]!!
@@ -79,6 +81,7 @@ class MultiTaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int =
 				model.put("tagKey", category)
 				model.put("tagUrl", category.slug())
 				model.put("tags", allTags.filter { it.category == category && it.postCount > 1 }.sortedBy { it.postCount }.reversed())
+
 
 				val renderedContent = renderer.render(model, "taglist")
 				fileHandler.writeFile(tagKeyFolder, "${category.slug()}.html", renderedContent)
