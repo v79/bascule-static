@@ -59,7 +59,7 @@ class TaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int = 1, p
 		val model = mutableMapOf<String, Any>()
 		model.putAll(project.model)
 		model.put("title", "List of tags")
-		model.put("tags", tagSet.filter { it.postCount > 1 }.sortedBy { it.postCount }.reversed())
+		model.put("tags", tagSet.filter { it.postCount > 0 }.sortedBy { it.postCount }.reversed())
 		logger.info("Tag model now $tagSet")
 
 		val renderedContent = renderer.render(model, "taglist")

@@ -77,6 +77,7 @@ internal class MultiTaxonomyNavigationGeneratorTest : Spek({
 			every { mFileHandler.createDirectory(any(),any()) } returns mDirectory
 			every { mProject.tagging} returns oneTagSet.toSet()
 			every { mFileHandler.writeFile(any(), any(),any())} just Runs
+			every { mDirectory.absolutePath} returns "genres"
 
 			val generator = MultiTaxonomyNavigationGenerator(listOf(postA), 1, 1)
 
@@ -115,7 +116,7 @@ internal class MultiTaxonomyNavigationGeneratorTest : Spek({
 			verify(exactly = 1) { mFileHandler.createDirectory(any(),"genres") }
 			verify(exactly = 1) { mFileHandler.createDirectory(any(),"composers") }
 			verify { mFileHandler.createDirectory(any(),"classical") }
-			verify(exactly = 0) { mFileHandler.createDirectory(any(),"jazz") }
+			verify(exactly = 1) { mFileHandler.createDirectory(any(),"jazz") }
 			verify { mFileHandler.writeFile(any(),"classical1.html", any()) }
 		}
 	}

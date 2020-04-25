@@ -149,20 +149,20 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 			}
 
 			if (mdFile.parentFile.name.startsWith(".") || mdFile.parentFile.name.startsWith("__")) {
-				logger.warn { "Skipping file ${mdFile.name} in draft folder '${mdFile.parentFile.name}' " }
+				logger.warn { "Skipping file ${mdFile.name} in draft folder '${mdFile.parentFile.name}'" }
 				continue // skip this one
 			}
 
 			if (mdFile.name.startsWith(".") || mdFile.name.startsWith("__")) {
-				markdownScannerProgressBar.progress(index, "Skipping draft file/folder '${mdFile.name}'")
-				logger.warn { "Skipping draft file '${mdFile.name}' " }
+				markdownScannerProgressBar.progress(index, "Skipping draft file/folder '${mdFile.name}'\n")
+				logger.warn { "Skipping draft file '${mdFile.name}'" }
 				// TODO: this isn't skipping a directory whose name begins with "__" or "."
 				continue // skip this one
 			}
 
 			if (mdFile.extension.toLowerCase() != "md") {
 				logger.warn { "Skipping file ${mdFile.name} as extension does not match '.md'" }
-				markdownScannerProgressBar.progress(markdownSourceCount1, "Skipping file ${mdFile.name} as extension does not match '.md'")
+				markdownScannerProgressBar.progress(markdownSourceCount1, "Skipping file ${mdFile.name} as extension does not match '.md'\n")
 				continue
 			} else {
 
