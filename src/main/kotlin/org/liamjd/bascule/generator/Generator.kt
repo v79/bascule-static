@@ -78,9 +78,9 @@ class Generator : Runnable, KoinComponent {
 
 		info("Constructing Handlebars extensions")
 		val handlebarPluginLoader = HandlebarPluginLoader(this.javaClass.classLoader, Extension::class, project.parentFolder)
-		if(project.extensions != null) {
+		if (project.extensions != null) {
 			val extensions = handlebarPluginLoader.getExtensions(project.extensions!!)
-			for(ext  in extensions) {
+			for (ext in extensions) {
 				debug("Checking extension ${ext.simpleName}")
 				handlebarExtensions.add(ext.createInstance())
 			}
@@ -124,23 +124,20 @@ class Generator : Runnable, KoinComponent {
 			pageList.forEachIndexed { index, cacheAndPost ->
 				cacheAndPost.post?.let {
 					it.rawContent = fileHandler.readFileAsString(cacheAndPost.post.sourceFileName) // TODO: this still contains the yaml front matter :(
-					markdownRenderer.renderHTML(cacheAndPost.post, index)
-					generated++
+					if (markdownRenderer.renderHTML(cacheAndPost.post, index)) generated++
 				}
 			}
 		} else {
-
 			pageList.filter { item -> item.mdCacheItem.rerender }.forEachIndexed { index, cacheAndPost ->
 				cacheAndPost.post?.let {
 					it.rawContent = fileHandler.readFileAsString(cacheAndPost.post.sourceFileName) // TODO: this still contains the yaml front matter :(
-					markdownRenderer.renderHTML(cacheAndPost.post, index)
+					if (markdownRenderer.renderHTML(cacheAndPost.post, index)) generated++
 				}
-				generated++
 			}
 		}
 
-		logger.info { "${generated} HTML files rendered" }
-		info("${generated} HTML files rendered")
+		logger.info { "$generated HTML files rendered" }
+		info("$generated HTML files rendered")
 
 		//TODO: come up with a better asset copying pipeline stage thingy
 		assetsProcessor.copyStatics()

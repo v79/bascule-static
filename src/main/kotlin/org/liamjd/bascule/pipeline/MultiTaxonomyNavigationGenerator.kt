@@ -95,7 +95,6 @@ class MultiTaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int =
 	private fun getAllTagsFromPosts(posts: List<Post>, taxonomies: Set<String>): List<Tag> {
 		val tList = mutableListOf<Tag>()
 		posts.forEach { post ->
-			println(post.title + ": " + post.tags)
 			if(post.tags.toList().isNotEmpty()) {
 				tList.addAll(post.tags.toList().filter { tag -> tag.label.isNotEmpty() })
 			}

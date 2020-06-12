@@ -16,7 +16,7 @@ import println.info
 /**
  * The primary class for calculating which files need to be rendered to build the website.
  * @param project the bascule project
- * Call [MarkdownScanner.calculateRenderSet] to get the set of posts which need to be rerendered
+ * Call [MarkdownScanner.calculateRenderSet] to get the set of posts which need to be re-rendered
  */
 @UnstableDefault
 class MarkdownScanner(val project: Project) : KoinComponent {
@@ -25,7 +25,6 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 	private val cache: BasculeCache by inject<BasculeCache> { parametersOf(project, fileHandler) }
 	private val logger = KotlinLogging.logger {}
 	private val changeSetCalculator: ChangeSetCalculator by inject { parametersOf(project) }
-	private val BLOG_POST = "post"
 
 	// this method is called by the Generator
 	/**
@@ -63,7 +62,6 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 			}
 		}
 		cache.writeCacheFile(toBeCached)
-//		return sorted
 
 		return uncachedSet
 	}
@@ -79,22 +77,22 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 		info("${sortedSet.size} markdown files sorted")
 		info("building next and previous links")
 
-		val filteredList = sortedSet.filter { cacheAndPost -> cacheAndPost.mdCacheItem.layout.equals(BLOG_POST) }.toList()
+		val filteredList = sortedSet.filter { cacheAndPost -> project.postLayouts.contains(cacheAndPost.mdCacheItem.layout) }.toList()
 		filteredList.forEachIndexed { index, cacheAndPost ->
 			if (index != 0) {
-				val olderPost = filteredList.get(index - 1).mdCacheItem
+				val olderPost = filteredList[index - 1].mdCacheItem
 				cacheAndPost.mdCacheItem.previous = olderPost.link
 				cacheAndPost.post?.older = olderPost.link
 			}
 			if (index != filteredList.size - 1) {
-				val newerPost = filteredList.get(index + 1).mdCacheItem
+				val newerPost = filteredList[index + 1].mdCacheItem
 				cacheAndPost.mdCacheItem.next = newerPost.link
 				cacheAndPost.post?.newer = newerPost.link
 			}
 		}
 
-		info("Excluding non-post items leaves ${filteredList.size}")
-		logger.info { "Excluding non-post items leaves ${filteredList.size}" }
+		info("Excluding non-(${project.postLayouts}) items leaves ${filteredList.size}")
+		logger.info { "Excluding non-(${project.postLayouts}) items leaves ${filteredList.size}" }
 
 		return sortedSet
 	}

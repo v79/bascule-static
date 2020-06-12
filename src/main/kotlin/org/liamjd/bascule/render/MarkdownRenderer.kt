@@ -5,7 +5,7 @@ import org.liamjd.bascule.model.BasculePost
 
 interface MarkdownRenderer {
 
-	fun renderHTML(post: BasculePost, itemCount: Int)
+	fun renderHTML(post: BasculePost, itemCount: Int): Boolean
 
 	fun renderMarkdown(document: Document): String
 }

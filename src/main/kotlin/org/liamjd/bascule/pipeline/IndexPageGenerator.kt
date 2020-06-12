@@ -19,7 +19,6 @@ import java.io.File
  */
 class IndexPageGenerator(posts: List<Post>, numPosts: Int = 1, postsPerPage: Int = 1) : GeneratorPipeline, AbstractPostListGenerator(posts, numPosts, postsPerPage) {
 
-	private val POST_TEMPLATE = "post"
 	override val TEMPLATE: String = "index"
 
 	override suspend fun process(project: Project, renderer: TemplatePageRenderer, fileHandler: FileHandler, clean: Boolean) {
@@ -29,7 +28,7 @@ class IndexPageGenerator(posts: List<Post>, numPosts: Int = 1, postsPerPage: Int
 		model.putAll(project.model)
 		// only include blog posts, not pages other other layouts
 		// TODO: this is assuming that no more than `postsPerPage` posts will appear on the homepage; should really be configurable
-		val postsToRender = posts.filter { post -> post.layout == POST_TEMPLATE }.sortedByDescending { it.date }.take(postsPerPage)
+		val postsToRender = posts.filter { post -> project.postLayouts.contains(post.layout) }.sortedByDescending { it.date }.take(postsPerPage)
 
 		val postBuilder = PostBuilder(project)
 
@@ -43,9 +42,9 @@ class IndexPageGenerator(posts: List<Post>, numPosts: Int = 1, postsPerPage: Int
 				}
 			}
 		}
-		model.put("posts", postsToRender)
-		model.put("postCount", numPosts)
-		model.put("\$thisPage","index")
+		model["posts"] = postsToRender
+		model["postCount"] = numPosts
+		model["\$thisPage"] = "index"
 
 		val renderedContent = renderer.render(model, TEMPLATE)
 
