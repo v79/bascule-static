@@ -26,15 +26,14 @@ class MultiTaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int =
 
 		info("Building taxonomy navigation pages...")
 
-		// strip out posts which don't have the basic layout "post" - tagging does not work for non-post pages
-		val filteredPosts = posts.filter { it.layout.equals("post") }.sortedByDescending { it.date }
+		val filteredPosts = posts.filter { project.postLayouts.contains(it.layout) }.sortedByDescending { it.date }
 		val allTags: List<Tag> = getAllTagsFromPosts(filteredPosts, project.tagging.toSet())
 		val tagCategoryFolders = mutableMapOf<String, File>()
 		project.tagging.forEach { tagKey ->
 			val tagSlug = tagKey.slug()
 			logger.info { "Building category folder for '${tagSlug}'" }
 			val tagCategoryFolder = fileHandler.createDirectory(project.dirs.output.absolutePath, tagSlug)
-			tagCategoryFolders.put(tagSlug, tagCategoryFolder)
+			tagCategoryFolders[tagSlug] = tagCategoryFolder
 		}
 
 		// we have a folder for each tagKey at this point, e.g. "genres", "composers"
@@ -42,12 +41,11 @@ class MultiTaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int =
 		// and then write a folder for each tag
 		// and then write 1 or more listing pages for each tag
 
-		if (allTags.size > 0) {
+		if (allTags.isNotEmpty()) {
 			for (tag in allTags) {
 				val category = tag.category
 				val tagCategoryFolder = tagCategoryFolders[category.slug()]!!
 				val taggedPosts = getPostsWithTag(tag, filteredPosts)
-
 				val numPosts = tag.postCount
 /*				if (numPosts != taggedPosts.size) {
 					logger.error("${tag} has a mismatch between tag.postCount (${tag.postCount}) and the count of posts with that tag (${taggedPosts.size})")
@@ -56,7 +54,7 @@ class MultiTaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int =
 
 				// only create tagged index pages if there's more than MINIMUM_TAGGED_POSTS page with the tag
 				if (taggedPosts.size >= MINIMUM_TAGGED_POSTS) {
-					logger.info { "Creating tag folder '${tagCategoryFolder}/${tag.url}'" }
+					logger.info { "Creating tag folder '${tagCategoryFolder}/${tag.url}' (${taggedPosts.size} posts)" }
 					val thisTagFolder = fileHandler.createDirectory(tagCategoryFolder.absolutePath, tag.url)
 					for (page in 1..totalPages) {
 						val startPos = postsPerPage * (page - 1)
@@ -65,8 +63,8 @@ class MultiTaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int =
 						val paginationModel = buildPaginationModel(projectModel = project.model, currentPage = page, totalPages = totalPages, posts = taggedPosts.subList(startPos, finalEndPos), totalPosts = numPosts, tagLabel = tag.label)
 						val model = mutableMapOf<String, Any>()
 						model.putAll(paginationModel)
-						model.put("tagKey", category)
-						model.put("tagUrl", category.slug())
+						model["tagKey"] = category
+						model["tagUrl"] = category.slug()
 
 						val renderedContent = renderer.render(model, TEMPLATE)
 						fileHandler.writeFile(thisTagFolder, "${tag.url}$page.html", renderedContent)
@@ -76,14 +74,14 @@ class MultiTaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int =
 
 			// now build the page which lists each ???
 			project.tagging.forEach { category ->
-				info("Building tagkey $category list page")
+				info("Building '$category' list page")
 				val tagKeyFolder = tagCategoryFolders[category.slug()]!!
 				val model = mutableMapOf<String, Any>()
 				model.putAll(project.model)
-				model.put("title", "List of ${category}")
-				model.put("tagKey", category)
-				model.put("tagUrl", category.slug())
-				model.put("tags", allTags.filter { it.category == category && it.postCount >= MINIMUM_TAGGED_POSTS }.sortedBy { it.postCount }.reversed())
+				model["title"] = "List of $category"
+				model["tagKey"] = category
+				model["tagUrl"] = category.slug()
+				model["tags"] = allTags.filter { it.category == category && it.postCount >= MINIMUM_TAGGED_POSTS }.sortedBy { it.postCount }.reversed()
 
 				val renderedContent = renderer.render(model, "taglist")
 				fileHandler.writeFile(tagKeyFolder, "${category.slug()}.html", renderedContent)
@@ -99,8 +97,7 @@ class MultiTaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int =
 				tList.addAll(post.tags.toList().filter { tag -> tag.label.isNotEmpty() })
 			}
 		}
-		val groupedList = tList.groupBy { it.label }.values.map { it.reduce { acc, item -> Tag(category = item.category, label = item.label, url = item.url, postCount = item.postCount , hasPosts = item.postCount > 1) } }
-		return groupedList
+		return tList.groupBy { it.label }.values.map { it.reduce { _, item -> Tag(category = item.category, label = item.label, url = item.url, postCount = item.postCount , hasPosts = item.postCount > 1) } }
 	}
 
 	private fun getPostsWithTag( tag: Tag, posts: List<Post>): List<Post> {
