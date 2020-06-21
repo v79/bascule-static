@@ -19,7 +19,7 @@ class PostNavigationGenerator(posts: List<Post>, numPosts: Int = 1, postsPerPage
 	override suspend fun process(project: Project, renderer: TemplatePageRenderer, fileHandler: FileHandler, clean: Boolean) {
 		val totalPages = ceil(numPosts.toDouble() / postsPerPage).roundToInt()
 		val listPages = posts.reversed().withIndex()
-				.filter { indexedValue: IndexedValue<Post> -> indexedValue.value.layout == "post" }
+				.filter { indexedValue: IndexedValue<Post> -> project.postLayouts.contains(indexedValue.value.layout) }
 				.sortedByDescending { it.value.date }
 				.groupBy { it.index / postsPerPage }
 				.map { it.value.map { it.value } }
