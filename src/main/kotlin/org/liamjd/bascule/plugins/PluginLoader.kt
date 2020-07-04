@@ -2,6 +2,7 @@ package org.liamjd.bascule.plugins
 
 import com.vladsch.flexmark.util.misc.Extension
 import org.liamjd.bascule.lib.generators.GeneratorPipeline
+import org.liamjd.bascule.lib.generators.SortAndFilter
 import java.io.File
 import java.net.URL
 import java.net.URLClassLoader
@@ -14,8 +15,8 @@ import kotlin.reflect.full.isSubclassOf
  */
 abstract class PluginLoader(var classLoader: ClassLoader, var pluginFolder: File) {
 	private val JAR = "jar"
-	val PLUGIN_FOLDER = "plugins"
-	val jars = ArrayList<URL>()
+	private val PLUGIN_FOLDER = "plugins"
+	private val jars = ArrayList<URL>()
 
 	fun loadPlugins(classNames: List<String>?): ClassLoader? {
 		if (classNames != null) {
@@ -27,16 +28,16 @@ abstract class PluginLoader(var classLoader: ClassLoader, var pluginFolder: File
 		return null
 	}
 
-	fun addJars(folder: File) {
+	private fun addJars(folder: File) {
 		folder.walk().forEach {
-			if (it.extension.equals(JAR)) {
+			if (it.extension == JAR) {
 				jars.add(it.toURI().toURL())
 			}
 		}
 	}
 }
 
-class HandlebarPluginLoader(classLoader: ClassLoader, val requiredInterface: KClass<out Any>, parentFolder: File) : PluginLoader(classLoader = classLoader, pluginFolder = parentFolder) {
+class HandlebarPluginLoader(classLoader: ClassLoader, private val requiredInterface: KClass<out Any>, parentFolder: File) : PluginLoader(classLoader = classLoader, pluginFolder = parentFolder) {
 	fun getExtensions(extensions: java.util.ArrayList<String>): List<KClass<Extension>> {
 
 		val pluginClassLoader = loadPlugins(extensions)
@@ -70,8 +71,47 @@ class HandlebarPluginLoader(classLoader: ClassLoader, val requiredInterface: KCl
 
 }
 
-class GeneratorPluginLoader(classLoader: ClassLoader, val requiredInterface: KClass<out Any>, parentFolder: File) : PluginLoader(classLoader = classLoader, pluginFolder = parentFolder) {
+class SortAndFilterLoader(classLoader: ClassLoader, private val requiredInterface: KClass<out Any>, parentFolder: File) : PluginLoader(classLoader = classLoader,pluginFolder = parentFolder) {
+	fun getSortAndFilter(generatorNames: List<String>?): SortAndFilter? {
+		var sorterList: ArrayList<KClass<SortAndFilter>> = ArrayList<KClass<SortAndFilter>>()
+		val pluginClassLoader: ClassLoader? = loadPlugins(generatorNames) // load all generators
 
+		if (generatorNames != null) {
+			for (className in generatorNames) {
+				try {
+					val kClass = if (pluginClassLoader != null) {
+						pluginClassLoader.loadClass(className).kotlin
+					} else {
+						Class.forName(className).kotlin
+					}
+
+					// confirm that we have the right type
+					if (kClass.isSubclassOf(requiredInterface)) {
+						println("Adding $kClass to the SortAndFilter pipeline")
+						@Suppress("UNCHECKED_CAST")
+						sorterList.add(kClass as KClass<SortAndFilter>)
+					} else {
+//						logger.error {"Pipeline class ${kClass.simpleName} is not an instance of SortAndFilter!"}
+						println.info("Pipeline class ${kClass.simpleName} is not an instance of SortAndFilter!")
+					}
+				} catch (cnfe: ClassNotFoundException) {
+//						logger.error {"Unable to load class '$className' - is it defined in the classpath or provided in a jar? The full package name must be provided."}
+					println.error("Unable to load class '$className' - is it defined in the classpath or provided in a jar? The full package name must be provided.")
+				}
+
+			}
+		}
+
+		val first = sorterList.firstOrNull()
+		if(first!= null) {
+			return first.objectInstance
+		}
+		return null
+	}
+}
+
+
+class GeneratorPluginLoader(classLoader: ClassLoader, private val requiredInterface: KClass<out Any>, parentFolder: File) : PluginLoader(classLoader = classLoader, pluginFolder = parentFolder) {
 
 	fun getGenerators(generatorNames: List<String>?): ArrayList<KClass<GeneratorPipeline>> {
 		val generatorList = ArrayList<KClass<GeneratorPipeline>>()
@@ -94,9 +134,9 @@ class GeneratorPluginLoader(classLoader: ClassLoader, val requiredInterface: KCl
 						generatorList.add(kClass as KClass<GeneratorPipeline>)
 					} else {
 //						logger.error {"Pipeline class ${kClass.simpleName} is not an instance of GeneratorPipeline!"}
-						println.error("Pipeline class ${kClass.simpleName} is not an instance of GeneratorPipeline!")
+						println.info("Pipeline class ${kClass.simpleName} is not an instance of GeneratorPipeline!")
 					}
-				} catch (cnfe: java.lang.ClassNotFoundException) {
+				} catch (cnfe: ClassNotFoundException) {
 //						logger.error {"Unable to load class '$className' - is it defined in the classpath or provided in a jar? The full package name must be provided."}
 					println.error("Unable to load class '$className' - is it defined in the classpath or provided in a jar? The full package name must be provided.")
 				}

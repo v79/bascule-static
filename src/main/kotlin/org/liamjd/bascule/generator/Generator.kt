@@ -19,11 +19,14 @@ import org.liamjd.bascule.assets.AssetsProcessor
 import org.liamjd.bascule.cache.CacheAndPost
 import org.liamjd.bascule.flexmark.hyde.HydeExtension
 import org.liamjd.bascule.lib.generators.GeneratorPipeline
+import org.liamjd.bascule.lib.generators.SortAndFilter
 import org.liamjd.bascule.lib.model.Post
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.lib.render.TemplatePageRenderer
+import org.liamjd.bascule.pipeline.DefaultSortAndFilter
 import org.liamjd.bascule.plugins.GeneratorPluginLoader
 import org.liamjd.bascule.plugins.HandlebarPluginLoader
+import org.liamjd.bascule.plugins.SortAndFilterLoader
 import org.liamjd.bascule.random
 import org.liamjd.bascule.render.MarkdownToHTMLRenderer
 import org.liamjd.bascule.scanner.MarkdownScanner
@@ -142,6 +145,7 @@ class Generator : Runnable, KoinComponent {
 		//TODO: come up with a better asset copying pipeline stage thingy
 		assetsProcessor.copyStatics()
 
+		// create the generation pipeline from the project configuration, or from the default set
 		val additionalGenerators = mutableListOf<String>()
 		if (project.generators.isNullOrEmpty()) {
 			additionalGenerators.addAll(DEFAULT_PROCESSORS)
@@ -149,6 +153,10 @@ class Generator : Runnable, KoinComponent {
 			additionalGenerators.addAll(project.generators!!)
 		}
 
+		// create the sort and filter mechanism, from project configuration, or from the default
+		val sortAndFilterPluginLoader = SortAndFilterLoader(this.javaClass.classLoader,SortAndFilter::class,project.parentFolder)
+		val sorter =  sortAndFilterPluginLoader.getSortAndFilter(additionalGenerators)
+		project.sortAndFilter = if(sorter != null) { sorter} else { DefaultSortAndFilter }
 		val generatorPluginLoader = GeneratorPluginLoader(this.javaClass.classLoader, GeneratorPipeline::class, project.parentFolder)
 		val generators = generatorPluginLoader.getGenerators(additionalGenerators)
 

@@ -6,6 +6,7 @@ import com.vladsch.flexmark.util.data.MutableDataSet
 import org.liamjd.bascule.lib.FileHandler
 import org.liamjd.bascule.lib.generators.AbstractPostListGenerator
 import org.liamjd.bascule.lib.generators.GeneratorPipeline
+import org.liamjd.bascule.lib.generators.SortAndFilter
 import org.liamjd.bascule.lib.model.Post
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.lib.render.TemplatePageRenderer
@@ -17,7 +18,7 @@ import java.io.File
 /**
  * Builds the home (index) page
  */
-class IndexPageGenerator(posts: List<Post>, numPosts: Int = 1, postsPerPage: Int = 1) : GeneratorPipeline, AbstractPostListGenerator(posts, numPosts, postsPerPage) {
+class IndexPageGenerator(posts: List<Post>, numPosts: Int = 1, postsPerPage: Int = 1,private val sortAndFilter: SortAndFilter) : GeneratorPipeline, AbstractPostListGenerator(posts, numPosts, postsPerPage) {
 
 	override val TEMPLATE: String = "index"
 
@@ -28,7 +29,8 @@ class IndexPageGenerator(posts: List<Post>, numPosts: Int = 1, postsPerPage: Int
 		model.putAll(project.model)
 		// only include blog posts, not pages other other layouts
 		// TODO: this is assuming that no more than `postsPerPage` posts will appear on the homepage; should really be configurable
-		val postsToRender = posts.filter { post -> project.postLayouts.contains(post.layout) }.sortedByDescending { it.date }.take(postsPerPage)
+//		val postsToRender = posts.filter { post -> project.postLayouts.contains(post.layout) }.sortedByDescending { it.date }.take(postsPerPage)
+		val postsToRender= 	sortAndFilter.sortAndFilter(project, posts).flatten().take(postsPerPage)
 
 		val postBuilder = PostBuilder(project)
 

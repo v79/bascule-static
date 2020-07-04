@@ -1,7 +1,6 @@
 package org.liamjd.bascule.cache
 
 import kotlinx.serialization.*
-import kotlinx.serialization.internal.SerialClassDescImpl
 import org.liamjd.bascule.lib.model.PostLink
 import java.time.Instant
 import java.time.LocalDate
@@ -12,16 +11,17 @@ import java.time.ZoneId
  *
  */
 object PostLinkSerializer : KSerializer<PostLink> {
+	@ImplicitReflectionSerializer
 	override fun deserialize(decoder: Decoder): PostLink {
 		val dec: CompositeDecoder = decoder.beginStructure(descriptor)
 		var title: String? = null
-		var url: String?= null
-		var date: LocalDate?= null
+		var url: String? = null
+		var date: LocalDate? = null
 		loop@ while (true) {
 			when (val i = dec.decodeElementIndex(descriptor)) {
 				CompositeDecoder.READ_DONE -> break@loop
-				0 -> title = dec.decodeStringElement(descriptor,i)
-				1 -> url = dec.decodeStringElement(descriptor,i)
+				0 -> title = dec.decodeStringElement(descriptor, i)
+				1 -> url = dec.decodeStringElement(descriptor, i)
 				2 -> date = longToLocalDate(dec.decodeLongElement(descriptor, i))
 				else -> throw SerializationException("Unknown index $i")
 			}
@@ -35,6 +35,7 @@ object PostLinkSerializer : KSerializer<PostLink> {
 
 	}
 
+	@ImplicitReflectionSerializer
 	override fun serialize(encoder: Encoder, obj: PostLink) {
 		val compositeOutput = encoder.beginStructure(descriptor)
 		compositeOutput.encodeStringElement(descriptor, 0, obj.title)
@@ -43,12 +44,11 @@ object PostLinkSerializer : KSerializer<PostLink> {
 		compositeOutput.endStructure(descriptor)
 	}
 
-	override val descriptor: SerialDescriptor = object : SerialClassDescImpl("postLink") {
-		init {
-			addElement("title") // title will have index 0
-			addElement("url") // url will have index 1
-			addElement("date") // date with have index 2
-		}
+	@ImplicitReflectionSerializer
+	override val descriptor: SerialDescriptor = SerialDescriptor("postLink") {
+		element<String>("title") // title will have index 0
+		element<String>("url")
+		element<String>("date")
 	}
 
 	private fun localDateToLong(date: LocalDate): Long {
