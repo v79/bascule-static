@@ -141,7 +141,7 @@ class BasculePost(val document: Document) : Post, PostStatus() {
 					// what's left is
 					// check for custom tagging as defined in the "tagging" attribute of the project yaml file
 					if(project.tagging.contains(yamlItem.key)) {
-						if (yamlItem.value != null && !yamlItem.value.isEmpty()) {
+						if (yamlItem.value != null && yamlItem.value.isNotEmpty()) {
 							val itemValue = yamlItem.value[0]
 							// split string [tagA, tagB, tagC] into a list of three tags, removing spaces
 							val tagList = itemValue.trim().drop(1).dropLast(1).split(",").map { label -> Tag(yamlItem.key, label.trim(), label.trim().slug(), postCount = 1, hasPosts = false) }
@@ -151,7 +151,13 @@ class BasculePost(val document: Document) : Post, PostStatus() {
 					} else {
 						// if still not found, shove it in the attributes object
 						val finalVal = if (yamlItem.value.size == 1) yamlItem.value[0] else yamlItem.value
-						post.attributes.put(yamlItem.key, finalVal)
+						// this could be quoted, if it's proper yaml
+						if(finalVal is String) {
+							post.attributes[yamlItem.key] = finalVal.removeSurrounding("\"")
+						} else {
+							post.attributes[yamlItem.key] = finalVal
+						}
+
 					}
 				}
 			} // else do nothing? depends on the key I guess...

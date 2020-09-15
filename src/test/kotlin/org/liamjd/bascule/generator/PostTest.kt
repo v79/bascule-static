@@ -26,11 +26,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-private val TITLE_VAL: String = "Four Weeks Sick Leave"
-private val AUTHOR_VAL = "Nessie the Monster"
-private val LAYOUT_POST_VAL = "post"
-private val SLUG_VAL = "four-weeks"
-private val POST_DATE_VAL = "01/01/2018"
+private const val TITLE_VAL: String = "Four Weeks Sick Leave"
+private const val AUTHOR_VAL = "Nessie the Monster"
+private const val LAYOUT_POST_VAL = "post"
+private const val SLUG_VAL = "four-weeks"
+private const val POST_DATE_VAL = "01/01/2018"
 
 class PostTest : Spek( {
 
@@ -140,6 +140,36 @@ class PostTest : Spek( {
 			assertEquals(2,attributes.size)
 			assertEquals(listOf("wobble","wumple"),result.attributes["wibble"])
 		}
+
+			it("builds a post with a custom scalar (string) attribute in quotes") {
+				data = buildYamlData()
+				data["summary"] = mutableListOf("\"This string is quoted\"")
+				every { mYamlVistor.data}.returns(data)
+
+				val result = BasculePost.createPostFromYaml(mFile,mDocument,project)
+				val isPost = result is BasculePost
+				assertTrue(isPost)
+				val post = result as BasculePost
+				val attributes = result.attributes["summary"] as String
+				assertNotNull(attributes)
+				assertEquals("This string is quoted",result.attributes["summary"])
+			}
+
+			it("builds a post with a custom scalar (string) attribute in quotes with escaped quotes") {
+				data = buildYamlData()
+				data["summary"] = mutableListOf("""
+					"\"This string is quoted and escaped\""
+				""".trimIndent())
+				every { mYamlVistor.data}.returns(data)
+
+				val result = BasculePost.createPostFromYaml(mFile,mDocument,project)
+				val isPost = result is BasculePost
+				assertTrue(isPost)
+				val post = result as BasculePost
+				val attributes = result.attributes["summary"] as String
+				assertNotNull(attributes)
+				assertEquals("\\\"This string is quoted and escaped\\\"",result.attributes["summary"])
+			}
 	}
 
 	describe("Returns an Error when a compulsory field is missing") {
@@ -201,8 +231,6 @@ class PostTest : Spek( {
 	}
 
 })
-
-
 
 private fun buildYamlData(): MutableMap<String, MutableList<String>> {
 	val data1 = mutableMapOf<String, MutableList<String>>()
