@@ -17,10 +17,10 @@ class ForEachHelper : Helper<Any> {
 			if (options == null) {
 				limit = Int.MAX_VALUE
 			} else {
-				if (options.params.isNotEmpty()) {
-					limit = (options.param<String?>(0)?.toInt() ?: Int.MAX_VALUE)
+				limit = if (options.params.isNotEmpty()) {
+					(options.param<String?>(0)?.toInt() ?: Int.MAX_VALUE)
 				} else {
-					limit = Int.MAX_VALUE
+					Int.MAX_VALUE
 				}
 				val buffer = options.buffer()
 				val loop = context.iterator()

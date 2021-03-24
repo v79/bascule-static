@@ -77,13 +77,13 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 			updateAllTagsInPosts(allSources)
 		}
 
-		info("Time taken to calculate set of ${markdownSourceCount} files: ${timeTaken}ms")
-		logger.info { "Time taken to calculate set of ${markdownSourceCount} files: ${timeTaken}ms" }
+		info("Time taken to calculate set of $markdownSourceCount files: ${timeTaken}ms")
+		logger.info { "Time taken to calculate set of $markdownSourceCount files: ${timeTaken}ms" }
 
 		if (errorMap.isNotEmpty()) {
 			logger.error { "Errors found in calculations:" }
 			println.error("Errors found in calculations:")
-			errorMap.forEach { t, u ->
+			errorMap.forEach { (t, u) ->
 				logger.error { "$t -> $u" }
 				println.error("$t -> $u")
 			}
@@ -169,8 +169,8 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 				/** Finally, we have something we can parse as a BasculePost!!! **/
 				val post = postBuilder.buildPost(mdFile)
 
-				info("Processing file ${index} ${mdFile.name}...")
-				logger.debug { "Processing file ${index} ${mdFile.name}..." }
+				info("Processing file $index ${mdFile.name}...")
+				logger.debug { "Processing file $index ${mdFile.name}..." }
 
 				// construct MDCacheItem for this file, and compare it with the cache file
 				val fileLastModifiedDateTimeLong = mdFile.lastModified();
@@ -182,7 +182,7 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 				// check for errors
 				when (post) {
 					is PostGenError -> {
-						errorMap.put(mdFile.name, post.errorMessage)
+						errorMap[mdFile.name] = post.errorMessage
 					}
 					is BasculePost -> {
 						// if we have a cache hit (the item is recorded correctly in the cache), then skip it
@@ -242,7 +242,7 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 		var cacheFound = false;
 
 		for (c in cachedSet) {
-			if (c.sourceFilePath.equals(mdItem.sourceFilePath) && c.sourceModificationDate.equals(mdItem.sourceModificationDate) && c.sourceFileSize.equals(mdItem.sourceFileSize)) {
+			if (c.sourceFilePath == mdItem.sourceFilePath && c.sourceModificationDate == mdItem.sourceModificationDate && c.sourceFileSize == mdItem.sourceFileSize) {
 				logger.info { "Cache match found for ${mdItem.sourceFilePath}" }
 				cacheFound = true
 			}
@@ -252,12 +252,11 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 	}
 
 	private fun calculateUrl(slug: String, sourcePath: String): String {
-		val url: String = if (sourcePath.isEmpty()) {
+		return if (sourcePath.isEmpty()) {
 			"$slug.html"
 		} else {
 			"${sourcePath.removePrefix("\\")}\\$slug.html".replace("\\", "/")
 		}
-		return url
 	}
 
 	/**
@@ -282,8 +281,8 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
 	/**
 	 * Load the Handlebars template file with the given @param layoutName
 	 */
-	fun getTemplate(templateDir: File, layoutName: String): File {
-		return fileHandler.getFile(templateDir, layoutName + ".hbs")
+	private fun getTemplate(templateDir: File, layoutName: String): File {
+		return fileHandler.getFile(templateDir, "$layoutName.hbs")
 	}
 
 	// TODO: duplicated function

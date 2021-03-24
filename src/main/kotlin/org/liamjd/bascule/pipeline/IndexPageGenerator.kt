@@ -30,7 +30,7 @@ class IndexPageGenerator(posts: List<Post>, numPosts: Int = 1, postsPerPage: Int
 		// only include blog posts, not pages other other layouts
 		// TODO: this is assuming that no more than `postsPerPage` posts will appear on the homepage; should really be configurable
 //		val postsToRender = posts.filter { post -> project.postLayouts.contains(post.layout) }.sortedByDescending { it.date }.take(postsPerPage)
-		val postsToRender= 	sortAndFilter.sortAndFilter(project, posts).flatten().take(postsPerPage)
+		val postsToRender = sortAndFilter.sortAndFilter(project, posts).flatten().take(postsPerPage)
 
 		val postBuilder = PostBuilder(project)
 
