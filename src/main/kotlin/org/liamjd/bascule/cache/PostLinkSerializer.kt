@@ -1,6 +1,10 @@
 package org.liamjd.bascule.cache
 
 import kotlinx.serialization.*
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.CompositeDecoder
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import org.liamjd.bascule.lib.model.PostLink
 import java.time.Instant
 import java.time.LocalDate
@@ -11,7 +15,7 @@ import java.time.ZoneId
  *
  */
 object PostLinkSerializer : KSerializer<PostLink> {
-	@ImplicitReflectionSerializer
+
 	override fun deserialize(decoder: Decoder): PostLink {
 		val dec: CompositeDecoder = decoder.beginStructure(descriptor)
 		var title: String? = null
@@ -19,7 +23,7 @@ object PostLinkSerializer : KSerializer<PostLink> {
 		var date: LocalDate? = null
 		loop@ while (true) {
 			when (val i = dec.decodeElementIndex(descriptor)) {
-				CompositeDecoder.READ_DONE -> break@loop
+				CompositeDecoder.DECODE_DONE -> break@loop
 				0 -> title = dec.decodeStringElement(descriptor, i)
 				1 -> url = dec.decodeStringElement(descriptor, i)
 				2 -> date = longToLocalDate(dec.decodeLongElement(descriptor, i))
@@ -35,7 +39,6 @@ object PostLinkSerializer : KSerializer<PostLink> {
 
 	}
 
-	@ImplicitReflectionSerializer
 	override fun serialize(encoder: Encoder, obj: PostLink) {
 		val compositeOutput = encoder.beginStructure(descriptor)
 		compositeOutput.encodeStringElement(descriptor, 0, obj.title)
@@ -44,7 +47,6 @@ object PostLinkSerializer : KSerializer<PostLink> {
 		compositeOutput.endStructure(descriptor)
 	}
 
-	@ImplicitReflectionSerializer
 	override val descriptor: SerialDescriptor = SerialDescriptor("postLink") {
 		element<String>("title") // title will have index 0
 		element<String>("url")

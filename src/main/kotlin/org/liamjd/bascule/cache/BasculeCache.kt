@@ -1,8 +1,6 @@
 package org.liamjd.bascule.cache
 
-import kotlinx.serialization.Serializable
 import org.liamjd.bascule.model.BasculePost
-import java.time.LocalDateTime
 
 // TODO: move to the library
 /**
