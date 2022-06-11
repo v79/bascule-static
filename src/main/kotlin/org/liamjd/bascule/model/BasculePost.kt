@@ -73,7 +73,6 @@ class BasculePost(val document: Document) : Post, PostStatus() {
 		}
 
 		fun createPostFromYaml(file: File, document: Document, project: Project): PostStatus {
-//			val yamlVisitor by inject<AbstractYamlFrontMatterVisitor>()
 			val yamlVisitor = AbstractYamlFrontMatterVisitor()
 			yamlVisitor.visit(document)
 			val data = yamlVisitor.data

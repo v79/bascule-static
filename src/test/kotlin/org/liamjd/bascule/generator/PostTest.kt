@@ -30,6 +30,12 @@ private const val LAYOUT_POST_VAL = "post"
 private const val SLUG_VAL = "four-weeks"
 private const val POST_DATE_VAL = "01/01/2018"
 
+/**
+ * Since the removal of Koin for DI, Unit tests are broken.
+ * IntelliJ can't import the bascule library either, even though gradle is fine with it.
+ */
+
+
 class PostTest : Spek({
 
 	var data: MutableMap<String, MutableList<String>>
@@ -67,7 +73,7 @@ class PostTest : Spek({
 			val isPost = result is BasculePost
 			assertTrue(isPost)
 			val post = result as BasculePost
-			assertEquals(TITLE_VAL, result.title)
+			assertEquals(TITLE_VAL, post.title)
 			assertEquals(AUTHOR_VAL, result.author)
 			assertEquals(LAYOUT_POST_VAL, result.layout)
 			assertEquals(SLUG_VAL, result.slug)
@@ -230,12 +236,12 @@ class PostTest : Spek({
 
 private fun buildYamlData(): MutableMap<String, MutableList<String>> {
 	val data1 = mutableMapOf<String, MutableList<String>>()
-	data1.put("title", mutableListOf(TITLE_VAL))
-	data1.put("author", mutableListOf(AUTHOR_VAL))
-	data1.put("layout", mutableListOf(LAYOUT_POST_VAL))
-	data1.put("date", mutableListOf(POST_DATE_VAL))
-	data1.put("tags", mutableListOf("[aTag]"))
-	data1.put("slug", mutableListOf(SLUG_VAL))
+	data1["title"] = mutableListOf(TITLE_VAL)
+	data1["author"] = mutableListOf(AUTHOR_VAL)
+	data1["layout"] = mutableListOf(LAYOUT_POST_VAL)
+	data1["date"] = mutableListOf(POST_DATE_VAL)
+	data1["tags"] = mutableListOf("[aTag]")
+	data1["slug"] = mutableListOf(SLUG_VAL)
 	return data1
 }
 
