@@ -2,6 +2,8 @@ package org.liamjd.bascule.cache
 
 import kotlinx.serialization.*
 import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.descriptors.element
 import kotlinx.serialization.encoding.CompositeDecoder
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
@@ -9,6 +11,8 @@ import org.liamjd.bascule.lib.model.PostLink
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+
+class PostLinkMissingFieldException(val fieldName: String): Exception()
 
 /**
  * Used by kotlinx.serialization in order to write the [PostLink] class to a Json file.
@@ -33,9 +37,9 @@ object PostLinkSerializer : KSerializer<PostLink> {
 		dec.endStructure(descriptor)
 
 		return PostLink(title
-				?: throw MissingFieldException("title"), url
-				?: throw MissingFieldException("url"), date
-				?: throw MissingFieldException("date"))
+				?: throw PostLinkMissingFieldException("title"), url
+				?: throw PostLinkMissingFieldException("url"), date
+				?: throw PostLinkMissingFieldException("date"))
 
 	}
 
@@ -47,8 +51,14 @@ object PostLinkSerializer : KSerializer<PostLink> {
 		compositeOutput.endStructure(descriptor)
 	}
 
+	/*@OptIn(ExperimentalSerializationApi::class)
 	override val descriptor: SerialDescriptor = SerialDescriptor("postLink") {
 		element<String>("title") // title will have index 0
+		element<String>("url")
+		element<String>("date")
+	}*/
+	override val descriptor: SerialDescriptor = buildClassSerialDescriptor("postLink") {
+		element<String>("title")
 		element<String>("url")
 		element<String>("date")
 	}

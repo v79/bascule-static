@@ -2,8 +2,6 @@ package org.liamjd.bascule.scanner
 
 import io.mockk.every
 import io.mockk.mockk
-import org.koin.dsl.module.module
-import org.koin.standalone.StandAloneContext
 import org.liamjd.bascule.cache.MDCacheItem
 import org.liamjd.bascule.lib.model.Directories
 import org.liamjd.bascule.lib.model.Project
@@ -19,6 +17,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
+
 internal class ChangeSetCalculatorTest : Spek({
 
 	val mProject = mockk<Project>()
@@ -30,12 +29,6 @@ internal class ChangeSetCalculatorTest : Spek({
 	val mPostBuilder = mockk<PostBuilder>()
 	val mParent = mockk<File>(relaxed = true)
 	val mHBTemplateFile = mockk<File>(relaxed = true)
-
-	val koinModule = module {
-		single(override = true) { mockFileHandler }
-		single { mPostBuilder }
-	}
-	StandAloneContext.loadKoinModules(koinModule)
 
 	every { mProject.name } returns TEST_DATA.test_project_name
 	every { mProject.dirs } returns mDirectories
@@ -57,7 +50,7 @@ internal class ChangeSetCalculatorTest : Spek({
 			val result = calculator.calculateUncachedSet(TEST_DATA.mdCacheItemSet, TEST_DATA.hbTemplateCacheEmptySet)
 
 			assertNotNull(result) {
-				assertEquals(0, it.size)
+				assertEquals(0,it.size)
 			}
 		}
 	}

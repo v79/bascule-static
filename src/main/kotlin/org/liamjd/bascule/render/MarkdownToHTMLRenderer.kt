@@ -3,12 +3,8 @@ package org.liamjd.bascule.render
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.util.ast.Document
 import mu.KotlinLogging
-import org.koin.core.parameter.ParameterList
-import org.koin.standalone.KoinComponent
-import org.koin.standalone.inject
 import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.lib.model.Project
-import org.liamjd.bascule.lib.render.TemplatePageRenderer
 import org.liamjd.bascule.model.BasculePost
 import println.info
 
@@ -16,11 +12,11 @@ import println.info
  * Transforms a given [BasculePost] into the final HTML file through the Flexmark HTMLRenderer class,
  * and writes it to disc
  */
-class MarkdownToHTMLRenderer(val project: Project) : KoinComponent, MarkdownRenderer {
+class MarkdownToHTMLRenderer(val project: Project) : MarkdownRenderer {
 
 	private val logger = KotlinLogging.logger {}
-	private val fileHandler: BasculeFileHandler by inject(parameters = { ParameterList() })
-	private val renderer by inject<TemplatePageRenderer> { ParameterList(project) }
+	private val fileHandler = BasculeFileHandler()
+	private val renderer = HandlebarsRenderer(project)
 
 //	val mdParser: Parser = Parser.builder(project.markdownOptions).build()
 
@@ -40,7 +36,7 @@ class MarkdownToHTMLRenderer(val project: Project) : KoinComponent, MarkdownRend
 			model.putAll(siteModel)
 			model.putAll(basculePost.toModel())
 			model.putAll(basculePost.groupTagsByCategory())
-			model.put("\$currentPage", basculePost.slug)
+			model["\$currentPage"] = basculePost.slug
 
 			// first, extract the content from the markdown
 			val renderedMarkdown = renderMarkdown(basculePost.document)

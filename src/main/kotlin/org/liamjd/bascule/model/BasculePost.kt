@@ -2,8 +2,6 @@ package org.liamjd.bascule.model
 
 import com.vladsch.flexmark.ext.yaml.front.matter.AbstractYamlFrontMatterVisitor
 import com.vladsch.flexmark.util.ast.Document
-import org.koin.standalone.KoinComponent
-import org.koin.standalone.inject
 import org.liamjd.bascule.lib.model.*
 import org.liamjd.bascule.slug
 import java.io.File
@@ -61,7 +59,7 @@ class BasculePost(val document: Document) : Post, PostStatus() {
 	 * Returns a PostStatus.BasculePost if successful, or PostStatus.PostGenError if unable to parse the content.
 	 *
 	 */
-	companion object Builder : KoinComponent, Comparator<BasculePost>  {
+	companion object Builder : Comparator<BasculePost>  {
 
 		/**
 		 * Sorting comparator by date order
@@ -75,7 +73,8 @@ class BasculePost(val document: Document) : Post, PostStatus() {
 		}
 
 		fun createPostFromYaml(file: File, document: Document, project: Project): PostStatus {
-			val yamlVisitor by inject<AbstractYamlFrontMatterVisitor>()
+//			val yamlVisitor by inject<AbstractYamlFrontMatterVisitor>()
+			val yamlVisitor = AbstractYamlFrontMatterVisitor()
 			yamlVisitor.visit(document)
 			val data = yamlVisitor.data
 
@@ -144,7 +143,7 @@ class BasculePost(val document: Document) : Post, PostStatus() {
 						if (yamlItem.value != null && yamlItem.value.isNotEmpty()) {
 							val itemValue = yamlItem.value[0]
 							// split string [tagA, tagB, tagC] into a list of three tags, removing spaces
-							val tagList = itemValue.trim().drop(1).dropLast(1).split(",").map { label -> Tag(yamlItem.key, label.trim(), label.trim().slug(), postCount = 1, hasPosts = false) }
+							val tagList = itemValue.trim().drop(1).dropLast(1).split(",").map { label: String -> Tag(yamlItem.key, label.trim(), label.trim().slug(), postCount = 1, hasPosts = false) }
 							post.tags.addAll(tagList.toSet() as MutableSet<Tag>)
 						}
 						// do nothing

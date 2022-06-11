@@ -1,29 +1,23 @@
 package org.liamjd.bascule.assets
 
 import mu.KotlinLogging
-import org.koin.core.parameter.ParameterList
-import org.koin.standalone.KoinComponent
-import org.koin.standalone.inject
 import org.liamjd.bascule.BasculeFileHandler
-import org.liamjd.bascule.lib.model.Project
+import org.liamjd.bascule.lib.model.*
 import println.ProgressBar
 import println.info
 import java.io.File
 import java.nio.file.FileSystems
 
-
 /**
  * Copies and generates fixed assets, such images, CSS, etc
  */
-class AssetsProcessor(val project: Project) : KoinComponent {
+class AssetsProcessor(val project: Project)  {
 
 	private val logger = KotlinLogging.logger {}
-
-	private val fileHandler: BasculeFileHandler by inject(parameters = { ParameterList() })
+	private val fileHandler = BasculeFileHandler()
 	val pathSeparator = FileSystems.getDefault().separator!!
 
 	fun copyStatics() {
-
 		logger.info {"Copying asset files through processor" }
 		val destinationDir = project.dirs.output.path + pathSeparator + "assets" + pathSeparator
 		copyDirectory(project.dirs.assets, destinationDir)
@@ -50,6 +44,6 @@ class AssetsProcessor(val project: Project) : KoinComponent {
 	}
 
 	fun copyTheme() {
-		info("Copying theme template files")
+		info("Copying theme template files - not supported")
 	}
 }

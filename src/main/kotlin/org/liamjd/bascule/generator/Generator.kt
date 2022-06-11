@@ -9,26 +9,24 @@ import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.misc.Extension
 import mu.KotlinLogging
-import org.koin.core.parameter.ParameterList
-import org.koin.core.parameter.parametersOf
-import org.koin.standalone.KoinComponent
-import org.koin.standalone.inject
 import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.Constants
 import org.liamjd.bascule.assets.AssetsProcessor
+import org.liamjd.bascule.cache.BasculeCacheImpl
 import org.liamjd.bascule.cache.CacheAndPost
 import org.liamjd.bascule.flexmark.hyde.HydeExtension
 import org.liamjd.bascule.lib.generators.GeneratorPipeline
 import org.liamjd.bascule.lib.generators.SortAndFilter
 import org.liamjd.bascule.lib.model.Post
 import org.liamjd.bascule.lib.model.Project
-import org.liamjd.bascule.lib.render.TemplatePageRenderer
 import org.liamjd.bascule.pipeline.DefaultSortAndFilter
 import org.liamjd.bascule.plugins.GeneratorPluginLoader
 import org.liamjd.bascule.plugins.HandlebarPluginLoader
 import org.liamjd.bascule.plugins.SortAndFilterLoader
 import org.liamjd.bascule.random
+import org.liamjd.bascule.render.HandlebarsRenderer
 import org.liamjd.bascule.render.MarkdownToHTMLRenderer
+import org.liamjd.bascule.scanner.ChangeSetCalculator
 import org.liamjd.bascule.scanner.MarkdownScanner
 import picocli.CommandLine
 import println.debug
@@ -37,7 +35,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintStream
 import kotlin.reflect.full.createInstance
-import kotlin.system.exitProcess
 
 val DEFAULT_PROCESSORS = arrayOf("org.liamjd.bascule.pipeline.IndexPageGenerator", "org.liamjd.bascule.pipeline.PostNavigationGenerator", "org.liamjd.bascule.pipeline.MultiTaxonomyNavigationGenerator")
 
@@ -46,20 +43,19 @@ val DEFAULT_PROCESSORS = arrayOf("org.liamjd.bascule.pipeline.IndexPageGenerator
  * Starts the post and page generation process. Must be run from inside the project folder
  */
 @CommandLine.Command(name = "generate", description = ["Generate your static website"])
-class Generator : Runnable, KoinComponent {
+class Generator : Runnable {
 
 	private val logger = KotlinLogging.logger {}
 
 	@CommandLine.Option(names = ["-c", "--clean"], description = ["do not use caching; clears generation directory for a clean build"])
 	var clean: Boolean = false
 
-	private val fileHandler: BasculeFileHandler by inject(parameters = { ParameterList() })
+	private val fileHandler = BasculeFileHandler()
 	private val currentDirectory = System.getProperty("user.dir")!!
 	private val yamlConfig: String
-	private val parentFolder: File
+	private val parentFolder: File = File(currentDirectory)
 
 	init {
-		parentFolder = File(currentDirectory)
 		yamlConfig = "${parentFolder.name}.yaml"
 	}
 
@@ -115,10 +111,11 @@ class Generator : Runnable, KoinComponent {
 //		fileHandler.emptyFolder(project.dirs.output, OUTPUT_SUFFIX)
 //		fileHandler.emptyFolder(File(project.dirs.output, "tags"))
 
-		val walker = MarkdownScanner(project)
+		val changeSetCalculator = ChangeSetCalculator(project = project)
+		val walker = MarkdownScanner(project, fileHandler, changeSetCalculator, BasculeCacheImpl(project, fileHandler))
 
 		val pageList = walker.calculateRenderSet()
-		println("walker.calculateRenderSet() has returned ${pageList.size} CacheAndPost items")
+		info("walker.calculateRenderSet() has returned ${pageList.size} CacheAndPost items")
 
 		val markdownRenderer = MarkdownToHTMLRenderer(project)
 
@@ -163,11 +160,11 @@ class Generator : Runnable, KoinComponent {
 		if (generators.size == 0) {
 			logger.error { "No generators found in the pipeline. Aborting execution!" }
 			error("No generators found in the pipeline. Aborting execution!")
-			exitProcess(-1)
 		}
 
 		// TODO: this still doesn't work with the CACHE!
-		val renderer by inject<TemplatePageRenderer> { parametersOf(project) }
+//		val renderer by inject<TemplatePageRenderer>()
+		val renderer = HandlebarsRenderer(project)
 		getPostsFromCacheAndPost(pageList).process(generators, project, renderer, fileHandler)
 	}
 

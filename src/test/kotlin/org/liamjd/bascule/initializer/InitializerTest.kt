@@ -4,8 +4,6 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
-import org.koin.dsl.module.module
-import org.koin.standalone.StandAloneContext.loadKoinModules
 import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.Constants
 import org.liamjd.bascule.lib.model.Theme
@@ -24,12 +22,6 @@ class InitializerTest : Spek({
 	val name = "testSite"
 	val defaultTheme: Theme = "bulma"
 	val mockFileHandler = mockk<org.liamjd.bascule.BasculeFileHandler>(relaxed = true)
-
-	val koinModule = module {
-		single { mockFileHandler }
-	}
-	loadKoinModules(koinModule)
-
 
 	describe("BasculeInitializer sets up an empty project with the given name") {
 

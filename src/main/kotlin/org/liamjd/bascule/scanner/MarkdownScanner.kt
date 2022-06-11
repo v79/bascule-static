@@ -1,11 +1,6 @@
 package org.liamjd.bascule.scanner
 
-import kotlinx.serialization.UnstableDefault
 import mu.KotlinLogging
-import org.koin.core.parameter.ParameterList
-import org.koin.core.parameter.parametersOf
-import org.koin.standalone.KoinComponent
-import org.koin.standalone.inject
 import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.cache.BasculeCache
 import org.liamjd.bascule.cache.CacheAndPost
@@ -18,13 +13,13 @@ import println.info
  * @param project the bascule project
  * Call [MarkdownScanner.calculateRenderSet] to get the set of posts which need to be re-rendered
  */
-@UnstableDefault
-class MarkdownScanner(val project: Project) : KoinComponent {
+class MarkdownScanner(val project: Project, val fileHandler: BasculeFileHandler, val changeSetCalculator: ChangeSetCalculator, val cache: BasculeCache)  {
 
-	private val fileHandler: BasculeFileHandler by inject(parameters = { ParameterList() })
-	private val cache: BasculeCache by inject<BasculeCache> { parametersOf(project, fileHandler) }
 	private val logger = KotlinLogging.logger {}
-	private val changeSetCalculator: ChangeSetCalculator by inject { parametersOf(project) }
+
+	init {
+		println("Initialization of Markdown Scanner")
+	}
 
 	// this method is called by the Generator
 	/**
@@ -33,6 +28,8 @@ class MarkdownScanner(val project: Project) : KoinComponent {
 	 * Only those with a [MDCacheItem.rerender] flag will need to be re-rendered as HTML
 	 */
 	fun calculateRenderSet(): Set<CacheAndPost> {
+
+		logger.info { "Calculating render set" }
 
 		// this is everything we know from the cache. it might even be empty!
 		val cachedSet = cache.loadCacheFile()

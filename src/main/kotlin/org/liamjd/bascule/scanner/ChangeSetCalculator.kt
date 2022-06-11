@@ -1,10 +1,6 @@
 package org.liamjd.bascule.scanner
 
 import mu.KotlinLogging
-import org.koin.core.parameter.ParameterList
-import org.koin.core.parameter.parametersOf
-import org.koin.standalone.KoinComponent
-import org.koin.standalone.inject
 import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.cache.CacheAndPost
 import org.liamjd.bascule.cache.HandlebarsTemplateCacheItem
@@ -34,10 +30,10 @@ import kotlin.system.measureTimeMillis
  * @param project the bascule project
  *
  */
-class ChangeSetCalculator(val project: Project) : KoinComponent {
+class ChangeSetCalculator(val project: Project)  {
 
-	private val fileHandler: BasculeFileHandler by inject(parameters = { ParameterList() })
-	private val postBuilder: PostBuilder by inject { parametersOf(project) }
+	private val fileHandler: BasculeFileHandler = BasculeFileHandler()
+	private val postBuilder: PostBuilder = PostBuilder(project)
 	private val logger = KotlinLogging.logger {}
 
 	/**
