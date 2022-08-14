@@ -64,10 +64,12 @@ dependencies {
 
 	// kotlinx serialization, for document caching
 	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.3")
-	testImplementation("org.spekframework.spek2:spek-dsl-jvm:$spek_version")
-	testRuntimeOnly("org.spekframework.spek2:spek-runner-junit5:$spek_version")
+/*	testImplementation("org.spekframework.spek2:spek-dsl-jvm:$spek_version")
+	testRuntimeOnly("org.spekframework.spek2:spek-runner-junit5:$spek_version")*/
 	testImplementation("io.mockk:mockk:$mockk_version")
 	testImplementation(kotlin("test"))
+	// bascule library
+	testImplementation("org.liamjd.bascule-lib:bascule-lib:$bascule_lib_version")
 }
 
 tasks.test {
