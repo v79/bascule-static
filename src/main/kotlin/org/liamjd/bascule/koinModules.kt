@@ -1,7 +1,7 @@
 package org.liamjd.bascule
 
 import com.vladsch.flexmark.ext.yaml.front.matter.AbstractYamlFrontMatterVisitor
-import org.koin.dsl.module.module
+import org.koin.dsl.module
 import org.liamjd.bascule.cache.BasculeCache
 import org.liamjd.bascule.cache.BasculeCacheImpl
 import org.liamjd.bascule.lib.FileHandler

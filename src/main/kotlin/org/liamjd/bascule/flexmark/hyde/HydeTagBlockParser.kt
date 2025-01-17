@@ -5,82 +5,84 @@ import com.vladsch.flexmark.ast.util.Parsing
 import com.vladsch.flexmark.parser.block.*
 import com.vladsch.flexmark.util.ast.Block
 import com.vladsch.flexmark.util.ast.BlockContent
-import com.vladsch.flexmark.util.options.DataHolder
+import com.vladsch.flexmark.util.data.DataHolder
 
 class HydeTagBlockParser(options: DataHolder?) : AbstractBlockParser() {
 
-	private var block = HydeTagBlock()
-	private var content: BlockContent? = BlockContent()
+    private var block = HydeTagBlock()
+    private var content: BlockContent? = BlockContent()
 
-	override fun tryContinue(state: ParserState?): BlockContinue? {
-		return BlockContinue.none()
-	}
+    override fun tryContinue(state: ParserState?): BlockContinue? {
+        return BlockContinue.none()
+    }
 
 
-	override fun getBlock(): Block = block
+    override fun getBlock(): Block = block
 
-	override fun closeBlock(state: ParserState?) {
-		block.setContent(content)
-		content = null
-	}
+    override fun closeBlock(state: ParserState?) {
+        content?.let { block.setContent(it) }
+        content = null
+    }
 
-	object Factory : CustomBlockParserFactory {
-		override fun getBeforeDependents(): MutableSet<out Class<Any>>? {
-			return null
-		}
+    object Factory : CustomBlockParserFactory {
+        override fun getBeforeDependents(): MutableSet<out Class<Any>>? {
+            return null
+        }
 
-		override fun getAfterDependents(): MutableSet<out Class<Any>>? {
-			return null
-		}
+        override fun apply(options: DataHolder): BlockParserFactory {
+            return BlockFactory(options)
+        }
 
-		override fun affectsGlobalScope() = false
+        override fun getAfterDependents(): MutableSet<out Class<Any>>? {
+            return null
+        }
 
-		override fun create(options: DataHolder?): BlockParserFactory {
-			return BlockFactory(options)
-		}
-	}
+        override fun affectsGlobalScope() = false
 
-	class BlockFactory(options: DataHolder?) : AbstractBlockParserFactory(options) {
+    }
 
-		private var parsing: HydeTagParsing
-		private var opts: DataHolder?
+    class BlockFactory(options: DataHolder?) : AbstractBlockParserFactory(options) {
 
-		init {
-			this.parsing = HydeTagParsing(Parsing(options))
-			opts = options
-		}
+        private var parsing: HydeTagParsing
+        private var opts: DataHolder?
 
-		override fun tryStart(state: ParserState?, matchedBlockParser: MatchedBlockParser?): BlockStart? {
-			val line = state?.getLine()
-			val currentIndent = state?.getIndent()
-			if (currentIndent == 0 && matchedBlockParser?.getBlockParser()?.block !is Paragraph) {
-				val tryLine = line?.subSequence(state.getIndex())
-				val matcher = parsing.MACRO_OPEN.matcher(tryLine)
+        init {
+            this.parsing = HydeTagParsing(Parsing(options))
+            opts = options
+        }
 
-				if (matcher.find()) {
-					// see if it closes on the same line, then we create a block and close it
-					val tag = tryLine?.subSequence(0, matcher.end())
-					val tagName = line?.subSequence(matcher.start(1), matcher.end(1))
-					val parameters = tryLine?.subSequence(matcher.end(1), matcher.end() - 2)?.trim()
+        override fun tryStart(state: ParserState?, matchedBlockParser: MatchedBlockParser?): BlockStart? {
+            val line = state?.getLine()
+            val currentIndent = state?.getIndent()
+            if (currentIndent == 0 && matchedBlockParser?.getBlockParser()?.block !is Paragraph) {
+                val tryLine = line?.subSequence(state.getIndex())
+                val matcher = parsing.MACRO_OPEN.matcher(tryLine)
 
-					when(tagName.toString()) {
-						"include" -> {
-							val tagNode = tag?.endSequence(2)?.let { HydeTag(tag.subSequence(0, 2), tagName, parameters, it) }
-							tagNode?.setCharsFromContent()
+                if (matcher.find()) {
+                    // see if it closes on the same line, then we create a block and close it
+                    val tag = tryLine?.subSequence(0, matcher.end())
+                    val tagName = line?.subSequence(matcher.start(1), matcher.end(1))
+                    val parameters = tryLine?.subSequence(matcher.end(1), matcher.end() - 2)?.trim()
 
-							val parser = HydeTagBlockParser(state.getProperties())
-							parser.block.appendChild(tagNode)
+                    when (tagName.toString()) {
+                        "include" -> {
+                            val tagNode =
+                                tag?.endSequence(2)?.let { HydeTag(tag.subSequence(0, 2), tagName, parameters, it) }
+                            tagNode?.setCharsFromContent()
 
-							return BlockStart.of(parser)
-									.atIndex(state.getLineEndIndex())
-						}
-					}
+                            val parser = HydeTagBlockParser(state.getProperties())
+                            parser.block.appendChild(tagNode)
 
-				}
-			}
-			return BlockStart.none()
-		}
+                            return BlockStart.of(parser)
+                                .atIndex(state.getLineEndIndex())
+                        }
+                    }
 
-	}
+                }
+            }
+            return BlockStart.none()
+        }
+
+    }
 }
 

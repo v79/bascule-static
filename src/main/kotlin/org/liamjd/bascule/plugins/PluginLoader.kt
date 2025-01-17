@@ -1,6 +1,6 @@
 package org.liamjd.bascule.plugins
 
-import com.vladsch.flexmark.util.builder.Extension
+import com.vladsch.flexmark.util.misc.Extension
 import org.liamjd.bascule.lib.generators.GeneratorPipeline
 import java.io.File
 import java.net.URL
