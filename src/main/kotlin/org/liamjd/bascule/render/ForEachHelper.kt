@@ -4,7 +4,6 @@ import com.github.jknack.handlebars.Context
 import com.github.jknack.handlebars.Helper
 import com.github.jknack.handlebars.Options
 import java.util.*
-import java.util.Map
 
 /**
  * A modification of the standard handlebars '#each iterator.
@@ -41,7 +40,7 @@ class ForEachHelper : Helper<Any> {
 							.combine("@even", if (even) "even" else "")
 							// 1-based index
 							.combine("@index_1", index + 1)
-					buffer?.append(options.apply(fn, itCtx, Arrays.asList<Any>(it, index)))
+					buffer?.append(options.apply(fn, itCtx, listOf(it, index)))
 					index += 1
 					even = !even
 					limitCounter++

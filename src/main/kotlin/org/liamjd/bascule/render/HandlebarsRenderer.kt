@@ -42,9 +42,11 @@ class HandlebarsRenderer(val project: Project) : TemplatePageRenderer {
 	private fun getTemplateText(project: Project, templateName: String): String {
 		val matches = project.dirs.templates.listFiles { _, name -> name == (templateName  + TEMPLATE_SUFFIX) }
 
-		if (matches.isNotEmpty() && matches.size == 1) {
-			val found = matches[0]
-			return found.readText()
+		if (matches != null) {
+			if (matches.isNotEmpty() && matches.size == 1) {
+				val found = matches[0]
+				return found.readText()
+			}
 		}
 		println.error("ERROR - template file '$templateName' not found - unable to generate content.")
 		return ""
