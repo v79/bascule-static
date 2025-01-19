@@ -42,11 +42,11 @@ object PostLinkSerializer : KSerializer<PostLink> {
 
     }
 
-    override fun serialize(encoder: Encoder, obj: PostLink) {
+    override fun serialize(encoder: Encoder, value: PostLink) {
         val compositeOutput = encoder.beginStructure(descriptor)
-        compositeOutput.encodeStringElement(descriptor, 0, obj.title)
-        compositeOutput.encodeStringElement(descriptor, 1, obj.url)
-        compositeOutput.encodeLongElement(descriptor, 2, localDateToLong(obj.date))
+        compositeOutput.encodeStringElement(descriptor, 0, value.title)
+        compositeOutput.encodeStringElement(descriptor, 1, value.url)
+        compositeOutput.encodeLongElement(descriptor, 2, localDateToLong(value.date))
         compositeOutput.endStructure(descriptor)
     }
 

@@ -28,9 +28,10 @@ repositories {
 
 dependencies {
     // stdlib
-    implementation(kotlin("stdlib"))
+    implementation(kotlin("stdlib","1.6.21"))
     // reflection
-    implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlin_version")
+    api(kotlin("reflect","1.6.21"))
+
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.0.1")
 
     // bascule library

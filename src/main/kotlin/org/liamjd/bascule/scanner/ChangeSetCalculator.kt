@@ -165,7 +165,7 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
                 logger.warn { "Skipping file ${mdFile.name} as extension does not match '.md'" }
                 markdownScannerProgressBar.progress(
                     markdownSourceCount1,
-                    "Skipping file ${mdFile.name} as extension does not match '.md'"
+                    "Skipping file ${mdFile.name} as extension does not match '.md'\n"
                 )
                 continue
             } else {

@@ -43,11 +43,11 @@ class MarkdownToHTMLRenderer(val project: Project) : KoinComponent, MarkdownRend
         val model = mutableMapOf<String, Any?>()
         model.putAll(siteModel)
         model.putAll(basculePost.toModel())
-        model.put("\$currentPage", basculePost.slug)
+        model["\$currentPage"] = basculePost.slug
 
         // first, extract the content from the markdown
         val renderedMarkdown = renderMarkdown(basculePost.document)
-        model.put("content", renderedMarkdown)
+        model["content"] = renderedMarkdown
 
         // then, render the corresponding Handlebars template
         val templateFromYaml

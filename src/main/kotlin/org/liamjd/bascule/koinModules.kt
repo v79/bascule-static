@@ -13,6 +13,7 @@ import org.liamjd.bascule.scanner.PostBuilder
 
 /**
  * Declares modules for Dependency Injection via Koin
+ * DO NOT REMOVE THE 'USELESS CASTS' - they are required for Koin to work correctly
  */
 val generationModule = module {
 	factory { AbstractYamlFrontMatterVisitor() }
