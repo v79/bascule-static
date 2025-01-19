@@ -12,7 +12,7 @@ val handlebars_version = "4.1.2"
 val spek_version = "2.0.7"
 val picocli_version = "3.8.2"
 val jansi_version = "1.17.1"
-val bascule_lib_version = "0.3.0"
+val bascule_lib_version = "0.3.1"
 
 plugins {
     kotlin("jvm") version "1.6.21"

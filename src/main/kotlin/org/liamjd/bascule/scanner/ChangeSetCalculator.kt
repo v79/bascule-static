@@ -161,7 +161,7 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
                 continue // skip this one
             }
 
-            if (mdFile.extension.toLowerCase() != "md") {
+            if (mdFile.extension.lowercase(Locale.getDefault()) != "md") {
                 logger.warn { "Skipping file ${mdFile.name} as extension does not match '.md'" }
                 markdownScannerProgressBar.progress(
                     markdownSourceCount1,
@@ -281,7 +281,7 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
     // TODO: move to interface
     fun getTemplates(templateDir: File): Set<HandlebarsTemplateCacheItem> {
         val templateSet = mutableSetOf<HandlebarsTemplateCacheItem>()
-        val templates = templateDir.listFiles(FileFilter { it.extension.toLowerCase() == "hbs" })
+        val templates = templateDir.listFiles(FileFilter { it.extension.lowercase(Locale.getDefault()) == "hbs" })
         if (templates != null) {
             templates.forEach { file ->
                 debug("Loading template details for ${file.name}")
@@ -301,8 +301,8 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
     /**
      * Load the Handlebars template file with the given @param layoutName
      */
-    fun getTemplate(templateDir: File, layoutName: String): File {
-        return fileHandler.getFile(templateDir, layoutName + ".hbs")
+	private fun getTemplate(templateDir: File, layoutName: String): File {
+        return fileHandler.getFile(templateDir, "$layoutName.hbs")
     }
 
     // TODO: duplicated function

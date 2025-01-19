@@ -12,13 +12,13 @@ import java.time.format.DateTimeFormatter
 /**
  * This serializer only works to ISO_DATE_TIME; nanoseconds are lost?
  */
-@Serializer(forClass = LocalDateTime::class)
+//@Serializer(forClass = LocalDateTime::class)
 object LocalDateTimeSerializer : KSerializer<LocalDateTime> {
     override val descriptor: SerialDescriptor =
         PrimitiveSerialDescriptor("LocalDateTime", PrimitiveKind.STRING)
 
-    override fun serialize(encoder: Encoder, obj: LocalDateTime) {
-        encoder.encodeString(obj.format(DateTimeFormatter.ISO_DATE_TIME))
+    override fun serialize(encoder: Encoder, value: LocalDateTime) {
+        encoder.encodeString(value.format(DateTimeFormatter.ISO_DATE_TIME))
     }
 
     override fun deserialize(decoder: Decoder): LocalDateTime {

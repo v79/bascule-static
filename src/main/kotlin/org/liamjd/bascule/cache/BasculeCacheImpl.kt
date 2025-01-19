@@ -40,8 +40,7 @@ class BasculeCacheImpl(val project: Project, val fileHandler: FileHandler) : Bas
     override fun loadCacheFile(): Set<MDCacheItem> {
         try {
             val jsonString = fileHandler.readFileAsString(project.dirs.sources, getCacheFileName())
-            val json = Json { prettyPrint = true }
-            val cache = json.decodeFromString(Cache.serializer(), jsonString)
+            val cache = Json.decodeFromString(Cache.serializer(), jsonString)
             val cacheItems: Set<MDCacheItem> = cache.items
             return cacheItems
         } catch (fnfe: FileNotFoundException) {
@@ -70,7 +69,7 @@ class BasculeCacheImpl(val project: Project, val fileHandler: FileHandler) : Bas
     // TODO: move to interface
     fun getTemplates(templateDir: File): Set<HandlebarsTemplateCacheItem> {
         val templateSet = mutableSetOf<HandlebarsTemplateCacheItem>()
-        val templates = templateDir.listFiles(FileFilter { it.extension.toLowerCase() == "hbs" })
+        val templates = templateDir.listFiles(FileFilter { it.extension.lowercase(Locale.getDefault()) == "hbs" })
         if (templates != null) {
             templates.forEach { file ->
                 println("Loading template details for ${file.name}")

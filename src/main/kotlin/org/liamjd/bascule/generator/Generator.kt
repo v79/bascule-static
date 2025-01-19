@@ -170,7 +170,7 @@ class Generator : Runnable, KoinComponent {
         if (generators.size == 0) {
             logger.error { "No generators found in the pipeline. Aborting execution!" }
             error("No generators found in the pipeline. Aborting execution!")
-            exitProcess(-1)
+//            exitProcess(-1)
         }
 
         // TODO: this still doesn't work with the CACHE!
