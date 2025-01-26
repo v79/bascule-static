@@ -25,21 +25,17 @@ import java.util.Collections.emptySet
 class BasculeCacheImpl(val project: Project, val fileHandler: FileHandler) : BasculeCache {
 
     private val cacheSetSerializer: KSerializer<Set<MDCacheItem>> = SetSerializer(MDCacheItem.serializer())
+    private val templateSetSerializer: KSerializer<Set<HandlebarsTemplateCacheItem>> =
+        SetSerializer(HandlebarsTemplateCacheItem.serializer())
 
     override fun writeCacheFile(mdCacheItems: Set<MDCacheItem>) {
-
         val cache = Cache(getTemplates(project.dirs.templates), mdCacheItems)
         val cacheJsonData = Json.encodeToString(cache)
-
         fileHandler.writeFile(project.dirs.sources, getCacheFileName(), cacheJsonData)
-        val jsonData = Json.encodeToString(cacheSetSerializer, mdCacheItems)
-        fileHandler.writeFile(project.dirs.sources, getCacheFileName(), jsonData)
+        // I used to have a cache for template sets, but I seem to have lost it
     }
 
     override fun loadCacheFile(): Set<MDCacheItem> {
-
-        println(cacheSetSerializer.descriptor)
-
         try {
             val jsonString = fileHandler.readFileAsString(project.dirs.sources, getCacheFileName())
             val cache = Json.decodeFromString(cacheSetSerializer, jsonString)
@@ -72,17 +68,15 @@ class BasculeCacheImpl(val project: Project, val fileHandler: FileHandler) : Bas
     fun getTemplates(templateDir: File): Set<HandlebarsTemplateCacheItem> {
         val templateSet = mutableSetOf<HandlebarsTemplateCacheItem>()
         val templates = templateDir.listFiles(FileFilter { it.extension.lowercase(Locale.getDefault()) == "hbs" })
-        if (templates != null) {
-            templates.forEach { file ->
-                println("Loading template details for ${file.name}")
-                val hbCacheItem = HandlebarsTemplateCacheItem(
-                    file.name.substringBeforeLast("."), file.absolutePath, file.length(), LocalDateTime.ofInstant(
-                        Instant.ofEpochMilli(file.lastModified()), TimeZone
-                            .getDefault().toZoneId()
-                    )
+        templates?.forEach { file ->
+            println("Loading template details for ${file.name}")
+            val hbCacheItem = HandlebarsTemplateCacheItem(
+                file.name.substringBeforeLast("."), file.absolutePath, file.length(), LocalDateTime.ofInstant(
+                    Instant.ofEpochMilli(file.lastModified()), TimeZone
+                        .getDefault().toZoneId()
                 )
-                templateSet.add(hbCacheItem)
-            }
+            )
+            templateSet.add(hbCacheItem)
         }
         return templateSet
     }
