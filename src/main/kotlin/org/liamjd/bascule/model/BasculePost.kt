@@ -75,10 +75,10 @@ class BasculePost(val document: Document) : Post, PostStatus() {
          * Sorting comparator by date order
          */
         override fun compare(o1: BasculePost, o2: BasculePost): Int {
-            if (o1.date.compareTo(o2.date) == 0) {
-                return o1.url.compareTo(o2.url)
+            return if (o1.date.compareTo(o2.date) == 0) {
+                o1.url.compareTo(o2.url)
             } else {
-                return o1.date.compareTo(o2.date)
+                o1.date.compareTo(o2.date)
             }
         }
 

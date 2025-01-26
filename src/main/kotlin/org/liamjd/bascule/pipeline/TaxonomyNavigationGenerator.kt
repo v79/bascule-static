@@ -17,7 +17,7 @@ class TaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int = 1, p
 
 	private val logger = KotlinLogging.logger {}
 
-	val FOLDER_NAME = "tags"
+	private val FOLDER_NAME = "tags"
 	override val TEMPLATE = "tag"
 
 	override suspend fun process(project: Project, renderer: TemplatePageRenderer, fileHandler: FileHandler, clean: Boolean) {
@@ -26,7 +26,7 @@ class TaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int = 1, p
 		val tagsFolder = fileHandler.createDirectory(project.dirs.output.absolutePath, FOLDER_NAME)
 
 		// filter out unwanted items
-		val filteredPosts = posts.filter { it.layout.equals("post") }.sortedByDescending { it.date }
+		val filteredPosts = posts.filter { it.layout == "post" }.sortedByDescending { it.date }
 
 		val tagSet = getAllTagsFromPosts(filteredPosts)
 
@@ -34,7 +34,7 @@ class TaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int = 1, p
 			val taggedPosts = getPostsWithTag(filteredPosts, tag)
 			val numPosts = tag.postCount
 			if(numPosts != taggedPosts.size) {
-				logger.error("${tag} has a mismatch between tag.postCount (${tag.postCount}) and the count of posts with that tag (${taggedPosts.size})")
+				logger.error("$tag has a mismatch between tag.postCount (${tag.postCount}) and the count of posts with that tag (${taggedPosts.size})")
 			}
 			val totalPages = ceil(numPosts.toDouble() / postsPerPage).roundToInt()
 
@@ -57,8 +57,8 @@ class TaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int = 1, p
 
 		val model = mutableMapOf<String, Any>()
 		model.putAll(project.model)
-		model.put("title", "List of tags")
-		model.put("tags", tagSet.filter { it.postCount > 1 }.sortedBy { it.postCount }.reversed())
+		model["title"] = "List of tags"
+		model["tags"] = tagSet.filter { it.postCount > 1 }.sortedBy { it.postCount }.reversed()
 		logger.info("Tag model now $tagSet")
 
 		val renderedContent = renderer.render(model, "taglist")
@@ -72,7 +72,7 @@ class TaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int = 1, p
 	private fun getPostsWithTag(posts: List<Post>, tag: Tag): List<Post> {
 		val taggedPosts = mutableListOf<Post>()
 		posts.forEach { post ->
-			post.tags.forEach { t -> if (t.label.equals(tag.label)) {
+			post.tags.forEach { t -> if (t.label == tag.label) {
 				taggedPosts.add(post)
 			} }
 		}

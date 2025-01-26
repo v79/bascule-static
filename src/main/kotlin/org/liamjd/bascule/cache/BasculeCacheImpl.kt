@@ -2,9 +2,11 @@
 
 package org.liamjd.bascule.cache
 
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.SetSerializer
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
 import org.liamjd.bascule.lib.FileHandler
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.slug
@@ -22,28 +24,28 @@ import java.util.Collections.emptySet
  */
 class BasculeCacheImpl(val project: Project, val fileHandler: FileHandler) : BasculeCache {
 
+    private val cacheSetSerializer: KSerializer<Set<MDCacheItem>> = SetSerializer(MDCacheItem.serializer())
+
     override fun writeCacheFile(mdCacheItems: Set<MDCacheItem>) {
 
         val cache = Cache(getTemplates(project.dirs.templates), mdCacheItems)
-//        val json = Json { prettyPrint = true }
-        val cacheJsonData = Json.encodeToString(Cache.serializer(), cache)
+        val cacheJsonData = Json.encodeToString(cache)
 
         fileHandler.writeFile(project.dirs.sources, getCacheFileName(), cacheJsonData)
-
-//		val templateJsonData = json.stringify(HandlebarsTemplateCacheItem.serializer().set,getTemplates())
-//
-//		println(templateJsonData)
-//		val jsonData = json.stringify(MDCacheItem.serializer().set, mdCacheItems)
-//		fileHandler.writeFile(project.dirs.sources, getCacheFileName(), jsonData)
+        val jsonData = Json.encodeToString(cacheSetSerializer, mdCacheItems)
+        fileHandler.writeFile(project.dirs.sources, getCacheFileName(), jsonData)
     }
 
     override fun loadCacheFile(): Set<MDCacheItem> {
+
+        println(cacheSetSerializer.descriptor)
+
         try {
             val jsonString = fileHandler.readFileAsString(project.dirs.sources, getCacheFileName())
-            val cache = Json.decodeFromString(Cache.serializer(), jsonString)
-            val cacheItems: Set<MDCacheItem> = cache.items
-            return cacheItems
+            val cache = Json.decodeFromString(cacheSetSerializer, jsonString)
+            return cache
         } catch (fnfe: FileNotFoundException) {
+            println("Cache file not found")
             return emptySet()
         }
     }
@@ -84,8 +86,6 @@ class BasculeCacheImpl(val project: Project, val fileHandler: FileHandler) : Bas
         }
         return templateSet
     }
-
-
 }
 
 @Serializable

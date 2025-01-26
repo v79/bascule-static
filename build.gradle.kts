@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 group = "org.liamjd"
-version = "0.3.1"
+version = "0.3.2"
 
 val kotlin_version = "1.6.21"
 val snakeyaml_version = "1.23"
@@ -12,7 +12,7 @@ val handlebars_version = "4.3.1"
 val spek_version = "2.0.7"
 val picocli_version = "3.8.2"
 val jansi_version = "1.17.1"
-val bascule_lib_version = "0.3.1"
+val bascule_lib_version = "0.3.2"
 
 plugins {
     kotlin("jvm") version "1.6.21"
@@ -60,9 +60,8 @@ dependencies {
     implementation("io.insert-koin:koin-core:3.0.2")
 
     // kotlinx serialization, for document caching
-    runtimeOnly("org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.20.0")
+    runtimeOnly("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
-    //	implementation("org.jetbrains.kotlinx:kotlinx-gradle-serialization-plugin:0.6.2'
 
     // for console progress bar?
     implementation("com.vdurmont:etaprinter:1.0.0")

@@ -150,8 +150,8 @@ class Generator : Runnable, KoinComponent {
             }
         }
 
-        logger.info { "${generated} HTML files rendered" }
-        info("${generated} HTML files rendered")
+        logger.info { "$generated HTML files rendered" }
+        info("$generated HTML files rendered")
 
         //TODO: come up with a better asset copying pipeline stage thingy
         assetsProcessor.copyStatics()
@@ -170,13 +170,11 @@ class Generator : Runnable, KoinComponent {
         if (generators.size == 0) {
             logger.error { "No generators found in the pipeline. Aborting execution!" }
             error("No generators found in the pipeline. Aborting execution!")
-//            exitProcess(-1)
         }
 
         // TODO: this still doesn't work with the CACHE!
         val renderer by inject<TemplatePageRenderer> { parametersOf(project) }
         getPostsFromCacheAndPost(pageList).process(generators, project, renderer, fileHandler)
-
 
     }
 
