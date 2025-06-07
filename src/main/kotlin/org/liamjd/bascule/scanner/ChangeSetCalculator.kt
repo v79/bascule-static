@@ -76,7 +76,7 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
             markdownScannerProgressBar.progress(markdownSourceCount, "Cache items found for all files.")
 
             if (markdownSourceCount != allSources.size) {
-                logger.error { "Markdown source count ($markdownSourceCount) != all sources size (${allSources.size}" }
+                logger.error { "Markdown source count ($markdownSourceCount) != all sources size (${allSources.size})" }
             }
 
             logger.info { "Cache items found for all $markdownSourceCount files." }

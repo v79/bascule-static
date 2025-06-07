@@ -156,7 +156,7 @@ class BasculePost(val document: Document) : Post, PostStatus() {
                                 // split string [tagA, tagB, tagC] into a list of three tags, removing spaces
                                 post.tags.addAll(
                                     value.trim().drop(1).dropLast(1).split(",")
-                                        .map { label -> Tag(label.trim(), label.trim(), label.slug().trim()) })
+                                        .map { label -> Tag(label.trim(), label.trim(), label.trim().slug()) })
                             }
 
                             else -> {
