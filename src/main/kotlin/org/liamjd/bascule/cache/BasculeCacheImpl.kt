@@ -38,8 +38,8 @@ class BasculeCacheImpl(val project: Project, val fileHandler: FileHandler) : Bas
     override fun loadCacheFile(): Set<MDCacheItem> {
         try {
             val jsonString = fileHandler.readFileAsString(project.dirs.sources, getCacheFileName())
-            val cache = Json.decodeFromString(cacheSetSerializer, jsonString)
-            return cache
+            val cache = Json.decodeFromString(Cache.serializer(), jsonString)
+            return cache.items
         } catch (fnfe: FileNotFoundException) {
             println("Cache file not found")
             return emptySet()

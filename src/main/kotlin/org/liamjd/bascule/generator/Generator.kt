@@ -167,7 +167,7 @@ class Generator : Runnable, KoinComponent {
             GeneratorPluginLoader(this.javaClass.classLoader, GeneratorPipeline::class, project.parentFolder)
         val generators = generatorPluginLoader.getGenerators(additionalGenerators)
 
-        if (generators.size == 0) {
+        if (generators.isEmpty()) {
             logger.error { "No generators found in the pipeline. Aborting execution!" }
             error("No generators found in the pipeline. Aborting execution!")
         }
