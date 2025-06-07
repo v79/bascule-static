@@ -51,17 +51,23 @@ class TaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int = 1, p
                     val startPos = postsPerPage * (page - 1)
                     val endPos = (postsPerPage * page)
                     val finalEndPos = if (endPos > taggedPosts.size) taggedPosts.size else endPos
-                    val model = buildPaginationModel(
-                        projectModel = project.model,
-                        currentPage = page,
-                        totalPages = totalPages,
-                        posts = taggedPosts.subList(startPos, finalEndPos),
-                        totalPosts = numPosts,
-                        tagLabel = tag.url
-                    )
+                    if (startPos > finalEndPos) {
+                        logger.error("Start position $startPos is greater than final end position $finalEndPos for tag ${tag.label} on page $page. Cannot render page!")
+                        logger.error("\tTagged posts size is ${taggedPosts.size} and total pages is $totalPages; there should be $postsPerPage posts per tag page (${numPosts}/${postsPerPage}=${numPosts / postsPerPage})")
+                        logger.error("\tThis usually happens when a non-blog post (e.g. devlog layout) has a tag applied to it, or when the tag is not applied to any posts at all.")
+                    } else {
+                        val model = buildPaginationModel(
+                            projectModel = project.model,
+                            currentPage = page,
+                            totalPages = totalPages,
+                            posts = taggedPosts.subList(startPos, finalEndPos),
+                            totalPosts = numPosts,
+                            tagLabel = tag.url
+                        )
 
-                    val renderedContent = renderer.render(model, TEMPLATE)
-                    fileHandler.writeFile(thisTagFolder, "${tag.url}$page.html", renderedContent)
+                        val renderedContent = renderer.render(model, TEMPLATE)
+                        fileHandler.writeFile(thisTagFolder, "${tag.url}$page.html", renderedContent)
+                    }
                 }
             }
         }
@@ -91,20 +97,6 @@ class TaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int = 1, p
                 }
             }
         }
-
-
-        /*	posts.forEach { post ->
-                logger.info { "Checking post ${post.title} for its tags"}
-                if(post.title=="Upgraded to Grails 2.3.7") {
-                    logger.warn{"*** Found 'Upgraded to Grails 2.3.7'"}
-                    logger.warn{"Tags are:"}
-                    post.tags.forEach { t ->
-                        logger.warn{"\t$t" }
-                    }
-                *//*post.tags.forEach { t -> if (t.label.equals(tag.label)) {
-				logger.info("Found post ${post.title} with tag ${tag.label}")
-			} }*//*
-		}}*/
         return taggedPosts.toList()
     }
 
@@ -124,7 +116,7 @@ class TaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int = 1, p
                 if (tagSet.contains(tag)) {
                     tagSet.elementAt(tagSet.indexOf(tag)).let {
                         if (it.postCount < tag.postCount) {
-                            logger.info("${it.label}: resetting count from ${it.postCount} to ${tag.postCount}")
+                            logger.info("Tag ${it}: resetting count from ${it.postCount} to ${tag.postCount}")
                             it.postCount = tag.postCount
                         }
                         it.hasPosts = true
