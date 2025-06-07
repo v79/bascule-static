@@ -1,6 +1,6 @@
 package org.liamjd.bascule.plugins
 
-import com.vladsch.flexmark.util.builder.Extension
+import com.vladsch.flexmark.util.misc.Extension
 import org.liamjd.bascule.lib.generators.GeneratorPipeline
 import java.io.File
 import java.net.URL
@@ -67,11 +67,9 @@ class HandlebarPluginLoader(classLoader: ClassLoader, val requiredInterface: KCl
 		return extensionList
 	}
 
-
 }
 
 class GeneratorPluginLoader(classLoader: ClassLoader, val requiredInterface: KClass<out Any>, parentFolder: File) : PluginLoader(classLoader = classLoader, pluginFolder = parentFolder) {
-
 
 	fun getGenerators(generatorNames: List<String>?): ArrayList<KClass<GeneratorPipeline>> {
 		val generatorList = ArrayList<KClass<GeneratorPipeline>>()
@@ -89,7 +87,6 @@ class GeneratorPluginLoader(classLoader: ClassLoader, val requiredInterface: KCl
 
 					// confirm that we have the right type
 					if (kClass.isSubclassOf(requiredInterface)) {
-						println("Adding $kClass to the generator pipeline")
 						@Suppress("UNCHECKED_CAST")
 						generatorList.add(kClass as KClass<GeneratorPipeline>)
 					} else {

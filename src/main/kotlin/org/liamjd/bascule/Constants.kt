@@ -14,14 +14,14 @@ fun ClosedRange<Int>.random() =
  */
 fun String.slug() : String {
 	val slugRegex = Regex("[^a-zA-Z0-9-]")
-	return slugRegex.replace(this.toLowerCase(), "-")
+	return slugRegex.replace(this.lowercase(Locale.getDefault()), "-")
 }
 
 /**
  * Various final values. Extension functions. Plus logos :)
  */
 object Constants {
-	const val VERSION_STRING = "v0.0.19"
+	const val VERSION_STRING = "v0.3.2"
 
 	// TODO: these will all be parameterised
 	val SOURCE_DIR = "sources"

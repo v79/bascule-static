@@ -1,9 +1,9 @@
 package org.liamjd.bascule.assets
 
 import mu.KotlinLogging
-import org.koin.core.parameter.ParameterList
-import org.koin.standalone.KoinComponent
-import org.koin.standalone.inject
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
+import org.koin.core.parameter.parametersOf
 import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.lib.model.Project
 import println.ProgressBar
@@ -19,7 +19,7 @@ class AssetsProcessor(val project: Project) : KoinComponent {
 
 	private val logger = KotlinLogging.logger {}
 
-	private val fileHandler: BasculeFileHandler by inject(parameters = { ParameterList() })
+	private val fileHandler: BasculeFileHandler by inject { parametersOf() }
 	val pathSeparator = FileSystems.getDefault().separator!!
 
 	fun copyStatics() {

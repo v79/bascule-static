@@ -43,13 +43,14 @@ internal fun List<Post>.process(pipeline: ArrayList<KClass<GeneratorPipeline>>, 
 				logger.debug { "Calling function ${func.name} for pipeline ${clazz.key.simpleName}" }
 				debug("Calling function ${func.name} for pipeline ${clazz.key.simpleName}")
 
-				val pipeline = constructPipeline(clazz.key as KClass<out GeneratorPipeline>, project,this@process)
+				@Suppress("UNCHECKED_CAST")
+				val processPipeline = constructPipeline(clazz.key as KClass<out GeneratorPipeline>, project,this@process)
 
 				try {
 					@Suppress("UNCHECKED_CAST")
-					func.callSuspend(pipeline, project, renderer, fileHandler, project.clean)
+					func.callSuspend(processPipeline, project, renderer, fileHandler, project.clean)
 				} catch ( iae: IllegalArgumentException) {
-					error("Unable to construct pipeline for ${pipeline.javaClass.name} with exception: ${iae.message}")
+					error("Unable to construct pipeline for ${processPipeline.javaClass.name} with exception: ${iae.message}")
 				}
 			}
 		}

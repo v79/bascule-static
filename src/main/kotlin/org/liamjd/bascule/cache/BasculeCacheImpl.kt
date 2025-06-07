@@ -2,10 +2,11 @@
 
 package org.liamjd.bascule.cache
 
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.SetSerializer
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
-import kotlinx.serialization.set
 import org.liamjd.bascule.lib.FileHandler
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.slug
@@ -23,67 +24,62 @@ import java.util.Collections.emptySet
  */
 class BasculeCacheImpl(val project: Project, val fileHandler: FileHandler) : BasculeCache {
 
-	override fun writeCacheFile(mdCacheItems: Set<MDCacheItem>) {
+    private val cacheSetSerializer: KSerializer<Set<MDCacheItem>> = SetSerializer(MDCacheItem.serializer())
+    private val templateSetSerializer: KSerializer<Set<HandlebarsTemplateCacheItem>> =
+        SetSerializer(HandlebarsTemplateCacheItem.serializer())
 
-		val cache = Cache(getTemplates(project.dirs.templates),mdCacheItems)
-		val json = Json(JsonConfiguration(prettyPrint = true))
-		val cacheJsonData = json.stringify(Cache.serializer(),cache)
+    override fun writeCacheFile(mdCacheItems: Set<MDCacheItem>) {
+        val cache = Cache(getTemplates(project.dirs.templates), mdCacheItems)
+        val cacheJsonData = Json.encodeToString(cache)
+        fileHandler.writeFile(project.dirs.sources, getCacheFileName(), cacheJsonData)
+        // I used to have a cache for template sets, but I seem to have lost it
+    }
 
-		fileHandler.writeFile(project.dirs.sources,getCacheFileName(),cacheJsonData)
+    override fun loadCacheFile(): Set<MDCacheItem> {
+        try {
+            val jsonString = fileHandler.readFileAsString(project.dirs.sources, getCacheFileName())
+            val cache = Json.decodeFromString(Cache.serializer(), jsonString)
+            return cache.items
+        } catch (fnfe: FileNotFoundException) {
+            println("Cache file not found")
+            return emptySet()
+        }
+    }
 
-//		val templateJsonData = json.stringify(HandlebarsTemplateCacheItem.serializer().set,getTemplates())
-//
-//		println(templateJsonData)
-//		val jsonData = json.stringify(MDCacheItem.serializer().set, mdCacheItems)
-//		fileHandler.writeFile(project.dirs.sources, getCacheFileName(), jsonData)
-	}
+    override fun loadTemplates(): Set<HandlebarsTemplateCacheItem> {
+        try {
+            val jsonString = fileHandler.readFileAsString(project.dirs.sources, getCacheFileName())
+            val json = Json { prettyPrint = true }
+            val cache = json.decodeFromString(Cache.serializer(), jsonString)
+            return cache.layouts
+        } catch (fnfe: FileNotFoundException) {
+            return emptySet()
+        }
+    }
 
-	override fun loadCacheFile(): Set<MDCacheItem> {
-		try {
-			val jsonString = fileHandler.readFileAsString(project.dirs.sources, getCacheFileName())
-			val json = Json(JsonConfiguration(prettyPrint = true))
-			val cache = json.parse(Cache.serializer(),jsonString)
-			val cacheItems: Set<MDCacheItem> = cache.items
-			return cacheItems
-		} catch (fnfe: FileNotFoundException) {
-			return emptySet()
-		}
-	}
+    private fun getCacheFileName(): String {
+        return "${project.name.slug()}.cache.json"
+    }
 
-	override fun loadTemplates(): Set<HandlebarsTemplateCacheItem> {
-		try {
-			val jsonString = fileHandler.readFileAsString(project.dirs.sources, getCacheFileName())
-			val json = Json(JsonConfiguration(prettyPrint = true))
-			val cache = json.parse(Cache.serializer(),jsonString)
-			return cache.layouts
-		} catch (fnfe: FileNotFoundException) {
-			return emptySet()
-		}
-	}
-
-	private fun getCacheFileName(): String {
-		return "${project.name.slug()}.cache.json"
-	}
-
-	/**
-	 * Read the existing templates from file and create HandlebarsTemplateCacheItem cache items for each of them
-	 */
-	// TODO: move to interface
-	fun getTemplates(templateDir: File): Set<HandlebarsTemplateCacheItem> {
-		val templateSet = mutableSetOf<HandlebarsTemplateCacheItem>()
-		val templates = templateDir.listFiles(FileFilter { it.extension.toLowerCase() == "hbs" })
-		if(templates != null) {
-			templates.forEach { file ->
-				println("Loading template details for ${file.name}")
-				val hbCacheItem = HandlebarsTemplateCacheItem(file.name.substringBeforeLast("."), file.absolutePath, file.length(), LocalDateTime.ofInstant(Instant.ofEpochMilli(file.lastModified()), TimeZone
-						.getDefault().toZoneId()))
-				templateSet.add(hbCacheItem)
-			}
-		}
-		return templateSet
-	}
-
-
+    /**
+     * Read the existing templates from file and create HandlebarsTemplateCacheItem cache items for each of them
+     */
+    // TODO: move to interface
+    fun getTemplates(templateDir: File): Set<HandlebarsTemplateCacheItem> {
+        val templateSet = mutableSetOf<HandlebarsTemplateCacheItem>()
+        val templates = templateDir.listFiles(FileFilter { it.extension.lowercase(Locale.getDefault()) == "hbs" })
+        templates?.forEach { file ->
+            println("Loading template details for ${file.name}")
+            val hbCacheItem = HandlebarsTemplateCacheItem(
+                file.name.substringBeforeLast("."), file.absolutePath, file.length(), LocalDateTime.ofInstant(
+                    Instant.ofEpochMilli(file.lastModified()), TimeZone
+                        .getDefault().toZoneId()
+                )
+            )
+            templateSet.add(hbCacheItem)
+        }
+        return templateSet
+    }
 }
 
 @Serializable
