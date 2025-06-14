@@ -31,12 +31,15 @@ class MarkdownScanner(val project: Project) : KoinComponent {
      * This will be the complete set of all pages in the site, sorted
      * Only those with a [MDCacheItem.rerender] flag will need to be re-rendered as HTML
      */
-    fun calculateRenderSet(): Set<CacheAndPost> {
+    fun calculateRenderSet(useCache: Boolean = true): Set<CacheAndPost> {
 
         logger.debug { "Calculate render set!!!!" }
 
         // this is everything we know from the cache. it might even be empty!
-        val cachedSet = cache.loadCacheFile()
+        val cachedSet = if(useCache) cache.loadCacheFile() else {
+            logger.debug { "Cache is not being used, so the cached set will be empty" }
+            emptySet()
+        }
 //		val templateSet = cache.loadTemplates() - isn't working just now
         val templateSet: Set<HandlebarsTemplateCacheItem> = emptySet()
 
