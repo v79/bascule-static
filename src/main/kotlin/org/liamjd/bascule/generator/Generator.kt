@@ -25,6 +25,7 @@ import org.liamjd.bascule.plugins.HandlebarPluginLoader
 import org.liamjd.bascule.random
 import org.liamjd.bascule.render.MarkdownToHTMLRenderer
 import org.liamjd.bascule.scanner.MarkdownScanner
+import org.liamjd.bascule.slug
 import picocli.CommandLine
 import println.debug
 import println.info
@@ -32,7 +33,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintStream
 import kotlin.reflect.full.createInstance
-import kotlin.system.exitProcess
 
 val DEFAULT_PROCESSORS = arrayOf(
     "org.liamjd.bascule.pipeline.IndexPageGenerator",
@@ -51,7 +51,7 @@ class Generator : Runnable, KoinComponent {
 
     @CommandLine.Option(
         names = ["-c", "--clean"],
-        description = ["do not use caching; clears generation directory for a clean build"]
+        description = ["do not use caching; clears generation directory and deletes cache for a clean build"]
     )
     var clean: Boolean = false
 
@@ -111,7 +111,11 @@ class Generator : Runnable, KoinComponent {
         project.clean = clean
         info(Constants.logos[(0 until Constants.logos.size).random()])
         info("Generating your website")
-        info("Reading yaml configuration file $yamlConfig")
+        if(clean) {
+            info("Cleaning the output directory before generation and deleting the cache")
+        } else {
+            info("Reading yaml configuration file $yamlConfig")
+        }
 
         // TODO: be less aggressive with this, use some sort of caching :)
         // if I don't delete, how do I keep track of deleted files?
@@ -123,13 +127,15 @@ class Generator : Runnable, KoinComponent {
 
         val walker = MarkdownScanner(project)
 
-        val pageList = walker.calculateRenderSet()
+        val pageList = walker.calculateRenderSet(!clean)
         println("walker.calculateRenderSet() has returned ${pageList.size} CacheAndPost items")
 
         val markdownRenderer = MarkdownToHTMLRenderer(project)
 
         var generated = 0
         if (clean) {
+            logger.info("Removing old cache file and clearing output directory")
+            fileHandler.deleteFile(project.dirs.sources,"${project.name.slug()}.cache.json")
             pageList.forEachIndexed { index, cacheAndPost ->
                 cacheAndPost.post?.let {
                     it.rawContent =

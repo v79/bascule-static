@@ -14,132 +14,146 @@ import java.util.*
  */
 class BasculeFileHandler : FileHandler {
 
-	private val logger = KotlinLogging.logger {}
-	override val pathSeparator = FileSystems.getDefault().separator!!
+    private val logger = KotlinLogging.logger {}
+    override val pathSeparator = FileSystems.getDefault().separator!!
 
-	override fun createDirectories(path: String): Boolean {
-		val folders = File(path.replace("/", pathSeparator))
-		return folders.mkdirs()
-	}
+    override fun createDirectories(path: String): Boolean {
+        val folders = File(path.replace("/", pathSeparator))
+        return folders.mkdirs()
+    }
 
-	/**
-	 * Create a directory tree matching the given file path
-	 * @param[path] path of directories to create
-	 */
-	override fun createDirectories(path: File): Boolean {
-		return path.mkdirs()
-	}
+    /**
+     * Create a directory tree matching the given file path
+     * @param[path] path of directories to create
+     */
+    override fun createDirectories(path: File): Boolean {
+        return path.mkdirs()
+    }
 
-	/**
-	 * Create a directory with the given folderName in the file path
-	 * If the folder already exists, it is returned. Otherwise, the new folder is created and returned
-	 */
-	override fun createDirectory(parentPath: String, folderName: String): File {
-		val folder = File(parentPath.replace("/", pathSeparator), folderName)
-		if (!folder.exists()) {
-			if (folder.mkdir()) {
-				return folder
-			}
-		} else {
-			return folder
-		}
-		logger.error {"Could not create directory $parentPath$pathSeparator$folderName"}
-		throw Exception("Could not create directory $parentPath$pathSeparator$folderName")
-	}
+    /**
+     * Create a directory with the given folderName in the file path
+     * If the folder already exists, it is returned. Otherwise, the new folder is created and returned
+     */
+    override fun createDirectory(parentPath: String, folderName: String): File {
+        val folder = File(parentPath.replace("/", pathSeparator), folderName)
+        if (!folder.exists()) {
+            if (folder.mkdir()) {
+                return folder
+            }
+        } else {
+            return folder
+        }
+        logger.error { "Could not create directory $parentPath$pathSeparator$folderName" }
+        throw Exception("Could not create directory $parentPath$pathSeparator$folderName")
+    }
 
-	override fun createDirectories(parentPath: String, folderName: String): File {
-		val folder = File(parentPath.replace("/", pathSeparator), folderName)
-		if (!folder.exists()) {
-			if (folder.mkdirs()) {
-				return folder
-			}
-		} else {
-			return folder
-		}
-		logger.error {"Could not create directories $parentPath\$folderName"}
-		throw Exception("Could not create directories $parentPath\$folderName")
-	}
+    override fun createDirectories(parentPath: String, folderName: String): File {
+        val folder = File(parentPath.replace("/", pathSeparator), folderName)
+        if (!folder.exists()) {
+            if (folder.mkdirs()) {
+                return folder
+            }
+        } else {
+            return folder
+        }
+        logger.error { "Could not create directories $parentPath\$folderName" }
+        throw Exception("Could not create directories $parentPath\$folderName")
+    }
 
-	@Throws(FileNotFoundException::class)
-	override fun getFileStream(folder: File, fileName: String): InputStream {
-		val file = File(folder, fileName)
-		if(!file.exists() || !file.canRead()) throw FileNotFoundException("Could not find (or read) file ${folder.name}/$fileName")
-		return file.inputStream()
-	}
+    @Throws(FileNotFoundException::class)
+    override fun getFileStream(folder: File, fileName: String): InputStream {
+        val file = File(folder, fileName)
+        if (!file.exists() || !file.canRead()) throw FileNotFoundException("Could not find (or read) file ${folder.name}/$fileName")
+        return file.inputStream()
+    }
 
-	override fun readFileAsString(folder: File, fileName: String): String {
-		val fileStream = getFileStream(folder,fileName)
-		return fileStream.bufferedReader().use(BufferedReader::readText)
-	}
+    override fun readFileAsString(folder: File, fileName: String): String {
+        val fileStream = getFileStream(folder, fileName)
+        return fileStream.bufferedReader().use(BufferedReader::readText)
+    }
 
-	/**
-	 * Reads a file from /src/main/resources/_sourceDir_ and writes it to _destination_.
-	 * You can override the filename by supplying a value for _destFileName_
-	 * @param[fileName] Name of the file to copy
-	 * @param[destination] Folder the file is to be copied to
-	 * @param[destFileName] The final name of the file once copied. If left out, the destination file will have the same name as the source
-	 * @param[sourceDir] the folder within /src/main/resources to copy from. Optional.
-	 */
-	override fun copyFileFromResources(fileName: String, destination: File, destFileName: String?, sourceDir: String) {
-		val data = readFileFromResources(sourceDir, fileName)
-		val finalFileName = destFileName ?: fileName
+    /**
+     * Reads a file from /src/main/resources/_sourceDir_ and writes it to _destination_.
+     * You can override the filename by supplying a value for _destFileName_
+     * @param[fileName] Name of the file to copy
+     * @param[destination] Folder the file is to be copied to
+     * @param[destFileName] The final name of the file once copied. If left out, the destination file will have the same name as the source
+     * @param[sourceDir] the folder within /src/main/resources to copy from. Optional.
+     */
+    override fun copyFileFromResources(fileName: String, destination: File, destFileName: String?, sourceDir: String) {
+        val data = readFileFromResources(sourceDir, fileName)
+        val finalFileName = destFileName ?: fileName
 
-		writeFile(destination, finalFileName, data)
-	}
+        writeFile(destination, finalFileName, data)
+    }
 
-	/**
-	 * Write the specified data to the file finalFileName in the directory destination
-	 * @param[data] The string to write
-	 * @param[finalFileName] The file name
-	 * @param[destination] The destination directory
-	 */
-	override fun writeFile(destination: File, finalFileName: String, data: String) {
-		File(destination, finalFileName).bufferedWriter().use { out ->
-			out.write(data)
-		}
-	}
+    /**
+     * Write the specified data to the file finalFileName in the directory destination
+     * @param[data] The string to write
+     * @param[finalFileName] The file name
+     * @param[destination] The destination directory
+     */
+    override fun writeFile(destination: File, finalFileName: String, data: String) {
+        File(destination, finalFileName).bufferedWriter().use { out ->
+            out.write(data)
+        }
+    }
 
-	/**
-	 * Read a text file from the project resource package
-	 */
-	override fun readFileFromResources(sourceDir: String, fileName: String): String {
-		return javaClass.getResource(sourceDir + fileName).readText()
-	}
+    /**
+     * Read a text file from the project resource package
+     */
+    override fun readFileFromResources(sourceDir: String, fileName: String): String {
+        return javaClass.getResource(sourceDir + fileName).readText()
+    }
 
-	/**
-	 * Delete all files of the specified type from the given directory
-	 * @param[folder] the folder to empty
-	 * @param[fileType] the type of file to delete, e.g. ".html"
-	 */
-	override fun emptyFolder(folder: File, fileType: String) {
-		logger.debug {"Purging folder ${folder.name} of '$fileType' files" }
-		folder.walk().forEach {
-			if (it != folder && it.name.endsWith(fileType)) {
-				it.delete()
-			}
-		}
-	}
+    /**
+     * Delete all files of the specified type from the given directory
+     * @param[folder] the folder to empty
+     * @param[fileType] the type of file to delete, e.g. ".html"
+     */
+    override fun emptyFolder(folder: File, fileType: String) {
+        logger.debug { "Purging folder ${folder.name} of '$fileType' files" }
+        folder.walk().forEach {
+            if (it != folder && it.name.endsWith(fileType)) {
+                it.delete()
+            }
+        }
+    }
 
-	/**
-	 * Delete everything in the given folder. Destructive!
-	 * @param[folder] the folder to empty recursively
-	 */
-	override fun emptyFolder(folder: File) {
-		logger.debug {"Purging folder ${folder.name}" }
-		folder.deleteRecursively()
-	}
+    /**
+     * Delete everything in the given folder. Destructive!
+     * @param[folder] the folder to empty recursively
+     */
+    override fun emptyFolder(folder: File) {
+        logger.debug { "Purging folder ${folder.name}" }
+        folder.deleteRecursively()
+    }
 
-	override fun copyFile(source: File, destination: File): File {
-		logger.debug {"Copying '${source.path}' to '${destination.path}'" }
-		return source.copyTo(destination, overwrite = true)
-	}
+    override fun copyFile(source: File, destination: File): File {
+        logger.debug { "Copying '${source.path}' to '${destination.path}'" }
+        return source.copyTo(destination, overwrite = true)
+    }
 
-	override fun getFile(folder: File, fileName: String) : File {
-		return File(folder,fileName)
-	}
+    override fun getFile(folder: File, fileName: String): File {
+        return File(folder, fileName)
+    }
 
-	override fun readFileAsString(fileName: String) : String {
-		val file = File(fileName)
-		return readFileAsString(file.parentFile,file.name)
-	}
-	}
+    override fun readFileAsString(fileName: String): String {
+        val file = File(fileName)
+        return readFileAsString(file.parentFile, file.name)
+    }
+
+    // TODO: Move this to the FileHandler interface
+    fun deleteFile(folder: File, fileName: String) {
+        val file = File(folder, fileName)
+        if (file.exists()) {
+            if (file.delete()) {
+                logger.info { "Deleted file: ${file.path}" }
+            } else {
+                logger.error { "Failed to delete file: ${file.path}" }
+            }
+        } else {
+            logger.warn { "File not found for deletion: ${file.path}" }
+        }
+    }
+}
