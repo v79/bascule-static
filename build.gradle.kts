@@ -24,6 +24,13 @@ plugins {
 repositories {
     mavenCentral()
     mavenLocal()
+    maven {
+        url = uri("https://maven.pkg.github.com/v79/bascule-lib")
+        credentials {
+            username = (project.findProperty("gpr.user") ?: System.getenv("GH_USERNAME")) as String?
+            password = (project.findProperty("gpr.key") ?: System.getenv("GH_PAT_REPO")) as String?
+        }
+    }
 }
 
 dependencies {
