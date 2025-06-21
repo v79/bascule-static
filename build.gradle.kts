@@ -42,7 +42,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.0.1")
 
     // bascule library
-    implementation("org.liamjd.bascule-lib:bascule-lib:$bascule_lib_version")
+    implementation("org.liamjd.bascule:bascule-lib:$bascule_lib_version")
 
     // handlebars templating
     implementation("com.github.jknack:handlebars:$handlebars_version")
