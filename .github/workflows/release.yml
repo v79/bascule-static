@@ -17,6 +17,12 @@ jobs:
           distribution: 'corretto'
           java-version: '17'
 
+      - name: Set up Gradle authentication
+        run: |
+          mkdir -p ~/.gradle
+          echo "githubUsername=${GITHUB_ACTOR}" >> ~/.gradle/gradle.properties
+          echo "githubToken=${{ secrets.GITHUB_TOKEN }}" >> ~/.gradle/gradle.properties
+
       - name: Cache Gradle packages
         uses: actions/cache@v4
         with:
