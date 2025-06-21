@@ -27,8 +27,8 @@ repositories {
     maven {
         url = uri("https://maven.pkg.github.com/v79/bascule-lib")
         credentials {
-            username = (project.findProperty("gpr.user") ?: System.getenv("GH_USERNAME")) as String?
-            password = (project.findProperty("gpr.key") ?: System.getenv("GH_PAT_REPO")) as String?
+            username = (project.findProperty("githubUsername") ?: System.getenv("GITHUB_ACTOR")) as String?
+            password = (project.findProperty("githubToken") ?: System.getenv("GH_PAT_REPO")) as String?
         }
     }
 }
