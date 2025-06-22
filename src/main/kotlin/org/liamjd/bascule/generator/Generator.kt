@@ -55,17 +55,25 @@ class Generator : Runnable, KoinComponent {
     )
     var clean: Boolean = false
 
+    @CommandLine.Option(
+        names = ["-p", "--project"],
+        description = ["YAML configuration file name (without extension) to use instead of the default. Useful if the project yaml name is different from the folder name."],
+    )
+    var projectName: String? = null
+
     private val fileHandler: BasculeFileHandler by inject { parametersOf() }
     private val currentDirectory = System.getProperty("user.dir")!!
-    private val yamlConfig: String
-    private val parentFolder: File
-
-    init {
-        parentFolder = File(currentDirectory)
-        yamlConfig = "${parentFolder.name}.yaml"
-    }
+    private lateinit var yamlConfig: String
+    private val parentFolder: File = File(currentDirectory)
 
     override fun run() {
+
+        yamlConfig = if (!projectName.isNullOrBlank()) {
+            "${projectName}.yaml"
+        } else {
+            "${parentFolder.name}.yaml"
+        }
+
         // build the basic project from the default configuration file
         println("Opening config file ${parentFolder.absolutePath}/$yamlConfig")
         val configText = File(parentFolder.absolutePath, yamlConfig).readText()
@@ -111,7 +119,7 @@ class Generator : Runnable, KoinComponent {
         project.clean = clean
         info(Constants.logos[(0 until Constants.logos.size).random()])
         info("Generating your website")
-        if(clean) {
+        if (clean) {
             info("Cleaning the output directory before generation and deleting the cache")
         } else {
             info("Reading yaml configuration file $yamlConfig")
@@ -135,7 +143,7 @@ class Generator : Runnable, KoinComponent {
         var generated = 0
         if (clean) {
             logger.info("Removing old cache file and clearing output directory")
-            fileHandler.deleteFile(project.dirs.sources,"${project.name.slug()}.cache.json")
+            fileHandler.deleteFile(project.dirs.sources, "${project.name.slug()}.cache.json")
             pageList.forEachIndexed { index, cacheAndPost ->
                 cacheAndPost.post?.let {
                     it.rawContent =
