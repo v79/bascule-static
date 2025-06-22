@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 group = "org.liamjd"
-version = "0.3.3"
+version = "0.3.4"
 
 val kotlin_version = "1.6.21"
 val snakeyaml_version = "1.23"
