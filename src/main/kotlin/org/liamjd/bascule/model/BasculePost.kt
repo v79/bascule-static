@@ -63,9 +63,9 @@ class BasculePost(val document: Document) : Post, PostStatus() {
     }
 
     /**
-     * Construct a BasculePost from the source markdown document.
-     * Ideally the document should contain a yaml front piece describing the post.
-     * If the yaml does not exist, it will make some best guesses from the file.
+     * Construct a BasculePost from the source Markdown document.
+     * Ideally, the document should contain a YAML front piece describing the post.
+     * If the YAML does not exist, it will make some best guesses from the file.
      * Returns a PostStatus.BasculePost if successful, or PostStatus.PostGenError if unable to parse the content.
      *
      */
@@ -92,7 +92,7 @@ class BasculePost(val document: Document) : Post, PostStatus() {
                 return buildPostWithoutYaml(file, document)
             }
 
-            val requiredFields = PostMetaData.values().toSet().filter { it.required }
+            val requiredFields = PostMetaData.entries.toSet().filter { it.required }
             requiredFields.forEach {
                 if (!data.containsKey(it.name)) {
                     // a required field is missing completely!
@@ -222,7 +222,7 @@ internal enum class PostMetaData(val required: Boolean, val multipleAllowed: Boo
 
     companion object {
         fun contains(key: String): Boolean {
-            for (md in values()) {
+            for (md in PostMetaData.entries) {
                 if (md.name == key) return true
             }
             return false
