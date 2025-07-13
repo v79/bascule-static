@@ -49,6 +49,7 @@ class BasculePost(val document: Document) : Post, PostStatus() {
     var destinationFolder: File? = null
 
     /**
+     * @Deprecated This function doesn't actually work because the content is not parsed from the document.
      * Return a short excerpt from the post, stripping out any HTML and returning just plain text
      */
     override fun getSummary(characterCount: Int): String {
@@ -57,6 +58,9 @@ class BasculePost(val document: Document) : Post, PostStatus() {
         return matcher.replaceAll("").plus("...")
     }
 
+    /**
+     * Not implemented yet. This function should group tags by their category, if they have one.
+     */
     override fun groupTagsByCategory(): Map<out String, Set<Tag>?> {
         println("Grouping tags by category - NOT YET IMPLEMENTED")
         return emptyMap()
@@ -122,7 +126,7 @@ class BasculePost(val document: Document) : Post, PostStatus() {
 
                         if (!metaData.multipleAllowed && valueList != null && valueList.size > 1) {
                             return PostGenError(
-                                "Field '${metaData.name}' is only allowed a single value; found '${it.value[0]}' in source file '$file.name'",
+                                "Field '${metaData.name}' is only allowed a single value; found '${valueList.size}' in source file '${file.name}'",
                                 file.name,
                                 metaData.name
                             )
