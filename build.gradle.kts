@@ -12,6 +12,7 @@ val handlebars_version = "4.4.0"
 val picocli_version = "3.8.2"
 val jansi_version = "1.17.1"
 val bascule_lib_version = "0.4.0"
+val junit_version = "5.10.2"
 
 plugins {
     kotlin("jvm") version "1.9.20"
@@ -34,9 +35,9 @@ repositories {
 
 dependencies {
     // stdlib
-    implementation(kotlin("stdlib",kotlin_version))
+    implementation(kotlin("stdlib", kotlin_version))
     // reflection
-    api(kotlin("reflect",kotlin_version))
+    api(kotlin("reflect", kotlin_version))
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.0.1")
 
@@ -73,18 +74,16 @@ dependencies {
     implementation("com.vdurmont:etaprinter:1.0.0")
 
     // Testing
-    implementation("io.insert-koin:koin-test:3.0.2")
-
-    // testing
-    testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlin_version")
-
+// Testing
+    testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:${kotlin_version}")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:${junit_version}")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junit_version}")
     testImplementation("io.mockk:mockk:${mockk_version}")
 
 }
 
 tasks.test {
-    useJUnitPlatform {
-    }
+    useJUnitPlatform()
 }
 
 java {
