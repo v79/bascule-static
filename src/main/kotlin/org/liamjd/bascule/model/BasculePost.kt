@@ -96,7 +96,7 @@ class BasculePost(val document: Document) : Post, PostStatus() {
             requiredFields.forEach {
                 if (!data.containsKey(it.name)) {
                     // a required field is missing completely!
-                    return PostGenError("Required field '${it.name} not found", file.name, it.name)
+                    return PostGenError("Required field '${it.name}' not found", file.name, it.name)
                 }
             }
 
