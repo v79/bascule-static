@@ -1,24 +1,23 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 group = "org.liamjd"
-version = "0.3.4"
+version = "0.4.0"
 
-val kotlin_version = "1.6.21"
-val snakeyaml_version = "1.23"
+val kotlin_version = "1.9.20"
+val snakeyaml_version = "2.4"
 val mockk_version = "1.12.4"
-val flexmark_version = "0.61.0"
+val flexmark_version = "0.64.8"
 val slf4j_version = "1.7.26"
-val handlebars_version = "4.3.1"
-val spek_version = "2.0.7"
+val handlebars_version = "4.4.0"
 val picocli_version = "3.8.2"
 val jansi_version = "1.17.1"
-val bascule_lib_version = "0.3.2"
+val bascule_lib_version = "0.4.0"
 
 plugins {
-    kotlin("jvm") version "1.6.21"
+    kotlin("jvm") version "1.9.20"
     `maven-publish`
-    id("com.github.johnrengelman.shadow") version "6.1.0"
-    kotlin("plugin.serialization") version "1.6.21"
+    id("com.gradleup.shadow") version "8.3.8"
+    kotlin("plugin.serialization") version "1.9.21"
 }
 
 repositories {
@@ -35,9 +34,9 @@ repositories {
 
 dependencies {
     // stdlib
-    implementation(kotlin("stdlib","1.6.21"))
+    implementation(kotlin("stdlib",kotlin_version))
     // reflection
-    api(kotlin("reflect","1.6.21"))
+    api(kotlin("reflect",kotlin_version))
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.0.1")
 
@@ -77,10 +76,7 @@ dependencies {
     implementation("io.insert-koin:koin-test:3.0.2")
 
     // testing
-//    testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlin_version")
-
-    testImplementation("org.spekframework.spek2:spek-dsl-jvm:$spek_version")
-    testRuntimeOnly("org.spekframework.spek2:spek-runner-junit5:$spek_version")
+    testImplementation("org.jetbrains.kotlin:kotlin-test:$kotlin_version")
 
     testImplementation("io.mockk:mockk:${mockk_version}")
 
@@ -88,15 +84,20 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform {
-        includeEngines("spek2")
     }
 }
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
 tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "11"
+    kotlinOptions {
+        jvmTarget = "21"
+    }
 }
 
-tasks.withType<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar> {
+tasks.shadowJar {
     archiveClassifier.set("")
     minimize()
     manifest {
