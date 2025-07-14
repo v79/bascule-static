@@ -35,6 +35,10 @@ class PostBuilder(val project: Project) : KoinComponent {
 	}
 
 	private fun parseMarkdown(file: File): Document {
+		println("Filehandler: $fileHandler")
+		println("Parsing ${file.name}")
+		print(file.parentFile)
+
 		val text = fileHandler.readFileAsString(file.parentFile, file.name)
 		return mdParser.parse(text)
 	}

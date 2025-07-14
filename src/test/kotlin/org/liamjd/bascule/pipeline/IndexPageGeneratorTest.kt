@@ -4,7 +4,12 @@ import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.koin.core.context.startKoin
+import org.koin.core.context.stopKoin
+import org.koin.dsl.module
+import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.lib.model.Directories
+import org.liamjd.bascule.lib.model.Post
 import org.liamjd.bascule.lib.model.Project
 import java.io.File
 import kotlin.test.Test
@@ -12,7 +17,9 @@ import kotlin.test.Test
 class IndexPageGeneratorTest {
 
     private val mockFileH = mockk<org.liamjd.bascule.lib.FileHandler>()
-    // This value comes from the Project constructor, and is based on System.getProperty("user.dir")
+    private val mockBFH = mockk<BasculeFileHandler>()
+
+    // This value comes from the Project constructor and is based on System.getProperty("user.dir")
     // Which I don't like
     private var outputFile = File("C:\\Users\\liamj\\Development\\Bascule\\bascule-static\\site")
     private val yamlConfig = """
@@ -40,20 +47,28 @@ class IndexPageGeneratorTest {
         custom = null
     )
 
+    private val koinModule = module {
+        factory { mockFileH }
+        factory { mockBFH }
+    }
 
     @BeforeEach
     fun setUp() {
+        startKoin {
+            modules(koinModule)
+        }
     }
 
 
     @AfterEach
     fun tearDown() {
+        stopKoin()
     }
 
     @Test
-    fun `build index page with no posts`() {
+    fun `build index page with no posts and no content`() {
         // setup
-        val generator = IndexPageGenerator(emptyList(), -0, 1)
+        val generator = IndexPageGenerator(emptyList(), 0, 1)
         val mockRenderer = mockk<org.liamjd.bascule.lib.render.TemplatePageRenderer>()
 
 
@@ -66,6 +81,29 @@ class IndexPageGeneratorTest {
 
             // Verify that the output file was created
             verify { mockFileH.writeFile(outputFile, "index.html", "<html></html>") }
+        }
+    }
+
+    @Test
+    fun `build index page with one post`() {
+        // setup
+        val mockPost = mockk<Post>(relaxed = true)
+        val generator = IndexPageGenerator(listOf(mockPost), 1, 1)
+        val mockRenderer = mockk<org.liamjd.bascule.lib.render.TemplatePageRenderer>()
+
+        every { mockPost.layout } returns "post"
+        every { mockRenderer.render(any(), any()) } returns "<html></html>"
+        every { mockFileH.writeFile(any(), any(), any()) } just Runs
+        every { mockFileH.readFileAsString(any()) } returns "Content of my post"
+        every { mockPost.sourceFileName } returns "/posts/my-post.md"
+        every { mockBFH.readFileAsString(any(), "my-post.md") } returns "Content of my post"
+        every { mockBFH.getFileStream(any(), "my-post.md") } returns "Content of my post".byteInputStream()
+        // execute
+        runBlocking {
+            generator.process(project, mockRenderer, mockFileH, clean = true)
+
+            // Verify that the output file was created
+            verify { mockFileH.writeFile(outputFile, "index.html", "<html>Content of my post</html>") }
         }
     }
 
