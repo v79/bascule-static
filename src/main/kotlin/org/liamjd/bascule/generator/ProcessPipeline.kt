@@ -30,7 +30,7 @@ internal fun List<Post>.process(pipeline: ArrayList<KClass<GeneratorPipeline>>, 
 	val processors = mutableMapOf<KClass<*>, KFunction<*>>()
 
 	for (p in pipeline) {
-		val processorFunc = p.declaredFunctions.find { it.name.equals("process") }
+		val processorFunc = p.declaredFunctions.find { it.name == "process" }
 		if (processorFunc != null) {
 			processors.put(p, processorFunc)
 		}

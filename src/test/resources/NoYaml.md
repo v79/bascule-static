@@ -1,0 +1,1 @@
+Simple post with no yaml data
