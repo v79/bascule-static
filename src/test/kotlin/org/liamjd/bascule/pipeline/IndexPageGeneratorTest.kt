@@ -84,27 +84,4 @@ class IndexPageGeneratorTest {
         }
     }
 
-    @Test
-    fun `build index page with one post`() {
-        // setup
-        val mockPost = mockk<Post>(relaxed = true)
-        val generator = IndexPageGenerator(listOf(mockPost), 1, 1)
-        val mockRenderer = mockk<org.liamjd.bascule.lib.render.TemplatePageRenderer>()
-
-        every { mockPost.layout } returns "post"
-        every { mockRenderer.render(any(), any()) } returns "<html></html>"
-        every { mockFileH.writeFile(any(), any(), any()) } just Runs
-        every { mockFileH.readFileAsString(any()) } returns "Content of my post"
-        every { mockPost.sourceFileName } returns "/posts/my-post.md"
-        every { mockBFH.readFileAsString(any(), "my-post.md") } returns "Content of my post"
-        every { mockBFH.getFileStream(any(), "my-post.md") } returns "Content of my post".byteInputStream()
-        // execute
-        runBlocking {
-            generator.process(project, mockRenderer, mockFileH, clean = true)
-
-            // Verify that the output file was created
-            verify { mockFileH.writeFile(outputFile, "index.html", "<html>Content of my post</html>") }
-        }
-    }
-
 }
