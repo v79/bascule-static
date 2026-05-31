@@ -2,8 +2,6 @@ package org.liamjd.bascule.model
 
 import com.vladsch.flexmark.ext.yaml.front.matter.AbstractYamlFrontMatterVisitor
 import com.vladsch.flexmark.util.ast.Document
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.liamjd.bascule.lib.model.Post
 import org.liamjd.bascule.lib.model.PostLink
 import org.liamjd.bascule.lib.model.Project
@@ -73,7 +71,7 @@ class BasculePost(val document: Document) : Post, PostStatus() {
      * Returns a PostStatus.BasculePost if successful, or PostStatus.PostGenError if unable to parse the content.
      *
      */
-    companion object Builder : KoinComponent, Comparator<BasculePost> {
+    companion object Builder : Comparator<BasculePost> {
 
         /**
          * Sorting comparator by date order
@@ -86,8 +84,12 @@ class BasculePost(val document: Document) : Post, PostStatus() {
             }
         }
 
-        fun createPostFromYaml(file: File, document: Document, project: Project): PostStatus {
-            val yamlVisitor by inject<AbstractYamlFrontMatterVisitor>()
+        fun createPostFromYaml(
+            file: File,
+            document: Document,
+            project: Project,
+            yamlVisitor: AbstractYamlFrontMatterVisitor
+        ): PostStatus {
             yamlVisitor.visit(document)
             val data = yamlVisitor.data
 

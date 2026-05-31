@@ -9,9 +9,7 @@ import kotlinx.serialization.encoding.CompositeDecoder
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import org.liamjd.bascule.lib.model.PostLink
-import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 
 /**
  * Used by kotlinx.serialization in order to write the [PostLink] class to a Json file.
@@ -28,7 +26,7 @@ object PostLinkSerializer : KSerializer<PostLink> {
                 CompositeDecoder.DECODE_DONE -> break@loop
                 0 -> title = dec.decodeStringElement(descriptor, i)
                 1 -> url = dec.decodeStringElement(descriptor, i)
-                2 -> date = longToLocalDate(dec.decodeLongElement(descriptor, i))
+                2 -> date = DateConversions.epochSecondsToLocalDate(dec.decodeLongElement(descriptor, i))
                 else -> throw SerializationException("Unknown index $i")
             }
         }
@@ -46,7 +44,7 @@ object PostLinkSerializer : KSerializer<PostLink> {
         val compositeOutput = encoder.beginStructure(descriptor)
         compositeOutput.encodeStringElement(descriptor, 0, value.title)
         compositeOutput.encodeStringElement(descriptor, 1, value.url)
-        compositeOutput.encodeLongElement(descriptor, 2, localDateToLong(value.date))
+        compositeOutput.encodeLongElement(descriptor, 2, DateConversions.localDateToEpochSeconds(value.date))
         compositeOutput.endStructure(descriptor)
     }
 
@@ -55,16 +53,6 @@ object PostLinkSerializer : KSerializer<PostLink> {
         element("url", descriptor = PrimitiveSerialDescriptor("url", PrimitiveKind.STRING))
         element("date", descriptor = PrimitiveSerialDescriptor("date", PrimitiveKind.LONG))
 
-    }
-
-    private fun localDateToLong(date: LocalDate): Long {
-        val zoneId = ZoneId.systemDefault() // or: ZoneId.of("Europe/Oslo");
-        return date.atStartOfDay(zoneId).toEpochSecond()
-    }
-
-    private fun longToLocalDate(longValue: Long): LocalDate {
-        val zoneId = ZoneId.systemDefault() // or: ZoneId.of("Europe/Oslo");
-        return Instant.ofEpochSecond(longValue).atZone(ZoneId.systemDefault()).toLocalDate()
     }
 
 }

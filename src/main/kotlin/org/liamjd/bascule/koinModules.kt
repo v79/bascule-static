@@ -1,6 +1,6 @@
 package org.liamjd.bascule
 
-import com.vladsch.flexmark.ext.yaml.front.matter.AbstractYamlFrontMatterVisitor
+import org.koin.core.parameter.parametersOf
 import org.koin.dsl.module
 import org.liamjd.bascule.cache.BasculeCache
 import org.liamjd.bascule.cache.BasculeCacheImpl
@@ -9,6 +9,7 @@ import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.lib.render.TemplatePageRenderer
 import org.liamjd.bascule.render.HandlebarsRenderer
 import org.liamjd.bascule.scanner.ChangeSetCalculator
+import org.liamjd.bascule.scanner.MarkdownScanner
 import org.liamjd.bascule.scanner.PostBuilder
 
 /**
@@ -16,11 +17,20 @@ import org.liamjd.bascule.scanner.PostBuilder
  * DO NOT REMOVE THE 'USELESS CASTS' - they are required for Koin to work correctly
  */
 val generationModule = module {
-	factory { AbstractYamlFrontMatterVisitor() }
 	factory { (project: Project, fileHandler: FileHandler) -> BasculeCacheImpl(project, fileHandler) as BasculeCache }
 	factory { (project: Project) -> HandlebarsRenderer(project) as TemplatePageRenderer }
-	factory { (project: Project) -> ChangeSetCalculator(project) }
-	factory { (project: Project) -> PostBuilder(project) }
+	factory { (project: Project) -> PostBuilder(project, get<BasculeFileHandler>()) }
+	factory { (project: Project) ->
+		ChangeSetCalculator(project, get(), get { parametersOf(project) }, get<BasculeFileHandler>())
+	}
+	factory { (project: Project) ->
+		val fileHandler = get<BasculeFileHandler>()
+		MarkdownScanner(
+			project,
+			get { parametersOf(project, fileHandler) },
+			get { parametersOf(project) }
+		)
+	}
 }
 
 val fileModule = module {

@@ -9,9 +9,6 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import org.junit.jupiter.api.BeforeEach
-import org.koin.core.context.startKoin
-import org.koin.core.context.stopKoin
-import org.koin.dsl.module
 import org.liamjd.bascule.lib.model.Project
 import java.io.File
 import kotlin.test.*
@@ -38,9 +35,6 @@ class BasculePostTest {
     """.trimIndent()
 
     private val project: Project = Project(yamlConfig = yamlConfig)
-    private val koinModule = module {
-        factory { mockYamlVisitor }
-    }
 
     private val frontispiece: MutableMap<String, List<String>> = mutableMapOf(
         "title" to listOf("Test Post"),
@@ -52,15 +46,6 @@ class BasculePostTest {
     @BeforeEach
     fun setup() {
         every { mockYamlVisitor.visit(any<Document>()) } just Runs
-
-        startKoin {
-            modules(koinModule)
-        }
-    }
-
-    @AfterTest
-    fun tearDown() {
-        stopKoin()
     }
 
     @Test
@@ -79,7 +64,7 @@ class BasculePostTest {
         every { mockYamlVisitor.data } returns frontispiece.toMap()
         // execute
         val document = parseMarkdown(markdown)
-        val post = BasculePost.createPostFromYaml(mockFile, document, project)
+        val post = BasculePost.createPostFromYaml(mockFile, document, project, mockYamlVisitor)
 
         // verify
         assertNotNull(post)
@@ -108,7 +93,7 @@ class BasculePostTest {
         every { mockYamlVisitor.data } returns emptyMap() // Simulate no YAML frontispiece
 
         // execute
-        val post = BasculePost.createPostFromYaml(mockFile, document, project)
+        val post = BasculePost.createPostFromYaml(mockFile, document, project, mockYamlVisitor)
 
         // verify
         assertNotNull(post)
@@ -131,7 +116,7 @@ class BasculePostTest {
         every { mockYamlVisitor.data } returns mapOf("layout" to listOf("post")) // Missing 'title'
 
         // execute
-        val post = BasculePost.createPostFromYaml(mockFile, document, project)
+        val post = BasculePost.createPostFromYaml(mockFile, document, project, mockYamlVisitor)
 
         // verify
         assertIs<PostGenError>(post)
@@ -152,7 +137,7 @@ class BasculePostTest {
         every { mockYamlVisitor.data } returns mapOf("title" to listOf(""), "layout" to listOf("post")) // Empty title
 
         // execute
-        val post = BasculePost.createPostFromYaml(mockFile, document, project)
+        val post = BasculePost.createPostFromYaml(mockFile, document, project, mockYamlVisitor)
 
         // verify
         assertIs<PostGenError>(post)
@@ -178,7 +163,7 @@ class BasculePostTest {
         ) // Multiple dates
 
         // execute
-        val post = BasculePost.createPostFromYaml(mockFile, document, project)
+        val post = BasculePost.createPostFromYaml(mockFile, document, project, mockYamlVisitor)
 
         // verify
         assertIs<PostGenError>(post)
@@ -208,7 +193,7 @@ class BasculePostTest {
 
         // execute
         val document = parseMarkdown(markdown)
-        val post = BasculePost.createPostFromYaml(mockFile, document, project)
+        val post = BasculePost.createPostFromYaml(mockFile, document, project, mockYamlVisitor)
 
         // verify
         assertNotNull(post)
@@ -239,7 +224,7 @@ class BasculePostTest {
 
         // execute
         val document = parseMarkdown(markdown)
-        val post = BasculePost.createPostFromYaml(mockFile, document, project)
+        val post = BasculePost.createPostFromYaml(mockFile, document, project, mockYamlVisitor)
 
         // verify
         assertNotNull(post)
@@ -264,7 +249,7 @@ class BasculePostTest {
 
         // execute
         val document = parseMarkdown(markdown)
-        val post = BasculePost.createPostFromYaml(mockFile, document, project)
+        val post = BasculePost.createPostFromYaml(mockFile, document, project, mockYamlVisitor)
 
         // verify
         assertNotNull(post)
@@ -294,7 +279,7 @@ class BasculePostTest {
 
         // execute
         val document = parseMarkdown(markdown)
-        val post = BasculePost.createPostFromYaml(mockFile, document, project)
+        val post = BasculePost.createPostFromYaml(mockFile, document, project, mockYamlVisitor)
 
         // verify
         assertNotNull(post)

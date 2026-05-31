@@ -1,11 +1,10 @@
 package org.liamjd.bascule.scanner
 
 import mu.KotlinLogging
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import org.koin.core.parameter.parametersOf
 import org.liamjd.bascule.BasculeFileHandler
+import org.liamjd.bascule.FileScanner
 import org.liamjd.bascule.cache.CacheAndPost
+import org.liamjd.bascule.cache.DateConversions
 import org.liamjd.bascule.cache.HandlebarsTemplateCacheItem
 import org.liamjd.bascule.cache.MDCacheItem
 import org.liamjd.bascule.lib.model.PostLink
@@ -14,13 +13,10 @@ import org.liamjd.bascule.lib.model.Tag
 import org.liamjd.bascule.model.BasculePost
 import org.liamjd.bascule.model.PostGenError
 import println.ProgressBar
-import println.debug
 import println.info
 import java.io.File
-import java.io.FileFilter
 import java.time.Instant
 import java.time.LocalDateTime
-import java.time.ZoneId
 import java.util.*
 import kotlin.system.measureTimeMillis
 
@@ -33,10 +29,13 @@ import kotlin.system.measureTimeMillis
  * @param project the bascule project
  *
  */
-class ChangeSetCalculator(val project: Project) : KoinComponent {
+class ChangeSetCalculator(
+    val project: Project,
+    private val fileHandler: BasculeFileHandler,
+    private val postBuilder: PostBuilder,
+    private val fileScanner: FileScanner
+) {
 
-    private val fileHandler: BasculeFileHandler by inject { parametersOf() }
-    private val postBuilder: PostBuilder by inject { parametersOf(project) }
     private val logger = KotlinLogging.logger {}
 
     /**
@@ -130,14 +129,14 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
     ): Int {
         var index = 0
         var markdownSourceCount1 = markdownSourceCount
-        fileLoop@ for (mdFile in folder.listFiles()) {
+        fileLoop@ for (mdFile in fileScanner.listFiles(folder)) {
             index++
             // walker starts with the current directory, which we don't need
             if (mdFile.absolutePath.equals(project.dirs.sources.absolutePath)) {
                 continue
             }
 
-            if (mdFile.isDirectory) {
+            if (fileScanner.isDirectory(mdFile)) {
                 walkFolder(
                     mdFile,
                     markdownScannerProgressBar,
@@ -149,19 +148,19 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
                 )
             }
 
-            if (mdFile.parentFile.name.startsWith(".") || mdFile.parentFile.name.startsWith("__")) {
+            if (isDraftName(mdFile.parentFile.name)) {
                 logger.warn { "Skipping file ${mdFile.name} in draft folder '${mdFile.parentFile.name}' " }
                 continue // skip this one
             }
 
-            if (mdFile.name.startsWith(".") || mdFile.name.startsWith("__")) {
+            if (isDraftName(mdFile.name)) {
                 markdownScannerProgressBar.progress(index, "Skipping draft file/folder '${mdFile.name}'")
                 logger.warn { "Skipping draft file '${mdFile.name}' " }
                 // TODO: this isn't skipping a directory whose name begins with "__" or "."
                 continue // skip this one
             }
 
-            if (mdFile.extension.lowercase(Locale.getDefault()) != "md") {
+            if (!isMarkdownFile(mdFile)) {
                 logger.warn { "Skipping file ${mdFile.name} as extension does not match '.md'" }
                 markdownScannerProgressBar.progress(
                     markdownSourceCount1,
@@ -177,12 +176,12 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
                 logger.debug { "Processing file ${index} ${mdFile.name}..." }
 
                 // construct MDCacheItem for this file, and compare it with the cache file
-                val fileLastModifiedDateTimeLong = mdFile.lastModified();
+                val fileLastModifiedDateTimeLong = fileScanner.lastModified(mdFile);
                 val fileLastModifiedDateTime = LocalDateTime.ofInstant(
                     Instant.ofEpochMilli(fileLastModifiedDateTimeLong), TimeZone
                         .getDefault().toZoneId()
                 )
-                val mdItem = MDCacheItem(mdFile.length(), mdFile.absolutePath, fileLastModifiedDateTime)
+                val mdItem = MDCacheItem(fileScanner.length(mdFile), mdFile.absolutePath, fileLastModifiedDateTime)
 
 
                 // check for errors
@@ -199,7 +198,7 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
                                 val htTemplateFile: File = getTemplate(project.dirs.templates, post.layout)
                                 val templateCacheItem = layoutSet.find { it.layoutName == post.layout }
                                 if (templateCacheItem != null) {
-                                    if (localDateTimeToLong(templateCacheItem.layoutModificationDate) != htTemplateFile.lastModified() / 1000) {
+                                    if (DateConversions.localDateTimeToEpochSeconds(templateCacheItem.layoutModificationDate) != fileScanner.lastModified(htTemplateFile) / 1000) {
                                         info("Template '${post.layout}' has been modified; this post needs regenerated even though markdown source has not been changed since last generation.")
                                         // should fall to end of if statements now
                                     } else {
@@ -250,64 +249,11 @@ class ChangeSetCalculator(val project: Project) : KoinComponent {
     }
 
 
-    private fun cacheContainsItem(mdItem: MDCacheItem, cachedSet: Set<MDCacheItem>): Boolean {
-        var cacheFound = false;
-
-        for (c in cachedSet) {
-            if (c.sourceFilePath.equals(mdItem.sourceFilePath) && c.sourceModificationDate.equals(mdItem.sourceModificationDate) && c.sourceFileSize.equals(
-                    mdItem.sourceFileSize
-                )
-            ) {
-                logger.info { "Cache match found for ${mdItem.sourceFilePath}" }
-                cacheFound = true
-            }
-        }
-
-        return cacheFound
-    }
-
-    private fun calculateUrl(slug: String, sourcePath: String): String {
-        val url: String = if (sourcePath.isEmpty()) {
-            "$slug.html"
-        } else {
-            "${sourcePath.removePrefix("\\")}\\$slug.html".replace("\\", "/")
-        }
-        return url
-    }
-
-    /**
-     * Read the existing templates from file and create HandlebarsTemplateCacheItem cache items for each of them
-     */
-    // TODO: move to interface
-    fun getTemplates(templateDir: File): Set<HandlebarsTemplateCacheItem> {
-        val templateSet = mutableSetOf<HandlebarsTemplateCacheItem>()
-        val templates = templateDir.listFiles(FileFilter { it.extension.lowercase(Locale.getDefault()) == "hbs" })
-        if (templates != null) {
-            templates.forEach { file ->
-                debug("Loading template details for ${file.name}")
-                val hbCacheItem = HandlebarsTemplateCacheItem(
-                    file.name.substringBeforeLast("."), file.absolutePath, file.length(), LocalDateTime.ofInstant(
-                        Instant.ofEpochMilli(file.lastModified()), TimeZone
-                            .getDefault().toZoneId()
-                    )
-                )
-                templateSet.add(hbCacheItem)
-            }
-        }
-        return templateSet
-    }
-
     // TODO: move to interface
     /**
      * Load the Handlebars template file with the given @param layoutName
      */
 	private fun getTemplate(templateDir: File, layoutName: String): File {
         return fileHandler.getFile(templateDir, "$layoutName.hbs")
-    }
-
-    // TODO: duplicated function
-    private fun localDateTimeToLong(date: LocalDateTime): Long {
-        val zoneId = ZoneId.systemDefault() // or: ZoneId.of("Europe/Oslo");
-        return date.toEpochSecond(zoneId.rules.getOffset(LocalDateTime.now()))
     }
 }

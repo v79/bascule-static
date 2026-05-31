@@ -48,7 +48,7 @@ class MDCacheItem(
     }
 
     override fun equals(other: Any?): Boolean {
-        return other != null && other is MDCacheItem && this.sourceFilePath == this.sourceFilePath
+        return other != null && other is MDCacheItem && other.sourceFilePath == this.sourceFilePath
     }
 
 }

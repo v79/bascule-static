@@ -19,9 +19,6 @@ class IndexPageGeneratorTest {
     private val mockFileH = mockk<org.liamjd.bascule.lib.FileHandler>()
     private val mockBFH = mockk<BasculeFileHandler>()
 
-    // This value comes from the Project constructor and is based on System.getProperty("user.dir")
-    // Which I don't like
-    private var outputFile = File("C:\\Users\\liamj\\Development\\Bascule\\bascule-static\\site")
     private val yamlConfig = """
         siteName: Liam John Davison
         dateFormat: "dd/MM/yyyy"
@@ -80,7 +77,7 @@ class IndexPageGeneratorTest {
             generator.process(project, mockRenderer, mockFileH, clean = true)
 
             // Verify that the output file was created
-            verify { mockFileH.writeFile(outputFile, "index.html", "<html></html>") }
+            verify { mockFileH.writeFile(project.dirs.output, "index.html", "<html></html>") }
         }
     }
 
