@@ -78,33 +78,10 @@ class MarkdownScanner(val project: Project) : KoinComponent {
      */
     private fun orderPosts(posts: Set<CacheAndPost>): Set<CacheAndPost> {
         info("sorting")
-        val sortedSet = posts.toSortedSet(
-            compareBy(
-                { cacheAndPost -> cacheAndPost.mdCacheItem.link.date },
-                { cacheAndPost -> cacheAndPost.mdCacheItem.link.url })
-        )
+        info("building next and previous links")
+        val sortedSet = sortAndLinkPosts(posts, BLOG_POST)
         logger.info { "${sortedSet.size} markdown files sorted" }
         info("${sortedSet.size} markdown files sorted")
-        info("building next and previous links")
-
-        val filteredList =
-            sortedSet.filter { cacheAndPost -> cacheAndPost.mdCacheItem.layout.equals(BLOG_POST) }.toList()
-        filteredList.forEachIndexed { index, cacheAndPost ->
-            if (index != 0) {
-                val olderPost = filteredList[index - 1].mdCacheItem
-                cacheAndPost.mdCacheItem.previous = olderPost.link
-                cacheAndPost.post?.older = olderPost.link
-            }
-            if (index != filteredList.size - 1) {
-                val newerPost = filteredList[index + 1].mdCacheItem
-                cacheAndPost.mdCacheItem.next = newerPost.link
-                cacheAndPost.post?.newer = newerPost.link
-            }
-        }
-
-        info("Excluding non-post items leaves ${filteredList.size}")
-        logger.info { "Excluding non-post items leaves ${filteredList.size}" }
-
         return sortedSet
     }
 }
