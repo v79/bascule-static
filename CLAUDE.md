@@ -82,7 +82,7 @@ External Flexmark extensions and custom `GeneratorPipeline` implementations can 
 
 ### Hyde Extension
 
-A custom Flexmark extension (`flexmark/hyde/`) that implements transclusion -- embedding the content of another source file inline using a special block syntax.
+A custom Flexmark extension (`flexmark/hyde/`) that implements transclusion – embedding the content of another source file inline using a special block syntax.
 
 ## External Dependency: bascule-lib
 
@@ -91,3 +91,5 @@ Core interfaces (`Post`, `Project`, `GeneratorPipeline`, `AbstractPostListGenera
 ## Testing Notes
 
 The app is difficult to unit test because `Project` construction requires real filesystem state and Koin DI is hard to mock in this setup. Existing tests (`BasculePostTest`, `IndexPageGeneratorTest`) exercise the model and a single pipeline stage using test resource fixtures in `src/test/resources/afternoon/`.
+
+The intention is to refactor the project to improve testability.
