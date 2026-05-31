@@ -1,5 +1,6 @@
 package org.liamjd.bascule.scanner
 
+import com.vladsch.flexmark.ext.yaml.front.matter.AbstractYamlFrontMatterVisitor
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.ast.Document
 import org.liamjd.bascule.lib.FileHandler
@@ -24,7 +25,8 @@ class PostBuilder(val project: Project, private val fileHandler: FileHandler) {
 	 */
 	fun buildPost(mdFile: File): PostStatus {
 		val document = parseMarkdown(mdFile)
-		val post = BasculePost.createPostFromYaml(mdFile, document, project)
+		// a fresh visitor per post; the visitor accumulates YAML data and must not be shared across files
+		val post = BasculePost.createPostFromYaml(mdFile, document, project, AbstractYamlFrontMatterVisitor())
 
 		return post
 	}
