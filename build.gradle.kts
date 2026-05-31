@@ -6,7 +6,7 @@ version = "0.5.0"
 val kotlin_version = "1.9.22"
 val bascule_lib_version = "0.5.0"
 val snakeyaml_version = "2.4"
-val mockk_version = "1.12.4"
+val mockk_version = "1.13.13"
 val flexmark_version = "0.64.8"
 val slf4j_version = "1.7.26"
 val handlebars_version = "4.4.0"
@@ -88,6 +88,8 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    // Allow ByteBuddy (used by MockK to mock final classes) to operate on newer JDKs than it was built against
+    systemProperty("net.bytebuddy.experimental", "true")
 }
 
 java {

@@ -12,10 +12,18 @@ import java.util.*
 /**
  * File handling utility for creating files and directories, extracting files from resources, etc.
  */
-class BasculeFileHandler : FileHandler {
+class BasculeFileHandler : FileHandler, FileScanner {
 
     private val logger = KotlinLogging.logger {}
     override val pathSeparator = FileSystems.getDefault().separator!!
+
+    override fun listFiles(folder: File): List<File> = folder.listFiles()?.toList() ?: emptyList()
+
+    override fun isDirectory(file: File): Boolean = file.isDirectory
+
+    override fun length(file: File): Long = file.length()
+
+    override fun lastModified(file: File): Long = file.lastModified()
 
     override fun createDirectories(path: String): Boolean {
         val folders = File(path.replace("/", pathSeparator))

@@ -2,6 +2,7 @@ package org.liamjd.bascule.scanner
 
 import mu.KotlinLogging
 import org.liamjd.bascule.BasculeFileHandler
+import org.liamjd.bascule.FileScanner
 import org.liamjd.bascule.cache.CacheAndPost
 import org.liamjd.bascule.cache.DateConversions
 import org.liamjd.bascule.cache.HandlebarsTemplateCacheItem
@@ -12,10 +13,8 @@ import org.liamjd.bascule.lib.model.Tag
 import org.liamjd.bascule.model.BasculePost
 import org.liamjd.bascule.model.PostGenError
 import println.ProgressBar
-import println.debug
 import println.info
 import java.io.File
-import java.io.FileFilter
 import java.time.Instant
 import java.time.LocalDateTime
 import java.util.*
@@ -33,7 +32,8 @@ import kotlin.system.measureTimeMillis
 class ChangeSetCalculator(
     val project: Project,
     private val fileHandler: BasculeFileHandler,
-    private val postBuilder: PostBuilder
+    private val postBuilder: PostBuilder,
+    private val fileScanner: FileScanner
 ) {
 
     private val logger = KotlinLogging.logger {}
@@ -129,14 +129,14 @@ class ChangeSetCalculator(
     ): Int {
         var index = 0
         var markdownSourceCount1 = markdownSourceCount
-        fileLoop@ for (mdFile in folder.listFiles()) {
+        fileLoop@ for (mdFile in fileScanner.listFiles(folder)) {
             index++
             // walker starts with the current directory, which we don't need
             if (mdFile.absolutePath.equals(project.dirs.sources.absolutePath)) {
                 continue
             }
 
-            if (mdFile.isDirectory) {
+            if (fileScanner.isDirectory(mdFile)) {
                 walkFolder(
                     mdFile,
                     markdownScannerProgressBar,
@@ -176,12 +176,12 @@ class ChangeSetCalculator(
                 logger.debug { "Processing file ${index} ${mdFile.name}..." }
 
                 // construct MDCacheItem for this file, and compare it with the cache file
-                val fileLastModifiedDateTimeLong = mdFile.lastModified();
+                val fileLastModifiedDateTimeLong = fileScanner.lastModified(mdFile);
                 val fileLastModifiedDateTime = LocalDateTime.ofInstant(
                     Instant.ofEpochMilli(fileLastModifiedDateTimeLong), TimeZone
                         .getDefault().toZoneId()
                 )
-                val mdItem = MDCacheItem(mdFile.length(), mdFile.absolutePath, fileLastModifiedDateTime)
+                val mdItem = MDCacheItem(fileScanner.length(mdFile), mdFile.absolutePath, fileLastModifiedDateTime)
 
 
                 // check for errors
@@ -198,7 +198,7 @@ class ChangeSetCalculator(
                                 val htTemplateFile: File = getTemplate(project.dirs.templates, post.layout)
                                 val templateCacheItem = layoutSet.find { it.layoutName == post.layout }
                                 if (templateCacheItem != null) {
-                                    if (DateConversions.localDateTimeToEpochSeconds(templateCacheItem.layoutModificationDate) != htTemplateFile.lastModified() / 1000) {
+                                    if (DateConversions.localDateTimeToEpochSeconds(templateCacheItem.layoutModificationDate) != fileScanner.lastModified(htTemplateFile) / 1000) {
                                         info("Template '${post.layout}' has been modified; this post needs regenerated even though markdown source has not been changed since last generation.")
                                         // should fall to end of if statements now
                                     } else {
@@ -248,28 +248,6 @@ class ChangeSetCalculator(
         return markdownSourceCount1
     }
 
-
-    /**
-     * Read the existing templates from file and create HandlebarsTemplateCacheItem cache items for each of them
-     */
-    // TODO: move to interface
-    fun getTemplates(templateDir: File): Set<HandlebarsTemplateCacheItem> {
-        val templateSet = mutableSetOf<HandlebarsTemplateCacheItem>()
-        val templates = templateDir.listFiles(FileFilter { it.extension.lowercase(Locale.getDefault()) == "hbs" })
-        if (templates != null) {
-            templates.forEach { file ->
-                debug("Loading template details for ${file.name}")
-                val hbCacheItem = HandlebarsTemplateCacheItem(
-                    file.name.substringBeforeLast("."), file.absolutePath, file.length(), LocalDateTime.ofInstant(
-                        Instant.ofEpochMilli(file.lastModified()), TimeZone
-                            .getDefault().toZoneId()
-                    )
-                )
-                templateSet.add(hbCacheItem)
-            }
-        }
-        return templateSet
-    }
 
     // TODO: move to interface
     /**
