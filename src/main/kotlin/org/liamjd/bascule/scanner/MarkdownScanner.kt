@@ -1,10 +1,6 @@
 package org.liamjd.bascule.scanner
 
 import mu.KotlinLogging
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import org.koin.core.parameter.parametersOf
-import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.cache.BasculeCache
 import org.liamjd.bascule.cache.CacheAndPost
 import org.liamjd.bascule.cache.HandlebarsTemplateCacheItem
@@ -17,12 +13,13 @@ import println.info
  * @param project the bascule project
  * Call [MarkdownScanner.calculateRenderSet] to get the set of posts which need to be rerendered
  */
-class MarkdownScanner(val project: Project) : KoinComponent {
+class MarkdownScanner(
+    val project: Project,
+    private val cache: BasculeCache,
+    private val changeSetCalculator: ChangeSetCalculator
+) {
 
-    private val fileHandler: BasculeFileHandler by inject { parametersOf() }
-    private val cache: BasculeCache by inject<BasculeCache> { parametersOf(project, fileHandler) }
     private val logger = KotlinLogging.logger {}
-    private val changeSetCalculator: ChangeSetCalculator by inject { parametersOf(project) }
     private val BLOG_POST = "post"
 
     // this method is called by the Generator

@@ -9,6 +9,7 @@ import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.misc.Extension
 import mu.KotlinLogging
 import org.koin.core.component.KoinComponent
+import org.koin.core.component.get
 import org.koin.core.component.inject
 import org.koin.core.parameter.parametersOf
 import org.liamjd.bascule.BasculeFileHandler
@@ -133,7 +134,7 @@ class Generator : Runnable, KoinComponent {
 //		fileHandler.emptyFolder(File(project.dirs.output, "tags"))
 //		val walker = FolderWalker(project)
 
-        val walker = MarkdownScanner(project)
+        val walker = get<MarkdownScanner> { parametersOf(project) }
 
         val pageList = walker.calculateRenderSet(!clean)
         println("walker.calculateRenderSet() has returned ${pageList.size} CacheAndPost items")

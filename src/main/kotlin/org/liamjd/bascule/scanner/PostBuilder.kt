@@ -2,10 +2,7 @@ package org.liamjd.bascule.scanner
 
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.ast.Document
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import org.koin.core.parameter.parametersOf
-import org.liamjd.bascule.BasculeFileHandler
+import org.liamjd.bascule.lib.FileHandler
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.model.BasculePost
 import org.liamjd.bascule.model.PostStatus
@@ -16,9 +13,7 @@ import java.io.File
  * Utility class to construct a [BasculePost] from a markdown source file
  * Most of the work is delegated to the [BasculePost.createPostFromYaml] method, after first parsing the markdown document.
  */
-class PostBuilder(val project: Project) : KoinComponent {
-
-	private val fileHandler: BasculeFileHandler by inject{ parametersOf() }
+class PostBuilder(val project: Project, private val fileHandler: FileHandler) {
 
 	val mdParser: Parser = Parser.builder(project.markdownOptions).build()
 	private val cacheFileName: String = "${project.name.slug()}.cache.json"
