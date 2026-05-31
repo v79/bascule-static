@@ -1,9 +1,10 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 group = "org.liamjd"
-version = "0.4.0"
+version = "0.5.0"
 
 val kotlin_version = "1.9.22"
+val bascule_lib_version = "0.5.0"
 val snakeyaml_version = "2.4"
 val mockk_version = "1.12.4"
 val flexmark_version = "0.64.8"
@@ -11,7 +12,6 @@ val slf4j_version = "1.7.26"
 val handlebars_version = "4.4.0"
 val picocli_version = "3.8.2"
 val jansi_version = "1.17.1"
-val bascule_lib_version = "0.4.0"
 val junit_version = "5.10.2"
 val koin_version = "3.5.6"
 
