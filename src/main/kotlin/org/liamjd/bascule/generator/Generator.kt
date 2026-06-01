@@ -107,7 +107,7 @@ class Generator : Runnable, KoinComponent {
         project.markdownOptions.set(HtmlRenderer.INDENT_SIZE, 2) // prettier HTML
         project.markdownOptions.set(HydeExtension.SOURCE_FOLDER, project.dirs.sources.toString())
 
-        val assetsProcessor = AssetsProcessor(project)
+        val assetsProcessor = AssetsProcessor(project, fileHandler)
 
         // suppress apache FOP logging to a log file
         // TODO: do this we a better logger?
@@ -139,7 +139,7 @@ class Generator : Runnable, KoinComponent {
         val pageList = walker.calculateRenderSet(!clean)
         println("walker.calculateRenderSet() has returned ${pageList.size} CacheAndPost items")
 
-        val markdownRenderer = MarkdownToHTMLRenderer(project)
+        val markdownRenderer = MarkdownToHTMLRenderer(project, fileHandler, get { parametersOf(project) })
 
         var generated = 0
         if (clean) {

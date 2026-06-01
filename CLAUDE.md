@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-Bascule is a Kotlin CLI static site generator (v0.4.0). It reads Markdown files with YAML front matter from a `sources/` directory, renders them to HTML via Handlebars templates, and writes output to a `site/` directory. Run as a fat JAR built with shadow.
+Bascule is a Kotlin CLI static site generator (v0.5.0). It reads Markdown files with YAML front matter from a `sources/` directory, renders them to HTML via Handlebars templates, and writes output to a `site/` directory. Run as a fat JAR built with shadow.
 
 ## Build & Run
 

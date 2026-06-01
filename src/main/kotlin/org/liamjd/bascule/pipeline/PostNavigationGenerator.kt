@@ -6,8 +6,6 @@ import org.liamjd.bascule.lib.generators.GeneratorPipeline
 import org.liamjd.bascule.lib.model.Post
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.lib.render.TemplatePageRenderer
-import kotlin.math.ceil
-import kotlin.math.roundToInt
 
 class PostNavigationGenerator(posts: List<Post>, numPosts: Int = 1, postsPerPage: Int) : GeneratorPipeline, AbstractPostListGenerator(posts, numPosts, postsPerPage) {
 
@@ -17,18 +15,17 @@ class PostNavigationGenerator(posts: List<Post>, numPosts: Int = 1, postsPerPage
 	// TODO: extend this interface to take an optional filter predicate
 	// TODO: extend this interface to specify the sorting order
 	override suspend fun process(project: Project, renderer: TemplatePageRenderer, fileHandler: FileHandler, clean: Boolean) {
-		val totalPages = ceil(numPosts.toDouble() / postsPerPage).roundToInt()
-		val listPages = posts.reversed().withIndex()
-				.filter { indexedValue: IndexedValue<Post> -> indexedValue.value.layout.equals("post") }
-				.sortedByDescending { it.value.date }
-				.groupBy { it.index / postsPerPage }
-				.map { it.value.map { it.value } }
+		// Filter to blog posts *before* paginating; sorting by date then chunking guarantees full,
+		// correctly-ordered pages. (Indexing before filtering used to scatter posts across extra pages.)
+		val sortedPosts = posts.filter { it.layout.equals("post") }.sortedByDescending { it.date }
+		val listPages = sortedPosts.chunked(postsPerPage)
+		val totalPages = listPages.size
 
 		val postsFolder = fileHandler.createDirectory(project.dirs.output.absolutePath, FOLDER_NAME)
 
 		listPages.forEachIndexed { pageIndex, paginatedPosts ->
 			val currentPage = pageIndex + 1 // to save on mangling zero-index stuff
-			val model = buildPaginationModel(project.model, currentPage, totalPages, paginatedPosts, posts.size)
+			val model = buildPaginationModel(project.model, currentPage, totalPages, paginatedPosts, sortedPosts.size)
 
 			val renderedContent = renderer.render(model, TEMPLATE)
 

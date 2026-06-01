@@ -51,29 +51,19 @@ class HydeTagNodeRenderer(options: DataHolder) : NodeRenderer {
         val fileUrl = node.parameters
 
         if (fileUrl.isNotNull) {
-            val sourceFile = File(File(opts.get(HydeExtension.SOURCE_FOLDER)), fileUrl.toString())
-            if (sourceFile.exists()) {
-
-                when (node.tag.toString()) {
+            when (val resolved = resolveInclude(opts.get(HydeExtension.SOURCE_FOLDER), fileUrl.toString())) {
+                is IncludeResolution.NotFound -> html.tag("em").text("${resolved.fileName} not found").closeTag("em")
+                is IncludeResolution.Found -> when (node.tag.toString()) {
                     "include" -> {
-                        val stream = sourceFile.inputStream()
-                        html.indent().append(stream.bufferedReader().readText())
+                        html.indent().append(resolved.content)
                     }
 
                     "md" -> {
                         html.indent()
-                            .append("markdown source file found; attemping to parse... (existing chars: ${node.chars}")
-                        val stream = sourceFile.inputStream()
-
-//						node.appendChild(stream.bufferedReader().readText())
-
+                            .append("markdown source file found; attempting to parse... (existing chars: ${node.chars}")
                         context.renderChildren(node)
                     }
                 }
-
-
-            } else {
-                html.tag("em").text("${sourceFile.name} not found").closeTag("em")
             }
         }
         html.line()
@@ -85,5 +75,29 @@ class HydeTagNodeRenderer(options: DataHolder) : NodeRenderer {
             return HydeTagNodeRenderer(options)
 
         }
+    }
+}
+
+/**
+ * The outcome of resolving a Hyde transclusion tag against the source folder: either the referenced
+ * file was [Found] (carrying its content) or it was [NotFound] (carrying the file name for the error
+ * message). Kept separate from the renderer so the file-resolution logic can be unit-tested without
+ * an [HtmlWriter].
+ */
+internal sealed class IncludeResolution {
+    data class Found(val content: String) : IncludeResolution()
+    data class NotFound(val fileName: String) : IncludeResolution()
+}
+
+/**
+ * Resolve the [fileUrl] referenced by a Hyde tag relative to [sourceFolder], returning its content if
+ * the file exists or its name if it does not.
+ */
+internal fun resolveInclude(sourceFolder: String?, fileUrl: String): IncludeResolution {
+    val sourceFile = File(File(sourceFolder ?: "/"), fileUrl)
+    return if (sourceFile.exists()) {
+        IncludeResolution.Found(sourceFile.readText())
+    } else {
+        IncludeResolution.NotFound(sourceFile.name)
     }
 }

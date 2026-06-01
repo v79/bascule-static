@@ -4,9 +4,6 @@ import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.ast.Document
 import mu.KotlinLogging
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import org.koin.core.parameter.parametersOf
 import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.lib.render.TemplatePageRenderer
@@ -15,20 +12,18 @@ import println.info
 
 /**
  * Transforms a given [BasculePost] into the final HTML file through the Flexmark HTMLRenderer class,
- * and writes it to disc
+ * and writes it to disc. Collaborators are supplied via the constructor (previously injected through
+ * Koin) so the renderer can be exercised in isolation.
  */
-class MarkdownToHTMLRenderer(val project: Project) : KoinComponent, MarkdownRenderer {
+class MarkdownToHTMLRenderer(
+    val project: Project,
+    private val fileHandler: BasculeFileHandler,
+    private val renderer: TemplatePageRenderer
+) : MarkdownRenderer {
 
     private val logger = KotlinLogging.logger {}
 
-    private val fileHandler: BasculeFileHandler by inject { parametersOf() }
-    private val renderer by inject<TemplatePageRenderer> { parametersOf(project) }
-
-    val mdParser: Parser
-
-    init {
-        mdParser = Parser.builder(project.markdownOptions).build()
-    }
+    val mdParser: Parser = Parser.builder(project.markdownOptions).build()
 
     override fun renderHTML(post: BasculePost, itemCount: Int) {
         info("Rendering post ${post.sourceFileName}")
