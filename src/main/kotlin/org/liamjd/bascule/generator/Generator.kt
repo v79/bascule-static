@@ -107,7 +107,7 @@ class Generator : Runnable, KoinComponent {
         project.markdownOptions.set(HtmlRenderer.INDENT_SIZE, 2) // prettier HTML
         project.markdownOptions.set(HydeExtension.SOURCE_FOLDER, project.dirs.sources.toString())
 
-        val assetsProcessor = AssetsProcessor(project)
+        val assetsProcessor = AssetsProcessor(project, fileHandler)
 
         // suppress apache FOP logging to a log file
         // TODO: do this we a better logger?

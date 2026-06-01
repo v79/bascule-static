@@ -1,25 +1,24 @@
 package org.liamjd.bascule.assets
 
 import mu.KotlinLogging
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import org.koin.core.parameter.parametersOf
 import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.lib.model.Project
 import println.ProgressBar
-import println.info
 import java.io.File
 import java.nio.file.FileSystems
 
 
 /**
- * Copies and generates fixed assets, such images, CSS, etc
+ * Copies fixed assets — images, CSS, JavaScript, etc — from the project's assets directory into an
+ * `assets/` subfolder of the output directory, preserving the nested folder structure.
+ *
+ * The [fileHandler] is supplied via the constructor (previously injected through Koin) so the
+ * processor can be exercised with a test double.
  */
-class AssetsProcessor(val project: Project) : KoinComponent {
+class AssetsProcessor(val project: Project, private val fileHandler: BasculeFileHandler) {
 
 	private val logger = KotlinLogging.logger {}
 
-	private val fileHandler: BasculeFileHandler by inject { parametersOf() }
 	val pathSeparator = FileSystems.getDefault().separator!!
 
 	fun copyStatics() {
@@ -47,9 +46,5 @@ class AssetsProcessor(val project: Project) : KoinComponent {
 			}
 		}
 		copyDirProgress.clear()
-	}
-
-	fun copyTheme() {
-		info("Copying theme template files")
 	}
 }
