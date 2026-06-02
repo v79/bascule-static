@@ -21,7 +21,7 @@ class PostBuilder(val project: Project, private val fileHandler: FileHandler) {
 
 	/**
 	 * Build a [PostStatus] object from the markdown source file
-	 * @return either a [BasculePost] or a [PostGenError]
+	 * @return either a [BasculePost] or a [org.liamjd.bascule.model.PostGenError]
 	 */
 	fun buildPost(mdFile: File): PostStatus {
 		val document = parseMarkdown(mdFile)
@@ -32,10 +32,7 @@ class PostBuilder(val project: Project, private val fileHandler: FileHandler) {
 	}
 
 	private fun parseMarkdown(file: File): Document {
-		println("Filehandler: $fileHandler")
 		println("Parsing ${file.name}")
-		print(file.parentFile)
-
 		val text = fileHandler.readFileAsString(file.parentFile, file.name)
 		return mdParser.parse(text)
 	}

@@ -60,7 +60,7 @@ class ChangeSetCalculator(
                 ProgressBar("Reading markdown files", animated = true, asPercentage = false)
 
             /** recursively walk the source folder for files
-             * allSources is updated when a source markdown file is found
+             * allSources is updated when a source Markdown file is found
              **/
             markdownSourceCount = walkFolder(
                 project.dirs.sources,
@@ -103,13 +103,13 @@ class ChangeSetCalculator(
             logger.info { "All tags calculated" }
         }
 
-        info("Time taken to calculate set of ${markdownSourceCount} files: ${timeTaken}ms")
-        logger.info { "Time taken to calculate set of ${markdownSourceCount} files: ${timeTaken}ms" }
+        info("Time taken to calculate set of $markdownSourceCount files: ${timeTaken}ms")
+        logger.info { "Time taken to calculate set of $markdownSourceCount files: ${timeTaken}ms" }
 
         if (errorMap.isNotEmpty()) {
             logger.error { "Errors found in calculations:" }
             println.error("Errors found in calculations:")
-            errorMap.forEach { t, u ->
+            errorMap.forEach { (t, u) ->
                 logger.error { "$t -> $u" }
                 println.error("$t -> $u")
             }
@@ -172,10 +172,10 @@ class ChangeSetCalculator(
                 /** Finally, we have something we can parse as a BasculePost!!! **/
                 val post = postBuilder.buildPost(mdFile)
 
-                info("Processing file ${index} ${mdFile.name}...")
-                logger.debug { "Processing file ${index} ${mdFile.name}..." }
+                info("Processing file $index ${mdFile.name}...")
+                logger.debug { "Processing file $index ${mdFile.name}..." }
 
-                // construct MDCacheItem for this file, and compare it with the cache file
+                // construct MDCacheItem for this file and compare it with the cache file
                 val fileLastModifiedDateTimeLong = fileScanner.lastModified(mdFile);
                 val fileLastModifiedDateTime = LocalDateTime.ofInstant(
                     Instant.ofEpochMilli(fileLastModifiedDateTimeLong), TimeZone
@@ -187,7 +187,7 @@ class ChangeSetCalculator(
                 // check for errors
                 when (post) {
                     is PostGenError -> {
-                        errorMap.put(mdFile.name, post.errorMessage)
+                        errorMap[mdFile.name] = post.errorMessage
                     }
 
                     is BasculePost -> {
@@ -237,7 +237,7 @@ class ChangeSetCalculator(
                         post.rawContent = fileHandler.readFileAsString(
                             mdFile.parentFile,
                             mdFile.name
-                        ) // TODO: this still contains the yaml front matter :(
+                        ) // TODO: this still contains the YAML front matter :(
 
                         allSources.add(CacheAndPost(mdItem, post))
                         markdownSourceCount1++

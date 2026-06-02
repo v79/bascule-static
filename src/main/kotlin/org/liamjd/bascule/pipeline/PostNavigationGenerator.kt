@@ -17,7 +17,7 @@ class PostNavigationGenerator(posts: List<Post>, numPosts: Int = 1, postsPerPage
 	override suspend fun process(project: Project, renderer: TemplatePageRenderer, fileHandler: FileHandler, clean: Boolean) {
 		// Filter to blog posts *before* paginating; sorting by date then chunking guarantees full,
 		// correctly-ordered pages. (Indexing before filtering used to scatter posts across extra pages.)
-		val sortedPosts = posts.filter { it.layout.equals("post") }.sortedByDescending { it.date }
+		val sortedPosts = posts.filter { it.layout == "post" }.sortedByDescending { it.date }
 		val listPages = sortedPosts.chunked(postsPerPage)
 		val totalPages = listPages.size
 
