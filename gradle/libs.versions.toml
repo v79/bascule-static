@@ -1,6 +1,6 @@
 [versions]
 kotlin = "1.9.22"
-bascule-lib = "0.5.0"
+bascule-lib = "0.5.3"
 coroutines = "1.0.1"
 snakeyaml = "2.6"
 mockk = "1.13.17"

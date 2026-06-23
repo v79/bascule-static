@@ -3,12 +3,7 @@ package org.liamjd.bascule.pipeline
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.ast.Document
 import com.vladsch.flexmark.util.data.MutableDataSet
-import io.mockk.Runs
-import io.mockk.every
-import io.mockk.just
-import io.mockk.mockk
-import io.mockk.slot
-import io.mockk.verify
+import io.mockk.*
 import kotlinx.coroutines.runBlocking
 import org.liamjd.bascule.lib.FileHandler
 import org.liamjd.bascule.lib.model.Post
@@ -43,6 +38,7 @@ class PostNavigationGeneratorTest {
     private val mockRenderer = mockk<TemplatePageRenderer>()
     private val mockFileHandler = mockk<FileHandler>()
     private val postsFolder = File("site/posts")
+    private val blogsFolder = File("site/blogs")
 
     private fun emptyDocument(): Document = Parser.builder(MutableDataSet()).build().parse("")
 
@@ -197,6 +193,7 @@ class PostNavigationGeneratorTest {
 
         @Suppress("UNCHECKED_CAST")
         val page1 = models[0]["posts"] as List<Post>
+
         @Suppress("UNCHECKED_CAST")
         val page2 = models[1]["posts"] as List<Post>
 
@@ -213,5 +210,44 @@ class PostNavigationGeneratorTest {
         // the model's page count now matches the number of files written
         assertEquals(2, models[0]["totalPages"])
         assertEquals(2, models[1]["totalPages"])
+    }
+
+    @Test
+    fun `runs post generator for each layout defined in postLayouts`() {
+        project.postLayouts = setOf("post", "blog")
+        val posts: List<Post> = listOf(
+            post("First", layout = "post"),
+            post("Second", layout = "blog")
+        )
+        val generator = PostNavigationGenerator(posts, numPosts = 2, postsPerPage = 10)
+
+        val models = mutableListOf<Map<String, Any?>>()
+        val fileNames = mutableListOf<String>()
+        every { mockFileHandler.createDirectory(any(), "posts") } returns postsFolder
+        every { mockFileHandler.createDirectory(any(), "blogs") } returns blogsFolder
+        every { mockRenderer.render(capture(models), "list") } returns "<html></html>"
+        every { mockFileHandler.writeFile(postsFolder, capture(fileNames), any()) } just Runs
+        every { mockFileHandler.writeFile(blogsFolder, capture(fileNames), any()) } just Runs
+
+        // execute
+        runBlocking { generator.process(project, mockRenderer, mockFileHandler, clean = true) }
+
+        val postModel = models.first { it["layout"] == "post" }
+        val blogModel = models.first { it["layout"] == "blog" }
+
+        @Suppress("UNCHECKED_CAST")
+        val renderedPosts = postModel["posts"] as List<Post>
+
+        @Suppress("UNCHECKED_CAST")
+        val renderedBlogs = blogModel["posts"] as List<Post>
+
+        assertEquals(1, renderedPosts.size)
+        assertEquals(renderedPosts.first().title, "First")
+        assertEquals(1, renderedBlogs.size)
+        assertEquals(renderedBlogs.first().title, "Second")
+        assertEquals(2, fileNames.size)
+        verify(exactly = 1) { mockFileHandler.writeFile(postsFolder, "list1.html", any()) }
+        verify(exactly = 1) { mockFileHandler.writeFile(blogsFolder, "list1.html", any()) }
+
     }
 }
