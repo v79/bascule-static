@@ -1,25 +1,13 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 group = "org.liamjd"
-version = "0.5.0"
-
-val kotlin_version = "1.9.22"
-val bascule_lib_version = "0.5.0"
-val snakeyaml_version = "2.4"
-val mockk_version = "1.13.13"
-val flexmark_version = "0.64.8"
-val slf4j_version = "1.7.26"
-val handlebars_version = "4.4.0"
-val picocli_version = "3.8.2"
-val jansi_version = "1.17.1"
-val junit_version = "5.10.2"
-val koin_version = "3.5.6"
+version = "0.5.1"
 
 plugins {
-    kotlin("jvm") version "1.9.22"
+    alias(libs.plugins.kotlin.jvm)
     `maven-publish`
-    id("com.gradleup.shadow") version "8.3.8"
-    kotlin("plugin.serialization") version "1.9.22"
+    alias(libs.plugins.shadow)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 repositories {
@@ -35,55 +23,48 @@ repositories {
 }
 
 dependencies {
-    // stdlib
-    implementation(kotlin("stdlib", kotlin_version))
     // reflection
-    api(kotlin("reflect", kotlin_version))
+    api(libs.kotlin.reflect)
 
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.0.1")
+    implementation(libs.kotlinx.coroutines.core)
 
     // bascule library
-    implementation("org.liamjd.bascule:bascule-lib:$bascule_lib_version")
+    implementation(libs.bascule.lib)
 
     // handlebars templating
-    implementation("com.github.jknack:handlebars:$handlebars_version")
+    implementation(libs.handlebars)
 
-    // markdown - probably want to be more selective with this!
-    implementation("com.vladsch.flexmark:flexmark-all:$flexmark_version")
-    implementation("com.vladsch.flexmark:flexmark-ext-tables:$flexmark_version")
-    implementation("com.vladsch.flexmark:flexmark-util-builder:$flexmark_version")
+    // markdown
+    implementation(libs.flexmark.all)
+    implementation(libs.flexmark.ext.tables)
+    implementation(libs.flexmark.util.builder)
 
     // snakeyaml
-    implementation("org.yaml:snakeyaml:$snakeyaml_version")
+    implementation(libs.snakeyaml)
 
     // sl4j logging
-    implementation("org.slf4j:slf4j-simple:$slf4j_version")
-    implementation("io.github.microutils:kotlin-logging:1.6.26")
+    implementation(libs.slf4j.simple)
+    implementation(libs.kotlin.logging)
 
     // command line parsing
-    implementation("info.picocli:picocli:$picocli_version")
-    implementation("org.fusesource.jansi:jansi:$jansi_version")
+    implementation(libs.picocli)
+    implementation(libs.jansi)
 
     // Koin for Kotlin apps
-    implementation(project.dependencies.platform("io.insert-koin:koin-bom:$koin_version"))
-    implementation("io.insert-koin:koin-core")
+    implementation(project.dependencies.platform(libs.koin.bom))
+    implementation(libs.koin.core)
 
     // kotlinx serialization, for document caching
-    runtimeOnly("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
-
-    // for console progress bar?
-    implementation("com.vdurmont:etaprinter:1.0.0")
+    runtimeOnly(libs.kotlinx.serialization.core)
+    implementation(libs.kotlinx.serialization.json)
 
     // Testing
-// Testing
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit5:${kotlin_version}")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:${junit_version}")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junit_version}")
-    testImplementation("io.mockk:mockk:${mockk_version}")
-    testImplementation("io.insert-koin:koin-test:${koin_version}")
-    testImplementation("io.insert-koin:koin-test-junit5:${koin_version}")
-
+    testImplementation(libs.kotlin.test.junit5)
+    testImplementation(libs.junit.jupiter.api)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testImplementation(libs.mockk)
+    testImplementation(libs.koin.test)
+    testImplementation(libs.koin.test.junit5)
 }
 
 tasks.test {
@@ -112,7 +93,6 @@ tasks.shadowJar {
         )
     }
 }
-
 
 // publishing
 publishing {
