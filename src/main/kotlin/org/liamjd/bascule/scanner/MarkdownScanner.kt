@@ -20,7 +20,6 @@ class MarkdownScanner(
 ) {
 
     private val logger = KotlinLogging.logger {}
-    private val BLOG_POST = "post"
 
     // this method is called by the Generator
     /**
@@ -30,7 +29,7 @@ class MarkdownScanner(
      */
     fun calculateRenderSet(useCache: Boolean = true): Set<CacheAndPost> {
 
-        logger.debug { "Calculate render set!!!!" }
+        logger.debug { "Calculate render set" }
 
         // this is everything we know from the cache. it might even be empty!
         val cachedSet = if(useCache) cache.loadCacheFile() else {
@@ -70,15 +69,14 @@ class MarkdownScanner(
     }
 
     /**
-     * Sorts posts according to the date in the PostLink property (user provided via yaml)
+     * Sorts posts according to the date in the PostLink property (user provided via YAML)
      * Then creates the navigation links between each post
+     * @param posts the set of posts to sort
+     * @return the sorted set of posts
      */
     private fun orderPosts(posts: Set<CacheAndPost>): Set<CacheAndPost> {
-        info("sorting")
-        info("building next and previous links")
-        val sortedSet = sortAndLinkPosts(posts, BLOG_POST)
+        val sortedSet = sortAndLinkPosts(posts)
         logger.info { "${sortedSet.size} markdown files sorted" }
-        info("${sortedSet.size} markdown files sorted")
         return sortedSet
     }
 }

@@ -8,7 +8,7 @@ import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.lib.render.TemplatePageRenderer
 
 /**
- * Generates paginated post navigation pages for a list of posts.
+ * Generates paginated post navigation pages for all layouts defined in project.postLayouts, or just "post"s
  *
  * @param posts The list of posts to paginate.
  * @param numPosts The total number of posts to consider (default is 1).
@@ -42,9 +42,6 @@ class PostNavigationGenerator(posts: List<Post>, numPosts: Int = 1, postsPerPage
             val listPages = sortedPosts.chunked(postsPerPage)
             val totalPages = listPages.size
 
-            println("Generating $TEMPLATE pages for $layout posts...")
-            println("listPages: ${listPages.size}")
-            println("Total pages: $totalPages for ${sortedPosts.size} ${layout}s")
             if(listPages.isEmpty()) return@forEach
             val postsFolder = fileHandler.createDirectory(project.dirs.output.absolutePath, "${layout}s")
 
@@ -59,7 +56,6 @@ class PostNavigationGenerator(posts: List<Post>, numPosts: Int = 1, postsPerPage
                     layout = layout
                 )
                 val renderedContent = renderer.render(model, TEMPLATE)
-                println("Writing ${postsFolder.path}\\$TEMPLATE$currentPage.html for $layout posts...")
                 fileHandler.writeFile(postsFolder, "$TEMPLATE$currentPage.html", renderedContent)
             }
         }

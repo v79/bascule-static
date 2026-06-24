@@ -108,7 +108,7 @@ class ScannerFunctionsTest {
 			post("a", LocalDate.of(2026, 1, 1)),
 			post("b", LocalDate.of(2026, 2, 1))
 		)
-		val ordered = sortAndLinkPosts(unsorted, "post").map { it.mdCacheItem.link.title }
+		val ordered = sortAndLinkPosts(unsorted).map { it.mdCacheItem.link.title }
 		assertEquals(listOf("a", "b", "c"), ordered)
 	}
 
@@ -118,7 +118,7 @@ class ScannerFunctionsTest {
 		val b = post("b", LocalDate.of(2026, 2, 1))
 		val c = post("c", LocalDate.of(2026, 3, 1))
 
-		sortAndLinkPosts(setOf(c, a, b), "post")
+		sortAndLinkPosts(setOf(c, a, b))
 
 		// middle post points both ways
 		assertEquals("a.html", b.mdCacheItem.previous?.url)
@@ -136,7 +136,7 @@ class ScannerFunctionsTest {
 		val p1 = post("first", LocalDate.of(2026, 1, 1))
 		val p2 = post("second", LocalDate.of(2026, 2, 1))
 
-		val result = sortAndLinkPosts(setOf(page, p1, p2), "post")
+		val result = sortAndLinkPosts(setOf(page, p1, p2))
 
 		// the page is still in the sorted set ...
 		assertTrue(result.any { it.mdCacheItem.link.title == "about" })
