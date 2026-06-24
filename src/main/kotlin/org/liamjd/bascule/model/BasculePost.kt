@@ -166,12 +166,10 @@ class BasculePost(val document: Document) : Post, PostStatus() {
                             }
 
                             else -> {
-                                println("How did i get here?")
+                                println.error("How did i get here?")
                             }
                         }
                     }
-
-
                 } else {
                     val finalVal = if (it.value.size == 1) it.value[0] else it.value
                     post.attributes[it.key] = finalVal

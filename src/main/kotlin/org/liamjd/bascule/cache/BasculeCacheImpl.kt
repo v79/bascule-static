@@ -19,7 +19,7 @@ import java.util.*
 import java.util.Collections.emptySet
 
 /**
- * Using kotlinx.serialization to serialize the cache items
+ * Using kotlinx.serialization to serialize the cache items.
  * The plug-in isn't working correctly in IntelliJ - do not "optimise" the imports
  */
 class BasculeCacheImpl(val project: Project, val fileHandler: FileHandler) : BasculeCache {
@@ -41,7 +41,7 @@ class BasculeCacheImpl(val project: Project, val fileHandler: FileHandler) : Bas
             val cache = Json.decodeFromString(Cache.serializer(), jsonString)
             return cache.items
         } catch (fnfe: FileNotFoundException) {
-            println("Cache file not found")
+            println.error("Cache file not found")
             return emptySet()
         }
     }
@@ -69,7 +69,6 @@ class BasculeCacheImpl(val project: Project, val fileHandler: FileHandler) : Bas
         val templateSet = mutableSetOf<HandlebarsTemplateCacheItem>()
         val templates = templateDir.listFiles(FileFilter { it.extension.lowercase(Locale.getDefault()) == "hbs" })
         templates?.forEach { file ->
-            println("Loading template details for ${file.name}")
             val hbCacheItem = HandlebarsTemplateCacheItem(
                 file.name.substringBeforeLast("."), file.absolutePath, file.length(), LocalDateTime.ofInstant(
                     Instant.ofEpochMilli(file.lastModified()), TimeZone

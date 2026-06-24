@@ -109,7 +109,7 @@ class Generator : Runnable, KoinComponent {
 
         val assetsProcessor = AssetsProcessor(project, fileHandler)
 
-        // suppress apache FOP logging to a log file
+        // Suppress Apache FOP logging to a log file
         // TODO: do this we a better logger?
         val errDumpFile = File(parentFolder, parentFolder.name + ".log")
         val errorOutStream = FileOutputStream(errDumpFile)
@@ -118,7 +118,7 @@ class Generator : Runnable, KoinComponent {
 
 
         project.clean = clean
-        info(Constants.logos[(0 until Constants.logos.size).random()])
+        info(Constants.logos[Constants.logos.indices.random()])
         info("Generating your website")
         if (clean) {
             info("Cleaning the output directory before generation and deleting the cache")
@@ -137,7 +137,7 @@ class Generator : Runnable, KoinComponent {
         val walker = get<MarkdownScanner> { parametersOf(project) }
 
         val pageList = walker.calculateRenderSet(!clean)
-        println("walker.calculateRenderSet() has returned ${pageList.size} CacheAndPost items")
+        debug("walker.calculateRenderSet() has returned ${pageList.size} CacheAndPost items")
 
         val markdownRenderer = MarkdownToHTMLRenderer(project, fileHandler, get { parametersOf(project) })
 
@@ -166,7 +166,6 @@ class Generator : Runnable, KoinComponent {
         }
 
         logger.info { "$generated HTML files rendered" }
-        info("$generated HTML files rendered")
 
         //TODO: come up with a better asset copying pipeline stage thingy
         assetsProcessor.copyStatics()
@@ -184,7 +183,6 @@ class Generator : Runnable, KoinComponent {
 
         if (generators.isEmpty()) {
             logger.error { "No generators found in the pipeline. Aborting execution!" }
-            error("No generators found in the pipeline. Aborting execution!")
         }
 
         // TODO: this still doesn't work with the CACHE!

@@ -2,6 +2,7 @@ package org.liamjd.bascule.scanner
 
 import org.liamjd.bascule.cache.CacheAndPost
 import org.liamjd.bascule.cache.MDCacheItem
+import println.info
 import java.io.File
 import java.util.Locale
 
@@ -46,17 +47,20 @@ fun cacheContainsItem(mdItem: MDCacheItem, cachedSet: Set<MDCacheItem>): Boolean
 
 /**
  * Sort [posts] by post date then url, and wire up the `previous`/`next` links (and the corresponding
- * `older`/`newer` links on any attached post) across the subset whose layout matches [blogPostLayout].
+ * `older`/`newer` links on any attached post) across all post layouts.
  * Mutates the [MDCacheItem]s (and posts) in place and returns the sorted set.
  */
-fun sortAndLinkPosts(posts: Set<CacheAndPost>, blogPostLayout: String): Set<CacheAndPost> {
+fun sortAndLinkPosts(posts: Set<CacheAndPost>): Set<CacheAndPost> {
+	info("Sorting all posts by date")
+	info("Building next and previous links")
 	val sortedSet = posts.toSortedSet(
 		compareBy(
 			{ cacheAndPost -> cacheAndPost.mdCacheItem.link.date },
 			{ cacheAndPost -> cacheAndPost.mdCacheItem.link.url })
 	)
 
-	val filteredList = sortedSet.filter { it.mdCacheItem.layout == blogPostLayout }.toList()
+	// 	val filteredList = sortedSet.filter { it.mdCacheItem.layout == blogPostLayout }.toList()
+	val filteredList = sortedSet.toList()
 	filteredList.forEachIndexed { index, cacheAndPost ->
 		if (index != 0) {
 			val olderPost = filteredList[index - 1].mdCacheItem
