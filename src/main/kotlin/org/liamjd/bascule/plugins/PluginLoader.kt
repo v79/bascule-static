@@ -12,13 +12,13 @@ import kotlin.reflect.full.isSubclassOf
  * Base class for resolving plugin classes from the application classpath and from JAR files dropped
  * into the project's `plugins/` folder.
  *
- * A plugin is any class — identified by its fully-qualified name — that implements a particular
- * interface, for example a Flexmark [Extension] (see [HandlebarPluginLoader]) or a
+ * A plugin is any class — identified by its fully qualified name — that implements a particular
+ * interface, for example, a Flexmark [Extension] (see [HandlebarPluginLoader]) or a
  * [GeneratorPipeline] (see [GeneratorPluginLoader]). Subclasses turn those names into Kotlin [KClass]
  * references, discarding any class that does not implement the expected interface.
  *
  * JARs found under `plugins/` are wrapped in a [URLClassLoader] that delegates to [classLoader], so
- * both bundled (classpath) plugins and externally-supplied (JAR) plugins can be resolved through a
+ * both bundled (classpath) plugins and externally supplied (JAR) plugins can be resolved through a
  * single loader.
  *
  * Extend this class once per kind of plugin you want to load.
@@ -47,7 +47,7 @@ abstract class PluginLoader(var classLoader: ClassLoader, var pluginFolder: File
      * Note that the JARs gathered cover the whole `plugins/` folder, not just the classes named in
      * [classNames]; the names are only used to decide whether any loader is needed at all.
      *
-     * @param classNames fully-qualified plugin class names that need to be resolvable, or `null`
+     * @param classNames fully qualified plugin class names that need to be resolvable or `null`
      * @return a [URLClassLoader] spanning the project's plugin JARs, or `null` if there is nothing to load
      */
     fun loadPlugins(classNames: List<String>?): ClassLoader? {
@@ -77,7 +77,7 @@ abstract class PluginLoader(var classLoader: ClassLoader, var pluginFolder: File
 
 /**
  * Loads Flexmark [Extension] plugins (the Markdown/Handlebars extensions configured under
- * `extensions:` in the project YAML) by fully-qualified class name.
+ * `extensions:` in the project YAML) by fully qualified class name.
  *
  * @param classLoader parent class loader used to resolve classpath extensions and JAR extensions
  * @property requiredInterface interface that every extension must implement, normally [Extension];
@@ -94,7 +94,7 @@ class HandlebarPluginLoader(classLoader: ClassLoader, val requiredInterface: KCl
      * does not implement [requiredInterface] is logged and omitted from the result rather than
      * failing the whole load, so one bad entry never blocks the others.
      *
-     * @param extensions fully-qualified class names of the extensions to load
+     * @param extensions fully qualified class names of the extensions to load
      * @return the successfully resolved extension classes, excluding any that could not be loaded or
      * were of the wrong type
      */
@@ -132,7 +132,7 @@ class HandlebarPluginLoader(classLoader: ClassLoader, val requiredInterface: KCl
 
 /**
  * Loads [GeneratorPipeline] plugins (the pipeline stages configured under `generators:` in the
- * project YAML) by fully-qualified class name.
+ * project YAML) by fully qualified class name.
  *
  * @param classLoader parent class loader used to resolve classpath generators and JAR generators
  * @property requiredInterface interface that every generator must implement, normally
@@ -150,7 +150,7 @@ class GeneratorPluginLoader(classLoader: ClassLoader, val requiredInterface: KCl
      * does not implement [requiredInterface] is logged and omitted from the result rather than
      * failing the whole load. A `null` [generatorNames] yields an empty list.
      *
-     * @param generatorNames fully-qualified class names of the generators to load, or `null`
+     * @param generatorNames fully qualified class names of the generators to load, or `null`
      * @return the successfully resolved generator classes, excluding any that could not be loaded or
      * were of the wrong type
      */

@@ -8,7 +8,6 @@ import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.lib.render.TemplatePageRenderer
 import org.liamjd.bascule.model.BasculePost
-import println.info
 
 /**
  * Transforms a given [BasculePost] into the final HTML file through the Flexmark HTMLRenderer class,
@@ -26,11 +25,9 @@ class MarkdownToHTMLRenderer(
     val mdParser: Parser = Parser.builder(project.markdownOptions).build()
 
     override fun renderHTML(post: BasculePost, itemCount: Int) {
-        info("Rendering post ${post.sourceFileName}")
-        logger.info { "Rendering post ${post.sourceFileName}" }
+        logger.info { "Rendering ${post.layout} ${post.sourceFileName}" }
         render(project.model, post, itemCount)
     }
-
 
     // no performance improvement by making this a suspending function
     private fun render(siteModel: Map<String, Any>, basculePost: BasculePost, count: Int) {

@@ -7,31 +7,64 @@ import org.liamjd.bascule.lib.model.Post
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.lib.render.TemplatePageRenderer
 
-class PostNavigationGenerator(posts: List<Post>, numPosts: Int = 1, postsPerPage: Int) : GeneratorPipeline, AbstractPostListGenerator(posts, numPosts, postsPerPage) {
+/**
+ * Generates paginated post navigation pages for a list of posts.
+ *
+ * @param posts The list of posts to paginate.
+ * @param numPosts The total number of posts to consider (default is 1).
+ * @param postsPerPage The number of posts to display per page.
+ */
+class PostNavigationGenerator(posts: List<Post>, numPosts: Int = 1, postsPerPage: Int) : GeneratorPipeline,
+    AbstractPostListGenerator(posts, numPosts, postsPerPage) {
 
-	override val TEMPLATE: String = "list"
-	val FOLDER_NAME: String = "posts"		// TODO: move this to project model
+    override val TEMPLATE: String = "list"
 
-	// TODO: extend this interface to take an optional filter predicate
-	// TODO: extend this interface to specify the sorting order
-	override suspend fun process(project: Project, renderer: TemplatePageRenderer, fileHandler: FileHandler, clean: Boolean) {
-		// Filter to blog posts *before* paginating; sorting by date then chunking guarantees full,
-		// correctly-ordered pages. (Indexing before filtering used to scatter posts across extra pages.)
-		val sortedPosts = posts.filter { it.layout.equals("post") }.sortedByDescending { it.date }
-		val listPages = sortedPosts.chunked(postsPerPage)
-		val totalPages = listPages.size
+    // TODO: extend this interface to take an optional filter predicate
+    // TODO: extend this interface to specify the sorting order
+    override suspend fun process(
+        project: Project,
+        renderer: TemplatePageRenderer,
+        fileHandler: FileHandler,
+        clean: Boolean
+    ) {
+        // Filter to blog posts *before* paginating; sorting by date, then chunking guarantees full,
+        // correctly ordered pages. (Indexing before filtering used to scatter posts across extra pages.)
 
-		val postsFolder = fileHandler.createDirectory(project.dirs.output.absolutePath, FOLDER_NAME)
+        // Loop through all the layouts marked listed in postLayouts and run the generator for each
+        // If no postLayout is specified, default to "post" layout
 
-		listPages.forEachIndexed { pageIndex, paginatedPosts ->
-			val currentPage = pageIndex + 1 // to save on mangling zero-index stuff
-			val model = buildPaginationModel(project.model, currentPage, totalPages, paginatedPosts, sortedPosts.size)
+        if (project.postLayouts.isEmpty()) {
+            project.postLayouts = setOf("post")
+        }
 
-			val renderedContent = renderer.render(model, TEMPLATE)
+        project.postLayouts.forEach { layout ->
+            val sortedPosts = posts.filter { it.layout == layout }.sortedByDescending { it.date }
+            val listPages = sortedPosts.chunked(postsPerPage)
+            val totalPages = listPages.size
 
-			fileHandler.writeFile(postsFolder, "$TEMPLATE$currentPage.html", renderedContent)
-		}
-	}
+            println("Generating $TEMPLATE pages for $layout posts...")
+            println("listPages: ${listPages.size}")
+            println("Total pages: $totalPages for ${sortedPosts.size} ${layout}s")
+            if(listPages.isEmpty()) return@forEach
+            val postsFolder = fileHandler.createDirectory(project.dirs.output.absolutePath, "${layout}s")
+
+            listPages.forEachIndexed { pageIndex, paginatedPosts ->
+                val currentPage = pageIndex + 1 // to save on mangling zero-index stuff
+                val model = buildPaginationModel(
+                    projectModel = project.model,
+                    currentPage = currentPage,
+                    totalPages = totalPages,
+                    posts = paginatedPosts,
+                    totalPosts = sortedPosts.size,
+                    layout = layout
+                )
+                val renderedContent = renderer.render(model, TEMPLATE)
+                println("Writing ${postsFolder.path}\\$TEMPLATE$currentPage.html for $layout posts...")
+                fileHandler.writeFile(postsFolder, "$TEMPLATE$currentPage.html", renderedContent)
+            }
+        }
+
+    }
 
 
 }

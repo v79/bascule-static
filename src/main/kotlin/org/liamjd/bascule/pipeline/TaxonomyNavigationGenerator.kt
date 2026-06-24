@@ -62,6 +62,7 @@ class TaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int = 1, p
                             totalPages = totalPages,
                             posts = taggedPosts.subList(startPos, finalEndPos),
                             totalPosts = numPosts,
+                            layout = "tag",
                             tagLabel = tag.url
                         )
 

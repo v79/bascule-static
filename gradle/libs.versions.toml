@@ -1,0 +1,47 @@
+[versions]
+kotlin = "1.9.22"
+bascule-lib = "0.5.3"
+coroutines = "1.0.1"
+snakeyaml = "2.6"
+mockk = "1.13.17"
+flexmark = "0.64.8"
+slf4j = "1.7.36"
+handlebars = "4.5.2"
+picocli = "3.9.6"
+jansi = "1.18"
+junit = "5.10.2"
+koin = "3.5.6"
+kotlin-logging = "1.6.26"
+kotlinx-serialization-core = "1.6.1"
+kotlinx-serialization-json = "1.4.1"
+shadow = "8.3.8"
+
+[libraries]
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+bascule-lib = { module = "org.liamjd.bascule:bascule-lib", version.ref = "bascule-lib" }
+handlebars = { module = "com.github.jknack:handlebars", version.ref = "handlebars" }
+flexmark-all = { module = "com.vladsch.flexmark:flexmark-all", version.ref = "flexmark" }
+flexmark-ext-tables = { module = "com.vladsch.flexmark:flexmark-ext-tables", version.ref = "flexmark" }
+flexmark-util-builder = { module = "com.vladsch.flexmark:flexmark-util-builder", version.ref = "flexmark" }
+snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
+kotlin-logging = { module = "io.github.microutils:kotlin-logging", version.ref = "kotlin-logging" }
+picocli = { module = "info.picocli:picocli", version.ref = "picocli" }
+jansi = { module = "org.fusesource.jansi:jansi", version.ref = "jansi" }
+koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koin" }
+koin-core = { module = "io.insert-koin:koin-core" }
+kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinx-serialization-core" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization-json" }
+kotlin-test-junit5 = { module = "org.jetbrains.kotlin:kotlin-test-junit5", version.ref = "kotlin" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+koin-test = { module = "io.insert-koin:koin-test", version.ref = "koin" }
+koin-test-junit5 = { module = "io.insert-koin:koin-test-junit5", version.ref = "koin" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
+
