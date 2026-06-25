@@ -1,12 +1,7 @@
 package org.liamjd.bascule.render
 
 import com.vladsch.flexmark.util.ast.Document
-import io.mockk.Runs
-import io.mockk.every
-import io.mockk.just
-import io.mockk.mockk
-import io.mockk.slot
-import io.mockk.verify
+import io.mockk.*
 import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.lib.render.TemplatePageRenderer
@@ -18,7 +13,7 @@ import kotlin.test.assertEquals
 
 /**
  * Tests for [MarkdownToHTMLRenderer]. The file handler and template renderer are supplied as mocks
- * via the constructor, so the Flexmark markdown conversion and the render/write orchestration can be
+ * via the constructor, so the Flexmark Markdown conversion and the render/write orchestration can be
  * verified without Koin or the filesystem.
  */
 class MarkdownToHTMLRendererTest {
@@ -103,6 +98,7 @@ class MarkdownToHTMLRendererTest {
         assertEquals(renderedMarkdown, post.content)
         // the post's own fields (via toModel) and the current page marker are present in the model
         assertEquals("My Post", model["title"])
-        assertEquals("my-post", model["\$currentPage"])
+        assertEquals("my-post", model["__currentPage"])
     }
+
 }

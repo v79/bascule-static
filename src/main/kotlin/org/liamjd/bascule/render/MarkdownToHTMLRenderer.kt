@@ -35,7 +35,7 @@ class MarkdownToHTMLRenderer(
         val model = mutableMapOf<String, Any?>()
         model.putAll(siteModel)
         model.putAll(basculePost.toModel())
-        model["\$currentPage"] = basculePost.slug
+        model["__currentPage"] = basculePost.slug
 
         // first, extract the content from the markdown
         val renderedMarkdown = renderMarkdown(basculePost.document)

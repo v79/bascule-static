@@ -1,9 +1,11 @@
 package org.liamjd.bascule.render
 
 import com.github.jknack.handlebars.Handlebars
+import com.github.jknack.handlebars.HandlebarsException
 import java.time.LocalDate
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 /**
  * Exercises [LocalDateFormatter] through a real Handlebars instance, since the helper's behaviour
@@ -45,4 +47,27 @@ class LocalDateFormatterTest {
 		// A lone single-quote is an unterminated literal, which DateTimeFormatter rejects.
 		assertEquals("2026-01-09", render("{{localDate this \"'\"}}", date))
 	}
+
+	@Test
+	fun `formats a date specified through the now model object`() {
+		val expected = LocalDate.now()
+		val expectedString = expected.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+		val context = mapOf("__nowDate" to expected)
+		assertEquals(expectedString, render("{{ localDate __nowDate }}", context))
+	}
+
+	@Test
+	fun `formats a date specified through the now model object with positional pattern`() {
+		val expected = LocalDate.now()
+		val expectedString = expected.format(java.time.format.DateTimeFormatter.ofPattern("EEE, dd/MM/yyyy"))
+		val context = mapOf("__nowDate" to expected)
+		assertEquals(expectedString, render("{{ localDate __nowDate \"EEE, dd/MM/yyyy\"}}", context))
+	}
+
+	@Test
+	fun `exception is thrown if a non-date is passed to the helper`() {
+		val context = mapOf("__nowDate" to "not a date")
+		assertFailsWith<HandlebarsException> { render("{{ localDate __nowDate }}", context) }
+	}
+
 }
