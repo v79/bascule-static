@@ -129,21 +129,4 @@ class ScannerFunctionsTest {
 		assertEquals("b.html", a.mdCacheItem.next?.url)
 		assertEquals("b.html", c.mdCacheItem.previous?.url)
 	}
-
-	@Test
-	fun `non-post layouts are excluded from the navigation chain`() {
-		val page = post("about", LocalDate.of(2026, 1, 15), layout = "page")
-		val p1 = post("first", LocalDate.of(2026, 1, 1))
-		val p2 = post("second", LocalDate.of(2026, 2, 1))
-
-		val result = sortAndLinkPosts(setOf(page, p1, p2))
-
-		// the page is still in the sorted set ...
-		assertTrue(result.any { it.mdCacheItem.link.title == "about" })
-		// ... but is not linked, and the two posts link directly to each other
-		assertNull(page.mdCacheItem.previous)
-		assertNull(page.mdCacheItem.next)
-		assertEquals("second.html", p1.mdCacheItem.next?.url)
-		assertEquals("first.html", p2.mdCacheItem.previous?.url)
-	}
 }

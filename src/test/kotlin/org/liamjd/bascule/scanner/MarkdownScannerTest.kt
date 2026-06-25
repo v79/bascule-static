@@ -1,10 +1,6 @@
 package org.liamjd.bascule.scanner
 
-import io.mockk.Runs
-import io.mockk.every
-import io.mockk.just
-import io.mockk.mockk
-import io.mockk.verify
+import io.mockk.*
 import org.liamjd.bascule.cache.BasculeCache
 import org.liamjd.bascule.cache.CacheAndPost
 import org.liamjd.bascule.cache.MDCacheItem
@@ -22,7 +18,7 @@ import kotlin.test.assertEquals
  */
 class MarkdownScannerTest {
 
-	private val yamlConfig = """
+    private val yamlConfig = """
         siteName: Test Site
         dateFormat: "dd/MM/yyyy"
         dateTimeFormat: HH:mm:ss dd/MM/yyyy
@@ -37,59 +33,59 @@ class MarkdownScannerTest {
           generators: [IndexPageGenerator, PostNavigationGenerator, TaxonomyNavigationGenerator]
     """.trimIndent()
 
-	private val project = Project(yamlConfig = yamlConfig).apply { clean = false }
+    private val project = Project(yamlConfig = yamlConfig).apply { clean = false }
 
-	private val cache = mockk<BasculeCache>()
-	private val changeSetCalculator = mockk<ChangeSetCalculator>()
+    private val cache = mockk<BasculeCache>()
+    private val changeSetCalculator = mockk<ChangeSetCalculator>()
 
-	private val scanner = MarkdownScanner(project, cache, changeSetCalculator)
+    private val scanner = MarkdownScanner(project, cache, changeSetCalculator)
 
-	private fun item(slug: String, date: LocalDate, layout: String = "post"): CacheAndPost {
-		val md = MDCacheItem(10L, "/sources/$slug.md", LocalDateTime.of(2026, 1, 1, 0, 0))
-		md.layout = layout
-		md.link = PostLink(slug, "$slug.html", date)
-		return CacheAndPost(md, null)
-	}
+    private fun item(slug: String, date: LocalDate, layout: String = "post"): CacheAndPost {
+        val md = MDCacheItem(10L, "/sources/$slug.md", LocalDateTime.of(2026, 1, 1, 0, 0))
+        md.layout = layout
+        md.link = PostLink(slug, "$slug.html", date)
+        return CacheAndPost(md, null)
+    }
 
-	@Test
-	fun `calculateRenderSet returns the uncached set produced by the change calculator`() {
-		val uncached = setOf(
-			item("a", LocalDate.of(2026, 1, 1)),
-			item("b", LocalDate.of(2026, 2, 1))
-		)
-		every { cache.loadCacheFile() } returns emptySet()
-		every { changeSetCalculator.calculateUncachedSet(any(), any()) } returns uncached
-		every { cache.writeCacheFile(any()) } just Runs
+    @Test
+    fun `calculateRenderSet returns the uncached set produced by the change calculator`() {
+        val uncached = setOf(
+            item("a", LocalDate.of(2026, 1, 1)),
+            item("b", LocalDate.of(2026, 2, 1))
+        )
+        every { cache.loadCacheFile() } returns emptySet()
+        every { changeSetCalculator.calculateUncachedSet(any(), any()) } returns uncached
+        every { cache.writeCacheFile(any()) } just Runs
 
-		val result = scanner.calculateRenderSet(useCache = true)
+        val result = scanner.calculateRenderSet(useCache = true)
 
-		assertEquals(uncached, result)
-	}
+        assertEquals(uncached, result)
+    }
 
-	@Test
-	fun `the merged set of cached and new items is written back to the cache`() {
-		val uncached = setOf(
-			item("a", LocalDate.of(2026, 1, 1)),
-			item("b", LocalDate.of(2026, 2, 1))
-		)
-		every { cache.loadCacheFile() } returns emptySet()
-		every { changeSetCalculator.calculateUncachedSet(any(), any()) } returns uncached
-		every { cache.writeCacheFile(any()) } just Runs
+    @Test
+    fun `the merged set of cached and new items is written back to the cache`() {
+        val uncached = setOf(
+            item("a", LocalDate.of(2026, 1, 1)),
+            item("b", LocalDate.of(2026, 2, 1))
+        )
+        every { cache.loadCacheFile() } returns emptySet()
+        every { changeSetCalculator.calculateUncachedSet(any(), any()) } returns uncached
+        every { cache.writeCacheFile(any()) } just Runs
 
-		scanner.calculateRenderSet(useCache = true)
+        scanner.calculateRenderSet(useCache = true)
 
-		// both new items should be persisted to the cache
-		verify { cache.writeCacheFile(match { items -> items.size == 2 }) }
-	}
+        // both new items should be persisted to the cache
+        verify { cache.writeCacheFile(match { items -> items.size == 2 }) }
+    }
 
-	@Test
-	fun `when caching is disabled the cache file is not loaded and an empty cached set is used`() {
-		every { changeSetCalculator.calculateUncachedSet(any(), any()) } returns emptySet()
-		every { cache.writeCacheFile(any()) } just Runs
+    @Test
+    fun `when caching is disabled the cache file is not loaded and an empty cached set is used`() {
+        every { changeSetCalculator.calculateUncachedSet(any(), any()) } returns emptySet()
+        every { cache.writeCacheFile(any()) } just Runs
 
-		scanner.calculateRenderSet(useCache = false)
+        scanner.calculateRenderSet(useCache = false)
 
-		verify(exactly = 0) { cache.loadCacheFile() }
-		verify { changeSetCalculator.calculateUncachedSet(emptySet(), emptySet()) }
-	}
+        verify(exactly = 0) { cache.loadCacheFile() }
+        verify { changeSetCalculator.calculateUncachedSet(emptySet(), emptySet()) }
+    }
 }
