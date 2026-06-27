@@ -35,6 +35,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintStream
 import kotlin.reflect.full.createInstance
+import kotlin.system.measureTimeMillis
 
 val DEFAULT_PROCESSORS = arrayOf(
     "org.liamjd.bascule.pipeline.IndexPageGenerator",
@@ -77,6 +78,8 @@ class Generator : Runnable, KoinComponent {
     override fun run() {
         reporter.verbose = verbose
 
+        val startTime = System.currentTimeMillis()
+
         yamlConfig = if (!projectName.isNullOrBlank()) {
             "${projectName}.yaml"
         } else {
@@ -84,7 +87,7 @@ class Generator : Runnable, KoinComponent {
         }
 
         // build the basic project from the default configuration file
-        println("Opening config file ${parentFolder.absolutePath}/$yamlConfig")
+        debug("Opening config file ${parentFolder.absolutePath}/$yamlConfig")
         val configText = File(parentFolder.absolutePath, yamlConfig).readText()
         val project = Project(configText)
 
@@ -98,7 +101,7 @@ class Generator : Runnable, KoinComponent {
         handlebarExtensions.add(HydeExtension.create())
         handlebarExtensions.add(YouTubeLinkExtension.create())
 
-        info("Constructing Handlebars extensions")
+        debug("Constructing Handlebars extensions")
         val handlebarPluginLoader =
             HandlebarPluginLoader(this.javaClass.classLoader, Extension::class, project.parentFolder)
         if (project.extensions != null) {
@@ -129,11 +132,9 @@ class Generator : Runnable, KoinComponent {
 
         project.clean = clean
         info(Constants.logos[Constants.logos.indices.random()])
-        info("Generating your website")
+        info("Generating your website [$yamlConfig]")
         if (clean) {
             info("Cleaning the output directory before generation and deleting the cache")
-        } else {
-            info("Reading yaml configuration file $yamlConfig")
         }
 
         // TODO: be less aggressive with this, use some sort of caching :)
@@ -152,29 +153,35 @@ class Generator : Runnable, KoinComponent {
         val markdownRenderer = MarkdownToHTMLRenderer(project, fileHandler, get { parametersOf(project) })
 
         var generated = 0
-        if (clean) {
-            fileHandler.deleteFile(project.dirs.sources, "${project.name.slug()}.cache.json")
-            pageList.forEachIndexed { index, cacheAndPost ->
-                cacheAndPost.post?.let {
-                    it.rawContent =
-                        fileHandler.readFileAsString(cacheAndPost.post.sourceFileName) // TODO: this still contains the yaml front matter :(
-                    markdownRenderer.renderHTML(cacheAndPost.post, index)
+        val renderMs = measureTimeMillis {
+            if (clean) {
+                fileHandler.deleteFile(project.dirs.sources, "${project.name.slug()}.cache.json")
+                pageList.forEachIndexed { index, cacheAndPost ->
+                    cacheAndPost.post?.let {
+                        it.rawContent =
+                            fileHandler.readFileAsString(cacheAndPost.post.sourceFileName) // TODO: this still contains the yaml front matter :(
+                        markdownRenderer.renderHTML(cacheAndPost.post, index)
+                        generated++
+                    }
+                }
+            } else {
+                pageList.filter { item -> item.mdCacheItem.rerender }.forEachIndexed { index, cacheAndPost ->
+                    cacheAndPost.post?.let {
+                        it.rawContent =
+                            fileHandler.readFileAsString(cacheAndPost.post.sourceFileName) // TODO: this still contains the yaml front matter :(
+                        markdownRenderer.renderHTML(cacheAndPost.post, index)
+                    }
                     generated++
                 }
             }
-        } else {
-
-            pageList.filter { item -> item.mdCacheItem.rerender }.forEachIndexed { index, cacheAndPost ->
-                cacheAndPost.post?.let {
-                    it.rawContent =
-                        fileHandler.readFileAsString(cacheAndPost.post.sourceFileName) // TODO: this still contains the yaml front matter :(
-                    markdownRenderer.renderHTML(cacheAndPost.post, index)
-                }
-                generated++
-            }
         }
 
-        info("$generated HTML files rendered")
+        val cachedCount = pageList.size - generated
+        if (!clean && cachedCount > 0) {
+            info("Rendered $generated HTML files in ${renderMs}ms ($cachedCount cached)")
+        } else {
+            info("Rendered $generated HTML files in ${renderMs}ms")
+        }
 
         //TODO: come up with a better asset copying pipeline stage thingy
         assetsProcessor.copyStatics()
@@ -198,6 +205,8 @@ class Generator : Runnable, KoinComponent {
         val renderer by inject<TemplatePageRenderer> { parametersOf(project) }
         getPostsFromCacheAndPost(pageList).process(generators, project, renderer, fileHandler)
 
+        val totalMs = System.currentTimeMillis() - startTime
+        info("Generation complete in ${totalMs}ms — site at ${project.dirs.output}")
     }
 
     private fun getPostsFromCacheAndPost(cacheSet: Set<CacheAndPost>): List<Post> {

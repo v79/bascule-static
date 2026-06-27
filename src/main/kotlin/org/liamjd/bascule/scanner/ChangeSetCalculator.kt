@@ -72,14 +72,17 @@ class ChangeSetCalculator(
             )
 
             clearProgress()
-            info("Read $markdownSourceCount markdown files.")
-
-            if (markdownSourceCount != allSources.size) {
-                logger.error { "Markdown source count ($markdownSourceCount) != all sources size (${allSources.size})" }
+            val toRender = markdownSourceCount
+            val totalFiles = allSources.size
+            val cachedCount = totalFiles - toRender
+            if (cachedCount > 0) {
+                info("Read $totalFiles markdown files: $toRender to render, $cachedCount cached.")
+            } else {
+                info("Read $totalFiles markdown files.")
             }
 
             // build the set of taxonomy tags
-            info("Building the set of tags")
+            debug("Building the set of tags")
             val allTags = mutableSetOf<Tag>()
             allSources.forEach { cacheAndPost ->
                 logger.debug { "ChangeSetCalculator: cacheAndPost ${cacheAndPost.mdCacheItem.link.title} has tags: ${cacheAndPost.post?.tags}" }
@@ -101,7 +104,7 @@ class ChangeSetCalculator(
             debug("All tags calculated")
         }
 
-        info("Time taken to calculate set of $markdownSourceCount files: ${timeTaken}ms")
+        debug("Time taken to calculate set of ${allSources.size} files: ${timeTaken}ms")
 
         if (errorMap.isNotEmpty()) {
             println.error("Errors found in calculations:")

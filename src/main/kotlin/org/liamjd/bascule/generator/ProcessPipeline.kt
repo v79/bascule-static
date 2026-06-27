@@ -9,7 +9,6 @@ import org.liamjd.bascule.lib.model.Post
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.lib.render.TemplatePageRenderer
 import println.debug
-import println.info
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
@@ -54,11 +53,8 @@ internal fun List<Post>.process(pipeline: ArrayList<KClass<GeneratorPipeline>>, 
 			}
 		}
 	}
-	if (progress.isCompleted) {
-		info("Generation complete. HTML files are stored in folder ${project.dirs.output}")
-	}
-
 }
+
 
 /**
  * Construct a GeneratorPipeline object from the given class

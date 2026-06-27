@@ -2,7 +2,7 @@ package org.liamjd.bascule.scanner
 
 import org.liamjd.bascule.cache.CacheAndPost
 import org.liamjd.bascule.cache.MDCacheItem
-import println.info
+import println.debug
 import java.io.File
 import java.util.Locale
 
@@ -51,8 +51,8 @@ fun cacheContainsItem(mdItem: MDCacheItem, cachedSet: Set<MDCacheItem>): Boolean
  * Mutates the [MDCacheItem]s (and posts) in place and returns the sorted set.
  */
 fun sortAndLinkPosts(posts: Set<CacheAndPost>): Set<CacheAndPost> {
-	info("Sorting all posts by date")
-	info("Building next and previous links")
+	debug("Sorting all posts by date")
+	debug("Building next and previous links")
 	val sortedSet = posts.toSortedSet(
 		compareBy(
 			{ cacheAndPost -> cacheAndPost.mdCacheItem.link.date },
