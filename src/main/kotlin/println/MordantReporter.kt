@@ -29,6 +29,7 @@ class MordantReporter : Reporter {
     }
 
     override fun progress(label: String, current: Int, message: String?) {
+        if (!terminal.terminalInfo.supportsAnsiCursor) return
         val spinner = animationChars[current % animationChars.size]
         terminal.cursor.move {
             startOfLine()
@@ -45,6 +46,7 @@ class MordantReporter : Reporter {
     }
 
     override fun clearProgress() {
+        if (!terminal.terminalInfo.supportsAnsiCursor) return
         terminal.cursor.move {
             startOfLine()
             clearLine()
