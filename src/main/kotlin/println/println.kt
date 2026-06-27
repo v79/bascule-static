@@ -1,28 +1,11 @@
 package println
 
-import org.fusesource.jansi.Ansi
+var reporter: Reporter = MordantReporter()
 
-val debug = true
+fun info(msg: String) = reporter.info(msg)
+fun error(msg: String) = reporter.error(msg)
+fun warn(msg: String) = reporter.warn(msg)
+fun debug(msg: String) = reporter.debug(msg)
+fun progress(label: String, current: Int, message: String? = null) = reporter.progress(label, current, message)
+fun clearProgress() = reporter.clearProgress()
 
-/**
- * Prints text in a nice yellow colour
- */
-fun info(string: String) {
-	println(Ansi.ansi().eraseLine().fgBrightYellow().a(string).reset())
-}
-
-/**
- * Prints text in a scary red colour
- */
-fun error(string: String) {
-	println(Ansi.ansi().fgBrightRed().a("ERROR: $string").reset())
-}
-
-/**
- * Prints text in a cyan colour
- */
-fun debug(string: String) {
-	if (debug) {
-		println(Ansi.ansi().fgCyan().a("DEBUG: $string").reset())
-	}
-}

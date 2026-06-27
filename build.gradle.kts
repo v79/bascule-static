@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 group = "org.liamjd"
-version = "0.5.3"
+version = "0.5.4"
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
@@ -48,7 +48,9 @@ dependencies {
 
     // command line parsing
     implementation(libs.picocli)
-    implementation(libs.jansi)
+
+    // Mordant for terminal output
+    implementation(libs.mordant)
 
     // Koin for Kotlin apps
     implementation(project.dependencies.platform(libs.koin.bom))
@@ -85,7 +87,9 @@ tasks.withType<KotlinCompile> {
 
 tasks.shadowJar {
     archiveClassifier.set("")
-    minimize()
+    minimize {
+        exclude(dependency("com.github.ajalt.mordant:.*"))
+    }
     manifest {
         attributes(
             "Main-Class" to "org.liamjd.bascule.MainKt",

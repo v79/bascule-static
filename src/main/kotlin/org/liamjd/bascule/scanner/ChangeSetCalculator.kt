@@ -12,8 +12,11 @@ import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.lib.model.Tag
 import org.liamjd.bascule.model.BasculePost
 import org.liamjd.bascule.model.PostGenError
-import println.ProgressBar
+import println.clearProgress
+import println.debug
 import println.info
+import println.progress
+import println.warn
 import java.io.File
 import java.time.Instant
 import java.time.LocalDateTime
@@ -49,22 +52,18 @@ class ChangeSetCalculator(
         layoutSet: Set<HandlebarsTemplateCacheItem>
     ): Set<CacheAndPost> {
         info("Scanning ${project.dirs.sources.absolutePath} for markdown files")
-        logger.info { "Scanning ${project.dirs.sources.absolutePath} for markdown files" }
+        logger.debug { "ChangeSetCalculator.calculateUncachedSet" }
 
         val errorMap = mutableMapOf<String, Any>()
         val allSources = mutableSetOf<CacheAndPost>()
         var markdownSourceCount = 0
 
         val timeTaken = measureTimeMillis {
-            val markdownScannerProgressBar =
-                ProgressBar("Reading markdown files", animated = true, asPercentage = false)
-
             /** recursively walk the source folder for files
              * allSources is updated when a source markdown file is found
              **/
             markdownSourceCount = walkFolder(
                 project.dirs.sources,
-                markdownScannerProgressBar,
                 markdownSourceCount,
                 errorMap,
                 allSources,
@@ -72,19 +71,21 @@ class ChangeSetCalculator(
                 layoutSet
             )
 
-            markdownScannerProgressBar.progress(markdownSourceCount, "Cache items found for all files.")
-
-            if (markdownSourceCount != allSources.size) {
-                logger.error { "Markdown source count ($markdownSourceCount) != all sources size (${allSources.size})" }
+            clearProgress()
+            val toRender = markdownSourceCount
+            val totalFiles = allSources.size
+            val cachedCount = totalFiles - toRender
+            if (cachedCount > 0) {
+                info("Read $totalFiles markdown files: $toRender to render, $cachedCount cached.")
+            } else {
+                info("Read $totalFiles markdown files.")
             }
 
-            logger.info { "Cache items found for all $markdownSourceCount files." }
-
             // build the set of taxonomy tags
-            logger.info("Building the set of tags")
+            debug("Building the set of tags")
             val allTags = mutableSetOf<Tag>()
             allSources.forEach { cacheAndPost ->
-                logger.info("calculateCachedSet: cacheAndPost ${cacheAndPost.mdCacheItem.link.title} has tags: ${cacheAndPost.post?.tags}")
+                logger.debug { "ChangeSetCalculator: cacheAndPost ${cacheAndPost.mdCacheItem.link.title} has tags: ${cacheAndPost.post?.tags}" }
                 cacheAndPost.post?.tags?.forEach { postTag ->
                     if (allTags.contains(postTag)) {
                         allTags.elementAt(allTags.indexOf(postTag)).let {
@@ -100,14 +101,12 @@ class ChangeSetCalculator(
                 }
             }
             // debugging tags
-            logger.info { "All tags calculated" }
+            debug("All tags calculated")
         }
 
-        info("Time taken to calculate set of ${markdownSourceCount} files: ${timeTaken}ms")
-        logger.info { "Time taken to calculate set of ${markdownSourceCount} files: ${timeTaken}ms" }
+        debug("Time taken to calculate set of ${allSources.size} files: ${timeTaken}ms")
 
         if (errorMap.isNotEmpty()) {
-            logger.error { "Errors found in calculations:" }
             println.error("Errors found in calculations:")
             errorMap.forEach { t, u ->
                 logger.error { "$t -> $u" }
@@ -120,7 +119,6 @@ class ChangeSetCalculator(
     // TODO: tidy up this recursive function
     private fun walkFolder(
         folder: File,
-        markdownScannerProgressBar: ProgressBar,
         markdownSourceCount: Int,
         errorMap: MutableMap<String, Any>,
         allSources: MutableSet<CacheAndPost>,
@@ -137,15 +135,15 @@ class ChangeSetCalculator(
             }
 
             if (fileScanner.isDirectory(mdFile)) {
-                walkFolder(
+                markdownSourceCount1 = walkFolder(
                     mdFile,
-                    markdownScannerProgressBar,
                     markdownSourceCount1,
                     errorMap,
                     allSources,
                     cachedSet,
                     layoutSet
                 )
+                continue@fileLoop
             }
 
             if (isDraftName(mdFile.parentFile.name)) {
@@ -154,26 +152,21 @@ class ChangeSetCalculator(
             }
 
             if (isDraftName(mdFile.name)) {
-                markdownScannerProgressBar.progress(index, "Skipping draft file/folder '${mdFile.name}'")
-                logger.warn { "Skipping draft file '${mdFile.name}' " }
+                warn("Skipping draft file/folder '${mdFile.name}'")
                 // TODO: this isn't skipping a directory whose name begins with "__" or "."
                 continue // skip this one
             }
 
             if (!isMarkdownFile(mdFile)) {
                 logger.warn { "Skipping file ${mdFile.name} as extension does not match '.md'" }
-                markdownScannerProgressBar.progress(
-                    markdownSourceCount1,
-                    "Skipping file ${mdFile.name} as extension does not match '.md'\n"
-                )
                 continue
             } else {
 
                 /** Finally, we have something we can parse as a BasculePost!!! **/
                 val post = postBuilder.buildPost(mdFile)
 
-                info("Processing file ${index} ${mdFile.name}...")
-                logger.debug { "Processing file ${index} ${mdFile.name}..." }
+                progress("Reading markdown files", markdownSourceCount1, mdFile.name)
+                logger.debug { "Processing file $index ${mdFile.name}..." }
 
                 // construct MDCacheItem for this file, and compare it with the cache file
                 val fileLastModifiedDateTimeLong = fileScanner.lastModified(mdFile);
@@ -187,7 +180,7 @@ class ChangeSetCalculator(
                 // check for errors
                 when (post) {
                     is PostGenError -> {
-                        errorMap.put(mdFile.name, post.errorMessage)
+                        errorMap[mdFile.name] = post.errorMessage
                     }
 
                     is BasculePost -> {
@@ -197,8 +190,12 @@ class ChangeSetCalculator(
                                 // check the template. If it has been updated, the post must be re-rerendered regardless of the cache content
                                 val htTemplateFile: File = getTemplate(project.dirs.templates, post.layout)
                                 val templateCacheItem = layoutSet.find { it.layoutName == post.layout }
+
                                 if (templateCacheItem != null) {
-                                    if (DateConversions.localDateTimeToEpochSeconds(templateCacheItem.layoutModificationDate) != fileScanner.lastModified(htTemplateFile) / 1000) {
+                                    if (DateConversions.localDateTimeToEpochSeconds(templateCacheItem.layoutModificationDate) != fileScanner.lastModified(
+                                            htTemplateFile
+                                        ) / 1000
+                                    ) {
                                         info("Template '${post.layout}' has been modified; this post needs regenerated even though markdown source has not been changed since last generation.")
                                         // should fall to end of if statements now
                                     } else {
@@ -253,7 +250,7 @@ class ChangeSetCalculator(
     /**
      * Load the Handlebars template file with the given @param layoutName
      */
-	private fun getTemplate(templateDir: File, layoutName: String): File {
+    private fun getTemplate(templateDir: File, layoutName: String): File {
         return fileHandler.getFile(templateDir, "$layoutName.hbs")
     }
 }

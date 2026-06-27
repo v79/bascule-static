@@ -30,10 +30,12 @@ import org.liamjd.bascule.slug
 import picocli.CommandLine
 import println.debug
 import println.info
+import println.reporter
 import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintStream
 import kotlin.reflect.full.createInstance
+import kotlin.system.measureTimeMillis
 
 val DEFAULT_PROCESSORS = arrayOf(
     "org.liamjd.bascule.pipeline.IndexPageGenerator",
@@ -62,12 +64,21 @@ class Generator : Runnable, KoinComponent {
     )
     var projectName: String? = null
 
+    @CommandLine.Option(
+        names = ["-v", "--verbose"],
+        description = ["Enable verbose/debug output"]
+    )
+    var verbose: Boolean = false
+
     private val fileHandler: BasculeFileHandler by inject { parametersOf() }
     private val currentDirectory = System.getProperty("user.dir")!!
     private lateinit var yamlConfig: String
     private val parentFolder: File = File(currentDirectory)
 
     override fun run() {
+        reporter.verbose = verbose
+
+        val startTime = System.currentTimeMillis()
 
         yamlConfig = if (!projectName.isNullOrBlank()) {
             "${projectName}.yaml"
@@ -76,7 +87,7 @@ class Generator : Runnable, KoinComponent {
         }
 
         // build the basic project from the default configuration file
-        println("Opening config file ${parentFolder.absolutePath}/$yamlConfig")
+        debug("Opening config file ${parentFolder.absolutePath}/$yamlConfig")
         val configText = File(parentFolder.absolutePath, yamlConfig).readText()
         val project = Project(configText)
 
@@ -90,7 +101,7 @@ class Generator : Runnable, KoinComponent {
         handlebarExtensions.add(HydeExtension.create())
         handlebarExtensions.add(YouTubeLinkExtension.create())
 
-        info("Constructing Handlebars extensions")
+        debug("Constructing Handlebars extensions")
         val handlebarPluginLoader =
             HandlebarPluginLoader(this.javaClass.classLoader, Extension::class, project.parentFolder)
         if (project.extensions != null) {
@@ -109,21 +120,21 @@ class Generator : Runnable, KoinComponent {
 
         val assetsProcessor = AssetsProcessor(project, fileHandler)
 
-        // Suppress Apache FOP logging to a log file
-        // TODO: do this we a better logger?
+        // Redirect System.err to a project log file. slf4j-simple writes all logger.* output
+        // to stderr, so this routes all diagnostic logging to <projectname>.log instead of
+        // the console — keeping the terminal clean for Reporter output only.
+        // The original motivation was silencing Apache FOP noise, but the redirect captures
+        // all slf4j traffic. A cleaner alternative would be a simplelogger.properties on the
+        // classpath, but that requires embedding configuration in the fat JAR.
         val errDumpFile = File(parentFolder, parentFolder.name + ".log")
-        val errorOutStream = FileOutputStream(errDumpFile)
-        val printStream = PrintStream(errorOutStream)
-        System.setErr(printStream);
+        System.setErr(PrintStream(FileOutputStream(errDumpFile)))
 
 
         project.clean = clean
         info(Constants.logos[Constants.logos.indices.random()])
-        info("Generating your website")
+        info("Generating your website [$yamlConfig]")
         if (clean) {
             info("Cleaning the output directory before generation and deleting the cache")
-        } else {
-            info("Reading yaml configuration file $yamlConfig")
         }
 
         // TODO: be less aggressive with this, use some sort of caching :)
@@ -142,30 +153,35 @@ class Generator : Runnable, KoinComponent {
         val markdownRenderer = MarkdownToHTMLRenderer(project, fileHandler, get { parametersOf(project) })
 
         var generated = 0
-        if (clean) {
-            logger.info("Removing old cache file and clearing output directory")
-            fileHandler.deleteFile(project.dirs.sources, "${project.name.slug()}.cache.json")
-            pageList.forEachIndexed { index, cacheAndPost ->
-                cacheAndPost.post?.let {
-                    it.rawContent =
-                        fileHandler.readFileAsString(cacheAndPost.post.sourceFileName) // TODO: this still contains the yaml front matter :(
-                    markdownRenderer.renderHTML(cacheAndPost.post, index)
+        val renderMs = measureTimeMillis {
+            if (clean) {
+                fileHandler.deleteFile(project.dirs.sources, "${project.name.slug()}.cache.json")
+                pageList.forEachIndexed { index, cacheAndPost ->
+                    cacheAndPost.post?.let {
+                        it.rawContent =
+                            fileHandler.readFileAsString(cacheAndPost.post.sourceFileName) // TODO: this still contains the yaml front matter :(
+                        markdownRenderer.renderHTML(cacheAndPost.post, index)
+                        generated++
+                    }
+                }
+            } else {
+                pageList.filter { item -> item.mdCacheItem.rerender }.forEachIndexed { index, cacheAndPost ->
+                    cacheAndPost.post?.let {
+                        it.rawContent =
+                            fileHandler.readFileAsString(cacheAndPost.post.sourceFileName) // TODO: this still contains the yaml front matter :(
+                        markdownRenderer.renderHTML(cacheAndPost.post, index)
+                    }
                     generated++
                 }
             }
-        } else {
-
-            pageList.filter { item -> item.mdCacheItem.rerender }.forEachIndexed { index, cacheAndPost ->
-                cacheAndPost.post?.let {
-                    it.rawContent =
-                        fileHandler.readFileAsString(cacheAndPost.post.sourceFileName) // TODO: this still contains the yaml front matter :(
-                    markdownRenderer.renderHTML(cacheAndPost.post, index)
-                }
-                generated++
-            }
         }
 
-        logger.info { "$generated HTML files rendered" }
+        val cachedCount = pageList.size - generated
+        if (!clean && cachedCount > 0) {
+            info("Rendered $generated HTML files in ${renderMs}ms ($cachedCount cached)")
+        } else {
+            info("Rendered $generated HTML files in ${renderMs}ms")
+        }
 
         //TODO: come up with a better asset copying pipeline stage thingy
         assetsProcessor.copyStatics()
@@ -182,13 +198,15 @@ class Generator : Runnable, KoinComponent {
         val generators = generatorPluginLoader.getGenerators(additionalGenerators)
 
         if (generators.isEmpty()) {
-            logger.error { "No generators found in the pipeline. Aborting execution!" }
+            error("No generators found in the pipeline. Aborting execution!")
         }
 
         // TODO: this still doesn't work with the CACHE!
         val renderer by inject<TemplatePageRenderer> { parametersOf(project) }
         getPostsFromCacheAndPost(pageList).process(generators, project, renderer, fileHandler)
 
+        val totalMs = System.currentTimeMillis() - startTime
+        info("Generation complete in ${totalMs}ms — site at ${project.dirs.output}")
     }
 
     private fun getPostsFromCacheAndPost(cacheSet: Set<CacheAndPost>): List<Post> {

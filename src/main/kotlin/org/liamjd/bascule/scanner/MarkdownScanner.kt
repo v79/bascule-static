@@ -3,10 +3,8 @@ package org.liamjd.bascule.scanner
 import mu.KotlinLogging
 import org.liamjd.bascule.cache.BasculeCache
 import org.liamjd.bascule.cache.CacheAndPost
-import org.liamjd.bascule.cache.HandlebarsTemplateCacheItem
 import org.liamjd.bascule.cache.MDCacheItem
 import org.liamjd.bascule.lib.model.Project
-import println.info
 
 /**
  * The primary class for calculating which files need to be rendered to build the website.
@@ -36,9 +34,8 @@ class MarkdownScanner(
             logger.debug { "Cache is not being used, so the cached set will be empty" }
             emptySet()
         }
-//		val templateSet = cache.loadTemplates() - isn't working just now
-        val templateSet: Set<HandlebarsTemplateCacheItem> = emptySet()
-
+		val templateSet = cache.loadTemplates()
+        logger.debug { "Loaded ${templateSet.size} templates from cache" }
 
         // if there are no changes, this set could be empty - but if the cachedSet is empty, this must be full
         val uncachedSet = changeSetCalculator.calculateUncachedSet(cachedSet, templateSet)

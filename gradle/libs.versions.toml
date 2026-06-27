@@ -8,13 +8,13 @@ flexmark = "0.64.8"
 slf4j = "1.7.36"
 handlebars = "4.5.2"
 picocli = "3.9.6"
-jansi = "1.18"
 junit = "5.10.2"
 koin = "3.5.6"
 kotlin-logging = "1.6.26"
 kotlinx-serialization-core = "1.6.1"
 kotlinx-serialization-json = "1.4.1"
 shadow = "8.3.8"
+mordant = "3.0.2"
 
 [libraries]
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
@@ -28,7 +28,6 @@ snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 kotlin-logging = { module = "io.github.microutils:kotlin-logging", version.ref = "kotlin-logging" }
 picocli = { module = "info.picocli:picocli", version.ref = "picocli" }
-jansi = { module = "org.fusesource.jansi:jansi", version.ref = "jansi" }
 koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koin" }
 koin-core = { module = "io.insert-koin:koin-core" }
 kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinx-serialization-core" }
@@ -39,6 +38,7 @@ junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", vers
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 koin-test = { module = "io.insert-koin:koin-test", version.ref = "koin" }
 koin-test-junit5 = { module = "io.insert-koin:koin-test-junit5", version.ref = "koin" }
+mordant = { module = "com.github.ajalt.mordant:mordant", version.ref = "mordant" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
