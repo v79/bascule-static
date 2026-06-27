@@ -41,7 +41,7 @@ class BasculeCacheImpl(val project: Project, val fileHandler: FileHandler) : Bas
             val cache = Json.decodeFromString(Cache.serializer(), jsonString)
             return cache.items
         } catch (fnfe: FileNotFoundException) {
-            println.error("Cache file not found")
+            println.warn("Cache file not found; a new one will be created on the next generation.")
             return emptySet()
         }
     }

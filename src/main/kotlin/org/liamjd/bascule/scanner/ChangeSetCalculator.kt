@@ -190,6 +190,7 @@ class ChangeSetCalculator(
                                 // check the template. If it has been updated, the post must be re-rerendered regardless of the cache content
                                 val htTemplateFile: File = getTemplate(project.dirs.templates, post.layout)
                                 val templateCacheItem = layoutSet.find { it.layoutName == post.layout }
+
                                 if (templateCacheItem != null) {
                                     if (DateConversions.localDateTimeToEpochSeconds(templateCacheItem.layoutModificationDate) != fileScanner.lastModified(
                                             htTemplateFile
