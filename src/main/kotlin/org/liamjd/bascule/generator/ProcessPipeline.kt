@@ -40,7 +40,6 @@ internal fun List<Post>.process(pipeline: ArrayList<KClass<GeneratorPipeline>>, 
 		launch {
 			for (clazz in processors) {
 				val func = clazz.value
-				logger.debug { "Calling function ${func.name} for pipeline ${clazz.key.simpleName}" }
 				debug("Calling function ${func.name} for pipeline ${clazz.key.simpleName}")
 
 				@Suppress("UNCHECKED_CAST")
@@ -56,7 +55,6 @@ internal fun List<Post>.process(pipeline: ArrayList<KClass<GeneratorPipeline>>, 
 		}
 	}
 	if (progress.isCompleted) {
-		logger.info { "Generation complete. HTML files are stored in folder ${project.dirs.output}" }
 		info("Generation complete. HTML files are stored in folder ${project.dirs.output}")
 	}
 

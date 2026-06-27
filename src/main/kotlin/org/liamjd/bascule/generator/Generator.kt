@@ -30,6 +30,7 @@ import org.liamjd.bascule.slug
 import picocli.CommandLine
 import println.debug
 import println.info
+import println.reporter
 import java.io.File
 import java.io.FileOutputStream
 import java.io.PrintStream
@@ -62,12 +63,19 @@ class Generator : Runnable, KoinComponent {
     )
     var projectName: String? = null
 
+    @CommandLine.Option(
+        names = ["-v", "--verbose"],
+        description = ["Enable verbose/debug output"]
+    )
+    var verbose: Boolean = false
+
     private val fileHandler: BasculeFileHandler by inject { parametersOf() }
     private val currentDirectory = System.getProperty("user.dir")!!
     private lateinit var yamlConfig: String
     private val parentFolder: File = File(currentDirectory)
 
     override fun run() {
+        reporter.verbose = verbose
 
         yamlConfig = if (!projectName.isNullOrBlank()) {
             "${projectName}.yaml"
@@ -109,12 +117,14 @@ class Generator : Runnable, KoinComponent {
 
         val assetsProcessor = AssetsProcessor(project, fileHandler)
 
-        // Suppress Apache FOP logging to a log file
-        // TODO: do this we a better logger?
+        // Redirect System.err to a project log file. slf4j-simple writes all logger.* output
+        // to stderr, so this routes all diagnostic logging to <projectname>.log instead of
+        // the console — keeping the terminal clean for Reporter output only.
+        // The original motivation was silencing Apache FOP noise, but the redirect captures
+        // all slf4j traffic. A cleaner alternative would be a simplelogger.properties on the
+        // classpath, but that requires embedding configuration in the fat JAR.
         val errDumpFile = File(parentFolder, parentFolder.name + ".log")
-        val errorOutStream = FileOutputStream(errDumpFile)
-        val printStream = PrintStream(errorOutStream)
-        System.setErr(printStream);
+        System.setErr(PrintStream(FileOutputStream(errDumpFile)))
 
 
         project.clean = clean
@@ -143,7 +153,6 @@ class Generator : Runnable, KoinComponent {
 
         var generated = 0
         if (clean) {
-            logger.info("Removing old cache file and clearing output directory")
             fileHandler.deleteFile(project.dirs.sources, "${project.name.slug()}.cache.json")
             pageList.forEachIndexed { index, cacheAndPost ->
                 cacheAndPost.post?.let {
@@ -165,7 +174,7 @@ class Generator : Runnable, KoinComponent {
             }
         }
 
-        logger.info { "$generated HTML files rendered" }
+        info("$generated HTML files rendered")
 
         //TODO: come up with a better asset copying pipeline stage thingy
         assetsProcessor.copyStatics()
@@ -182,7 +191,7 @@ class Generator : Runnable, KoinComponent {
         val generators = generatorPluginLoader.getGenerators(additionalGenerators)
 
         if (generators.isEmpty()) {
-            logger.error { "No generators found in the pipeline. Aborting execution!" }
+            error("No generators found in the pipeline. Aborting execution!")
         }
 
         // TODO: this still doesn't work with the CACHE!

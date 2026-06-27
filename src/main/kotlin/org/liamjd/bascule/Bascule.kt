@@ -1,9 +1,8 @@
 package org.liamjd.bascule
 
-import org.fusesource.jansi.AnsiConsole
 import org.koin.core.component.KoinComponent
 import org.koin.core.context.startKoin
-import org.koin.core.logger.PrintLogger
+import org.koin.core.logger.EmptyLogger
 import org.liamjd.bascule.generator.Generator
 import org.liamjd.bascule.initializer.BasculeInitializer
 import org.liamjd.bascule.initializer.Destroyer
@@ -35,11 +34,12 @@ class Bascule : Runnable, KoinComponent {
     var deleteAllName: String = ""
 
     init {
-        AnsiConsole.systemInstall()
         // start Koin DI, change logger to PrintLogger() for DI logs or EmptyLogger for no logs
+        // EmptyLogger suppresses Koin's internal DI logs from the console.
+        // Koin starts before Picocli parses arguments, so we can't gate this on --verbose.
         startKoin {
             modules(generationModule, fileModule)
-            logger(PrintLogger())
+            logger(EmptyLogger())
         }
     }
 

@@ -47,9 +47,6 @@ class MarkdownToHTMLRenderer(
         val renderedContent = renderer.render(model, templateFromYaml)
         basculePost.content = renderedMarkdown
 
-        /*	val renderProgressBar = ProgressBar(label = "Rendering", animated = true, messageLine = basculePost.url)
-            renderProgressBar.progress(count)*/
-
         fileHandler.createDirectories(basculePost.destinationFolder!!)
         fileHandler.writeFile(project.dirs.output.absoluteFile, basculePost.url, renderedContent)
 
