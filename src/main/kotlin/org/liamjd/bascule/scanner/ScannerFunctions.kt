@@ -25,14 +25,16 @@ fun isMarkdownFile(file: File): Boolean =
 
 /**
  * Build the output URL for a post from its slug and the source sub-path (relative to the sources root).
- * A leading backslash is stripped and all backslashes are normalised to forward slashes.
+ * Both `\` and `/` separators are normalised to forward slashes, and any leading/trailing separators are
+ * stripped so the result is always a clean root-relative path (no leading slash). This matters because the
+ * sub-path arrives with a leading OS separator (`\2025` on Windows, `/2025` on Linux); a surviving leading
+ * slash would combine with the template's own `/` prefix to produce a protocol-relative `//2025/...` URL,
+ * where the year folder is wrongly parsed as the host.
  */
-fun calculateUrl(slug: String, sourcePath: String): String =
-	if (sourcePath.isEmpty()) {
-		"$slug.html"
-	} else {
-		"${sourcePath.removePrefix("\\")}\\$slug.html".replace("\\", "/")
-	}
+fun calculateUrl(slug: String, sourcePath: String): String {
+	val normalised = sourcePath.replace("\\", "/").trim('/')
+	return if (normalised.isEmpty()) "$slug.html" else "$normalised/$slug.html"
+}
 
 /**
  * True if [cachedSet] already contains an item matching [mdItem] on path, modification date AND size,

@@ -62,6 +62,14 @@ class ScannerFunctionsTest {
 		assertEquals("blog/my-post.html", calculateUrl("my-post", "\\blog"))
 	}
 
+	@Test
+	fun `url strips a leading forward slash from a unix source path`() {
+		// On Linux the sub-path arrives as "/2025"; the leading slash must be stripped so the
+		// template's own "/" prefix does not produce a protocol-relative "//2025/..." URL.
+		assertEquals("2025/my-post.html", calculateUrl("my-post", "/2025"))
+		assertEquals("blog/2026/my-post.html", calculateUrl("my-post", "/blog/2026"))
+	}
+
 	// ---- cacheContainsItem ------------------------------------------------
 
 	private val modDate = LocalDateTime.of(2026, 5, 31, 12, 0, 0)
