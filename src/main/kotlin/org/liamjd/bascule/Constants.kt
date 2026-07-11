@@ -21,12 +21,13 @@ fun String.slug() : String {
  * Various final values. Extension functions. Plus logos :)
  */
 object Constants {
-	const val VERSION_STRING = "v0.5.4"
+	const val VERSION_STRING = "v0.5.5"
 
 	// TODO: these will all be parameterised
 	val SOURCE_DIR = "sources"
 	val OUTPUT_DIR = "site"
 	val ASSETS_DIR = "assets"
+	val PLUGINS_DIR = "plugins"
 	val PAGES_DIR = "pages"
 	val TEMPLATES_DIR = "templates"
 	val DEFAULT_THEME = "bulma"
