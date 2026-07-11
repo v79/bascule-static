@@ -73,7 +73,7 @@ When the website is generated, a `site/posts/list<X>.html` is generated, which c
 
 Bascule will skip any file or folder whose name starts with `__` or with `.`. Use these for any draft posts you do not want to be generated.
 
-> ![CAUTION]
+> [!CAUTION]
 > The default bascule theme does not provide a Handlebars template for static pages. 
 
 ### Tagging
@@ -86,7 +86,7 @@ The templates for your project are written using the [Handlebars](https://handle
 
 Create a folder for your theme `my-theme` and in that, a folder called `templates`. You must supply the four key handlebars files of `index.hbs`, `post.hbs`, `taglist.hbs` and `list.hbs`. Without these Bascule will fail with an error.
 
-Bascule provides a few common Handlebars extension functions – _capitalize_, _upper_, and _slugify_, plus a couple of bespoke functions `forEach` and `localDate`.
+Bascule provides a few common Handlebars extension functions – _capitalize_, _upper_, and _slugify_, plus a couple of bespoke functions `forEach` for loops, and `localDate` to provide date formatting options.
 
 See my [own website theme folder](https://github.com/v79/liamjd-web/tree/master/liamjd-theme/templates) for a much more extensive set of templates. I use the `{{ > }}` partials extensively to keep my templates modular and maintainable.
 
@@ -100,13 +100,13 @@ Custom generators need to be provided as JAR files in the `<project>/plugins` fo
 
 You can even provide custom Handlebars extension functions in the plugins folder. They are listed in the `extensions:` section of the project definition file.
 
-> ![WARNING]
+> [!WARNING]
 > TODO: Document the generator interface
 > 
-> ![WARNING]
+> [!WARNING]
 > TODO: Make more use of custom generators
 > 
-> ![WARNING]
+> [!WARNING]
 > TODO: Verify and document Handlebars extension loading
 
 ### Caching
@@ -127,5 +127,5 @@ If there are any fatal errors during the generation process (such as a missing t
 
 ### Project model
 
-> ![WARNING]
-> See __ProjectModel.md__ for a full list of the standard elements available to handlebars templates.
+> [!WARNING]
+> See [ProjectModel.md] for a full list of the standard elements available to handlebars templates.
