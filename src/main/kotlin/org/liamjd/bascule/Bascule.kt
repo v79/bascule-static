@@ -5,7 +5,6 @@ import org.koin.core.context.startKoin
 import org.koin.core.logger.EmptyLogger
 import org.liamjd.bascule.generator.Generator
 import org.liamjd.bascule.initializer.BasculeInitializer
-import org.liamjd.bascule.initializer.Destroyer
 import org.liamjd.bascule.initializer.Themes
 import picocli.CommandLine
 import println.info
@@ -30,9 +29,6 @@ class Bascule : Runnable, KoinComponent {
     )
     var themeName: String? = null
 
-    @CommandLine.Option(names = ["--deleteSite"], description = ["destroy your entire website!"])
-    var deleteAllName: String = ""
-
     init {
         // start Koin DI, change logger to PrintLogger() for DI logs or EmptyLogger for no logs
         // EmptyLogger suppresses Koin's internal DI logs from the console.
@@ -51,10 +47,6 @@ class Bascule : Runnable, KoinComponent {
             initializer.create()
         }
 
-        if (deleteAllName.isNotBlank()) {
-            Destroyer(deleteAllName)
-        }
     }
-
 
 }

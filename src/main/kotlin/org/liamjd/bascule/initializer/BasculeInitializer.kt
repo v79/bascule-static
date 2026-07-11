@@ -8,6 +8,7 @@ import org.liamjd.bascule.Constants
 import org.liamjd.bascule.Constants.ASSETS_DIR
 import org.liamjd.bascule.Constants.CONFIG_YAML
 import org.liamjd.bascule.Constants.OUTPUT_DIR
+import org.liamjd.bascule.Constants.PLUGINS_DIR
 import org.liamjd.bascule.Constants.SOURCE_DIR
 import org.liamjd.bascule.Constants.TEMPLATES_DIR
 import org.liamjd.bascule.lib.model.Theme
@@ -35,13 +36,14 @@ class BasculeInitializer(val siteName: String, val themeName: Theme?, val fileHa
 		}
 
 		// copy configuration yaml file from resources
-		val yamlConfigString = buildConfiguration(theme, siteRoot)
+		buildConfiguration(theme, siteRoot)
 		info("Building directory structure")
 
 
 		val sourceDir = fileHandler.createDirectory(siteRoot.absolutePath,SOURCE_DIR)
 		val outputDir = fileHandler.createDirectory(siteRoot.absolutePath,OUTPUT_DIR)
 		val assetsDir = fileHandler.createDirectory(siteRoot.absolutePath,ASSETS_DIR)
+		val pluginsDir = fileHandler.createDirectory(siteRoot.absolutePath, PLUGINS_DIR)
 		val templatesDir = fileHandler.createDirectories("${siteRoot.absolutePath}/$theme",TEMPLATES_DIR)
 
 		info("Copying theme '$theme' templates")
@@ -52,19 +54,17 @@ class BasculeInitializer(val siteName: String, val themeName: Theme?, val fileHa
 	}
 
 	// TODO: this will get much more complicated in the future
-	private fun buildConfiguration(themeName: Theme, root: File): String {
+	private fun buildConfiguration(themeName: Theme, root: File) {
 		val yamlConfigString = "$siteName.yaml"
 
 		info("Writing $siteName.yaml configuration file")
 		val yamlTemplate = fileHandler.readFileFromResources("", CONFIG_YAML)
 		val model = mutableMapOf<String, String>()
-		model.put("themeName", themeName)
+        model["themeName"] = themeName
 
-		val projectConfig = render(model, yamlTemplate)
+        val projectConfig = render(model, yamlTemplate)
 
 		fileHandler.writeFile(root, yamlConfigString, projectConfig)
-
-		return yamlConfigString
 
 	}
 
@@ -78,7 +78,7 @@ class BasculeInitializer(val siteName: String, val themeName: Theme?, val fileHa
 
 	private fun copyThemeToTemplates(themeName: Theme, templatesDir: File) {
 		val themeTemplateDirName = "${Constants.THEME_FOLDER}/$themeName/templates"
-		val filesToCopy = arrayOf("post.hbs","index.hbs")
+		val filesToCopy = arrayOf("post.hbs","index.hbs","list.hbs","taglist.hbs")
 		for (f in filesToCopy) {
 			fileHandler.copyFileFromResources(fileName = f, destination = templatesDir, sourceDir = "$themeTemplateDirName/")
 		}
@@ -86,21 +86,3 @@ class BasculeInitializer(val siteName: String, val themeName: Theme?, val fileHa
 
 }
 
-
-/**
- * Really, really destructive and I'm only using it for testing purposes!
- */
-@Deprecated("Dangerous, deletes all the things!", level = DeprecationLevel.WARNING)
-class Destroyer(siteName: String) {
-	val currentDirectory = System.getProperty("user.dir")
-	val pathSeparator = FileSystems.getDefault().separator
-	init {
-		if (siteName.isNotBlank()) {
-			println("Destroying your website $currentDirectory$pathSeparator$siteName!")
-
-			val siteRoot = File("$currentDirectory$pathSeparator$siteName")
-			siteRoot.deleteRecursively()
-		}
-		exitProcess(-1)
-	}
-}

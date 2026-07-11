@@ -65,7 +65,7 @@ class HandlebarsRenderer(val project: Project) : TemplatePageRenderer {
                 return found.readText()
             }
         }
-        println.error("ERROR - template file '$templateName' not found - unable to generate content.")
+        println.error("ERROR - template file '$templateName' not found - unable to generate content for this template.")
         return ""
     }
 }

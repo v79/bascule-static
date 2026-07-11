@@ -3,13 +3,13 @@ dateFormat: dd/MM/yyyy
 dateTimeFormat: HH:mm:ss dd/MM/yyyy
 author: bascule
 theme: {{themeName}}
-tagskey: tags
-postsPerPage: 2
+postsPerPage: 5
+postLayouts: [post]
 
 directories:
   source: sources
   output: site
   assets: assets
-  templates: templates
+  templates: {{themeName}}/templates
 plugins: []
-processors: [IndexPageGenerator,PostNavigationGenerator,TaxonomyNavigationGenerator,org.liamjd.bascule.lib.generators.pdf.SinglePagePDFGenerator]
+processors: [IndexPageGenerator,PostNavigationGenerator,TaxonomyNavigationGenerator]
