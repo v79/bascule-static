@@ -30,22 +30,25 @@ import kotlin.test.assertTrue
 class ChangeSetCalculatorTest {
 
 	private val yamlConfig = """
-        siteName: Test Site
+        ---
+        theme: liamjd-theme
         dateFormat: "dd/MM/yyyy"
         dateTimeFormat: HH:mm:ss dd/MM/yyyy
-        author: Tester
-        theme: liamjd-theme
         postsPerPage: 10
+        ---
         directories:
           source: sources
           output: site
-          assets: assets
+          assets: src/test/resources/assets-test
           templates: liamjd-theme/templates
-          generators: [IndexPageGenerator, PostNavigationGenerator, TaxonomyNavigationGenerator]
-    """.trimIndent()
+        generators: [IndexPageGenerator]
+        ---
+        siteName: Liam John Davison
+        author: Liam Davison
+    """.trimIndent().replace("\t","  ")
 
-	private val project = Project(yamlConfig = yamlConfig)
-	private val sourcesDir: File = project.dirs.sources
+	private val project = Project(yamlString = yamlConfig)
+	private val sourcesDir: File = project.config.directories.sources
 
 	private val emptyDocument = Parser.builder(MutableDataSet()).build().parse("")
 
@@ -180,7 +183,7 @@ class ChangeSetCalculatorTest {
 
 		// the template is also unchanged: its cached mod-date must equal the file's lastModified (in seconds)
 		val templateFile = File("templates", "post.hbs")
-		every { fileHandler.getFile(project.dirs.templates, "post.hbs") } returns templateFile
+		every { fileHandler.getFile(project.config.directories.templates, "post.hbs") } returns templateFile
 		val templateLdt = LocalDateTime.of(2026, 1, 1, 12, 0, 0)
 		val templateEpochSeconds = DateConversions.localDateTimeToEpochSeconds(templateLdt)
 		fileScanner.addFile(templateFile, lastModified = templateEpochSeconds * 1000)

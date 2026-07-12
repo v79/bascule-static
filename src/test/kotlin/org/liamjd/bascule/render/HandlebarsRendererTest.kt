@@ -12,21 +12,24 @@ import kotlin.test.assertEquals
 class HandlebarsRendererTest {
 
     private val yamlConfig = """
-        siteName: Liam John Davison
+        ---
+        theme: liamjd-theme
         dateFormat: "dd/MM/yyyy"
         dateTimeFormat: HH:mm:ss dd/MM/yyyy
-        author: Liam Davison
-        theme: liamjd-theme
         postsPerPage: 10
+        ---
         directories:
           source: sources
           output: site
-          assets: assets
+          assets: src/test/resources/assets-test
           templates: src/test/resources/handlebars/templates
-          generators: [IndexPageGenerator]
-    """.trimIndent()
+        generators: [IndexPageGenerator]
+        ---
+        siteName: Liam John Davison
+        author: Liam Davison
+    """.trimIndent().replace("\t","  ")
 
-    private val project = Project(yamlConfig = yamlConfig)
+    private val project = Project(yamlString = yamlConfig)
     private val renderer = HandlebarsRenderer(project)
 
     @Test

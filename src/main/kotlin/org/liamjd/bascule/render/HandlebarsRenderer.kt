@@ -25,7 +25,7 @@ class HandlebarsRenderer(val project: Project) : TemplatePageRenderer {
     val loader: FileTemplateLoader
 
     init {
-        loader = FileTemplateLoader(project.dirs.templates)
+        loader = FileTemplateLoader(project.config.directories.templates)
         dateFormat = project.model["dateFormat"] as String? ?: "dd/MMM/yyyy"
 
         hbRenderer = Handlebars(loader)
@@ -57,7 +57,7 @@ class HandlebarsRenderer(val project: Project) : TemplatePageRenderer {
     }
 
     private fun getTemplateText(project: Project, templateName: String): String {
-        val matches = project.dirs.templates.listFiles { _, name -> name == (templateName + TEMPLATE_SUFFIX) }
+        val matches = project.config.directories.templates.listFiles { _, name -> name == (templateName + TEMPLATE_SUFFIX) }
 
         if (matches != null) {
             if (matches.isNotEmpty() && matches.size == 1) {

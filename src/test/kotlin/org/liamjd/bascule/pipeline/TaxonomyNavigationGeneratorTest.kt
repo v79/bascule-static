@@ -23,21 +23,24 @@ import kotlin.test.assertEquals
 class TaxonomyNavigationGeneratorTest {
 
     private val yamlConfig = """
-        siteName: Liam John Davison
+        ---
+        theme: liamjd-theme
         dateFormat: "dd/MM/yyyy"
         dateTimeFormat: HH:mm:ss dd/MM/yyyy
-        author: Liam Davison
-        theme: liamjd-theme
         postsPerPage: 10
+        ---
         directories:
           source: sources
           output: site
-          assets: assets
+          assets: src/test/resources/assets-test
           templates: liamjd-theme/templates
-          generators: [IndexPageGenerator, PostNavigationGenerator, TaxonomyNavigationGenerator]
-    """.trimIndent()
+        generators: [IndexPageGenerator]
+        ---
+        siteName: Liam John Davison
+        author: Liam Davison
+    """.trimIndent().replace("\t","  ")
 
-    private val project: Project = Project(yamlConfig = yamlConfig)
+    private val project: Project = Project(yamlString = yamlConfig)
 
     private val mockRenderer = mockk<TemplatePageRenderer>()
     private val mockFileHandler = mockk<FileHandler>()
@@ -86,7 +89,7 @@ class TaxonomyNavigationGeneratorTest {
 
         runBlocking { generator.process(project, mockRenderer, mockFileHandler, clean = true) }
 
-        verify(exactly = 1) { mockFileHandler.createDirectory(project.dirs.output.absolutePath, "tags") }
+        verify(exactly = 1) { mockFileHandler.createDirectory(project.config.directories.output.absolutePath, "tags") }
     }
 
     @Test

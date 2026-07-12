@@ -19,21 +19,24 @@ import kotlin.test.assertEquals
 class MarkdownScannerTest {
 
     private val yamlConfig = """
-        siteName: Test Site
+        ---
+        theme: liamjd-theme
         dateFormat: "dd/MM/yyyy"
         dateTimeFormat: HH:mm:ss dd/MM/yyyy
-        author: Tester
-        theme: liamjd-theme
         postsPerPage: 10
+        ---
         directories:
           source: sources
           output: site
-          assets: assets
-          templates: liamjd-theme/templates
-          generators: [IndexPageGenerator, PostNavigationGenerator, TaxonomyNavigationGenerator]
-    """.trimIndent()
+          assets: src/test/resources/assets-test
+          templates: templates
+        generators: [IndexPageGenerator]
+        ---
+        siteName: Liam John Davison
+        author: Liam Davison
+    """.trimIndent().replace("\t","  ")
 
-    private val project = Project(yamlConfig = yamlConfig).apply { clean = false }
+    private val project = Project(yamlString = yamlConfig).apply { clean = false }
 
     private val cache = mockk<BasculeCache>()
     private val changeSetCalculator = mockk<ChangeSetCalculator>()
@@ -54,6 +57,7 @@ class MarkdownScannerTest {
             item("b", LocalDate.of(2026, 2, 1))
         )
         every { cache.loadCacheFile() } returns emptySet()
+        every { cache.loadTemplates() } returns emptySet()
         every { changeSetCalculator.calculateUncachedSet(any(), any()) } returns uncached
         every { cache.writeCacheFile(any()) } just Runs
 
@@ -69,6 +73,7 @@ class MarkdownScannerTest {
             item("b", LocalDate.of(2026, 2, 1))
         )
         every { cache.loadCacheFile() } returns emptySet()
+        every { cache.loadTemplates() } returns emptySet()
         every { changeSetCalculator.calculateUncachedSet(any(), any()) } returns uncached
         every { cache.writeCacheFile(any()) } just Runs
 
@@ -82,6 +87,7 @@ class MarkdownScannerTest {
     fun `when caching is disabled the cache file is not loaded and an empty cached set is used`() {
         every { changeSetCalculator.calculateUncachedSet(any(), any()) } returns emptySet()
         every { cache.writeCacheFile(any()) } just Runs
+        every { cache.loadTemplates() } returns emptySet()
 
         scanner.calculateRenderSet(useCache = false)
 

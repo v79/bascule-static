@@ -29,15 +29,15 @@ class BasculeCacheImpl(val project: Project, val fileHandler: FileHandler) : Bas
         SetSerializer(HandlebarsTemplateCacheItem.serializer())
 
     override fun writeCacheFile(mdCacheItems: Set<MDCacheItem>) {
-        val cache = Cache(getTemplates(project.dirs.templates), mdCacheItems)
+        val cache = Cache(getTemplates(project.config.directories.templates), mdCacheItems)
         val cacheJsonData = Json.encodeToString(cache)
-        fileHandler.writeFile(project.dirs.sources, getCacheFileName(), cacheJsonData)
+        fileHandler.writeFile(project.config.directories.sources, getCacheFileName(), cacheJsonData)
         // I used to have a cache for template sets, but I seem to have lost it
     }
 
     override fun loadCacheFile(): Set<MDCacheItem> {
         try {
-            val jsonString = fileHandler.readFileAsString(project.dirs.sources, getCacheFileName())
+            val jsonString = fileHandler.readFileAsString(project.config.directories.sources, getCacheFileName())
             val cache = Json.decodeFromString(Cache.serializer(), jsonString)
             return cache.items
         } catch (fnfe: FileNotFoundException) {
@@ -48,7 +48,7 @@ class BasculeCacheImpl(val project: Project, val fileHandler: FileHandler) : Bas
 
     override fun loadTemplates(): Set<HandlebarsTemplateCacheItem> {
         try {
-            val jsonString = fileHandler.readFileAsString(project.dirs.sources, getCacheFileName())
+            val jsonString = fileHandler.readFileAsString(project.config.directories.sources, getCacheFileName())
             val json = Json { prettyPrint = true }
             val cache = json.decodeFromString(Cache.serializer(), jsonString)
             return cache.layouts

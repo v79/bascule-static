@@ -19,21 +19,24 @@ import kotlin.test.assertTrue
 class PostNavigationGeneratorTest {
 
     private val yamlConfig = """
-        siteName: Liam John Davison
+        ---
+        theme: liamjd-theme
         dateFormat: "dd/MM/yyyy"
         dateTimeFormat: HH:mm:ss dd/MM/yyyy
-        author: Liam Davison
-        theme: liamjd-theme
         postsPerPage: 10
+        ---
         directories:
           source: sources
           output: site
-          assets: assets
+          assets: src/test/resources/assets-test
           templates: liamjd-theme/templates
-          generators: [IndexPageGenerator, PostNavigationGenerator, TaxonomyNavigationGenerator]
-    """.trimIndent()
+        generators: [IndexPageGenerator]
+        ---
+        siteName: Liam John Davison
+        author: Liam Davison
+    """.trimIndent().replace("\t","  ")
 
-    private val project: Project = Project(yamlConfig = yamlConfig)
+    private val project: Project = Project(yamlString = yamlConfig)
 
     private val mockRenderer = mockk<TemplatePageRenderer>()
     private val mockFileHandler = mockk<FileHandler>()
@@ -84,7 +87,7 @@ class PostNavigationGeneratorTest {
 
         runBlocking { generator.process(project, mockRenderer, mockFileHandler, clean = true) }
 
-        verify(exactly = 1) { mockFileHandler.createDirectory(project.dirs.output.absolutePath, "posts") }
+        verify(exactly = 1) { mockFileHandler.createDirectory(project.config.directories.output.absolutePath, "posts") }
     }
 
     @Test
@@ -214,7 +217,7 @@ class PostNavigationGeneratorTest {
 
     @Test
     fun `runs post generator for each layout defined in postLayouts`() {
-        project.postLayouts = setOf("post", "blog")
+        project.config.postLayouts = setOf("post", "blog")
         val posts: List<Post> = listOf(
             post("First", layout = "post"),
             post("Second", layout = "blog")

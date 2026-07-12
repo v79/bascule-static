@@ -103,20 +103,20 @@ class Generator : Runnable, KoinComponent {
 
         debug("Constructing Handlebars extensions")
         val handlebarPluginLoader =
-            HandlebarPluginLoader(this.javaClass.classLoader, Extension::class, project.parentFolder)
-        if (project.extensions != null) {
-            val extensions = handlebarPluginLoader.getExtensions(project.extensions!!)
+            HandlebarPluginLoader(this.javaClass.classLoader, Extension::class, project.config.parentDir)
+        if (project.config.extensions != null) {
+            val extensions = handlebarPluginLoader.getExtensions(project.config.extensions!!)
             for (ext in extensions) {
                 debug("Checking extension ${ext.simpleName}")
                 handlebarExtensions.add(ext.createInstance())
             }
         }
 
-        project.markdownOptions.set(Parser.EXTENSIONS, handlebarExtensions)
-        project.markdownOptions.set(HtmlRenderer.GENERATE_HEADER_ID, true)
+        project.config.markdownOptions.set(Parser.EXTENSIONS, handlebarExtensions)
+        project.config.markdownOptions.set(HtmlRenderer.GENERATE_HEADER_ID, true)
             .set(HtmlRenderer.RENDER_HEADER_ID, true) // to give headings IDs
-        project.markdownOptions.set(HtmlRenderer.INDENT_SIZE, 2) // prettier HTML
-        project.markdownOptions.set(HydeExtension.SOURCE_FOLDER, project.dirs.sources.toString())
+        project.config.markdownOptions.set(HtmlRenderer.INDENT_SIZE, 2) // prettier HTML
+        project.config.markdownOptions.set(HydeExtension.SOURCE_FOLDER, project.config.directories.sources.toString())
 
         val assetsProcessor = AssetsProcessor(project, fileHandler)
 
@@ -141,8 +141,8 @@ class Generator : Runnable, KoinComponent {
         // if I don't delete, how do I keep track of deleted files?
         // if I do delete, there is no cache
         // unless I cache all content externally
-//		fileHandler.emptyFolder(project.dirs.output, OUTPUT_SUFFIX)
-//		fileHandler.emptyFolder(File(project.dirs.output, "tags"))
+//		fileHandler.emptyFolder(project.config.directories.output, OUTPUT_SUFFIX)
+//		fileHandler.emptyFolder(File(project.config.directories.output, "tags"))
 //		val walker = FolderWalker(project)
 
         val walker = get<MarkdownScanner> { parametersOf(project) }
@@ -155,7 +155,7 @@ class Generator : Runnable, KoinComponent {
         var generated = 0
         val renderMs = measureTimeMillis {
             if (clean) {
-                fileHandler.deleteFile(project.dirs.sources, "${project.name.slug()}.cache.json")
+                fileHandler.deleteFile(project.config.directories.sources, "${project.name.slug()}.cache.json")
                 pageList.forEachIndexed { index, cacheAndPost ->
                     cacheAndPost.post?.let {
                         it.rawContent =
@@ -187,14 +187,14 @@ class Generator : Runnable, KoinComponent {
         assetsProcessor.copyStatics()
 
         val additionalGenerators = mutableListOf<String>()
-        if (project.generators.isNullOrEmpty()) {
+        if (project.config.generators.isNullOrEmpty()) {
             additionalGenerators.addAll(DEFAULT_PROCESSORS)
         } else {
-            additionalGenerators.addAll(project.generators!!)
+            additionalGenerators.addAll(project.config.generators!!)
         }
 
         val generatorPluginLoader =
-            GeneratorPluginLoader(this.javaClass.classLoader, GeneratorPipeline::class, project.parentFolder)
+            GeneratorPluginLoader(this.javaClass.classLoader, GeneratorPipeline::class, project.config.parentDir)
         val generators = generatorPluginLoader.getGenerators(additionalGenerators)
 
         if (generators.isEmpty()) {
@@ -206,7 +206,7 @@ class Generator : Runnable, KoinComponent {
         getPostsFromCacheAndPost(pageList).process(generators, project, renderer, fileHandler)
 
         val totalMs = System.currentTimeMillis() - startTime
-        info("Generation complete in ${totalMs}ms — site at ${project.dirs.output}")
+        info("Generation complete in ${totalMs}ms — site at ${project.config.directories.output}")
     }
 
     private fun getPostsFromCacheAndPost(cacheSet: Set<CacheAndPost>): List<Post> {

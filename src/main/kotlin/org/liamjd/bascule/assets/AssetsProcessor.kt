@@ -21,8 +21,8 @@ class AssetsProcessor(val project: Project, private val fileHandler: BasculeFile
 
 	fun copyStatics() {
 
-		val destinationDir = project.dirs.output.path + pathSeparator + "assets" + pathSeparator
-		copyDirectory(project.dirs.assets, destinationDir)
+		val destinationDir = project.config.directories.output.path + pathSeparator + "assets" + pathSeparator
+		copyDirectory(project.config.directories.assets, destinationDir)
 	}
 
 	private fun copyFile(file: File, destinationDir: String) {
