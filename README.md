@@ -102,10 +102,10 @@ You can even provide custom Handlebars extension functions in the plugins folder
 
 > [!WARNING]
 > TODO: Document the generator interface
-> 
+ 
 > [!WARNING]
 > TODO: Make more use of custom generators
-> 
+ 
 > [!WARNING]
 > TODO: Verify and document Handlebars extension loading
 
