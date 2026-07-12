@@ -7,6 +7,7 @@ import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.core.parameter.parametersOf
 import org.liamjd.bascule.BasculeFileHandler
+import org.liamjd.bascule.TestProjectYaml
 import org.liamjd.bascule.fileModule
 import org.liamjd.bascule.generationModule
 import org.liamjd.bascule.lib.model.Project
@@ -20,23 +21,7 @@ import kotlin.test.assertNotNull
  */
 class ScannerKoinWiringTest {
 
-	private val yamlConfig = """
-        ---
-        theme: liamjd-theme
-        dateFormat: "dd/MM/yyyy"
-        dateTimeFormat: HH:mm:ss dd/MM/yyyy
-        postsPerPage: 10
-        ---
-        directories:
-          source: sources
-          output: site
-          assets: src/test/resources/assets-test
-          templates: liamjd-theme/templates
-        generators: [IndexPageGenerator]
-        ---
-        siteName: Liam John Davison
-        author: Liam Davison
-    """.trimIndent().replace("\t","  ")
+	private val yamlConfig = TestProjectYaml.load()
 
 	private val project = Project(yamlString = yamlConfig)
 	private lateinit var koin: Koin

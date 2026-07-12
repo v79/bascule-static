@@ -3,6 +3,7 @@ package org.liamjd.bascule.render
 import com.vladsch.flexmark.util.ast.Document
 import io.mockk.*
 import org.liamjd.bascule.BasculeFileHandler
+import org.liamjd.bascule.TestProjectYaml
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.lib.render.TemplatePageRenderer
 import org.liamjd.bascule.model.BasculePost
@@ -18,23 +19,7 @@ import kotlin.test.assertEquals
  */
 class MarkdownToHTMLRendererTest {
 
-    private val yamlConfig = """
-        ---
-        theme: liamjd-theme
-        dateFormat: "dd/MM/yyyy"
-        dateTimeFormat: HH:mm:ss dd/MM/yyyy
-        postsPerPage: 10
-        ---
-        directories:
-          source: sources
-          output: site
-          assets: src/test/resources/assets-test
-          templates: liamjd-theme/templates
-        generators: [IndexPageGenerator]
-        ---
-        siteName: Liam John Davison
-        author: Liam Davison
-    """.trimIndent().replace("\t","  ")
+    private val yamlConfig = TestProjectYaml.load()
 
     private val project = Project(yamlString = yamlConfig)
     private val mockFileHandler = mockk<BasculeFileHandler>()

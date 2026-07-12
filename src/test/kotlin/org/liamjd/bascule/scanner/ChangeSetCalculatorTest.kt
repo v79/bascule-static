@@ -6,6 +6,7 @@ import io.mockk.every
 import io.mockk.mockk
 import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.FakeFileScanner
+import org.liamjd.bascule.TestProjectYaml
 import org.liamjd.bascule.cache.HandlebarsTemplateCacheItem
 import org.liamjd.bascule.cache.MDCacheItem
 import org.liamjd.bascule.cache.DateConversions
@@ -29,23 +30,7 @@ import kotlin.test.assertTrue
  */
 class ChangeSetCalculatorTest {
 
-	private val yamlConfig = """
-        ---
-        theme: liamjd-theme
-        dateFormat: "dd/MM/yyyy"
-        dateTimeFormat: HH:mm:ss dd/MM/yyyy
-        postsPerPage: 10
-        ---
-        directories:
-          source: sources
-          output: site
-          assets: src/test/resources/assets-test
-          templates: liamjd-theme/templates
-        generators: [IndexPageGenerator]
-        ---
-        siteName: Liam John Davison
-        author: Liam Davison
-    """.trimIndent().replace("\t","  ")
+	private val yamlConfig = TestProjectYaml.load()
 
 	private val project = Project(yamlString = yamlConfig)
 	private val sourcesDir: File = project.config.directories.sources

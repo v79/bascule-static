@@ -9,6 +9,7 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import org.junit.jupiter.api.BeforeEach
+import org.liamjd.bascule.TestProjectYaml
 import org.liamjd.bascule.lib.model.Project
 import java.io.File
 import kotlin.test.*
@@ -19,23 +20,7 @@ class BasculePostTest {
     private val mockYamlVisitor: AbstractYamlFrontMatterVisitor = mockk()
     private val mockFile: File = File("src/test/resources/NoYaml.md")
 
-    private val yamlConfig = """
-        ---
-        theme: liamjd-theme
-        dateFormat: "dd/MM/yyyy"
-        dateTimeFormat: HH:mm:ss dd/MM/yyyy
-        postsPerPage: 10
-        ---
-        directories:
-          source: sources
-          output: site
-          assets: src/test/resources/assets-test
-          templates: liamjd-theme/templates
-        generators: [IndexPageGenerator]
-        ---
-        siteName: Liam John Davison
-        author: Liam Davison
-    """.trimIndent().replace("\t","  ")
+    private val yamlConfig = TestProjectYaml.load()
 
     private val project: Project = Project(yamlString = yamlConfig)
 

@@ -8,6 +8,7 @@ import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.dsl.module
 import org.liamjd.bascule.BasculeFileHandler
+import org.liamjd.bascule.TestProjectYaml
 import org.liamjd.bascule.lib.model.Directories
 import org.liamjd.bascule.lib.model.Post
 import org.liamjd.bascule.lib.model.Project
@@ -19,23 +20,7 @@ class IndexPageGeneratorTest {
     private val mockFileH = mockk<org.liamjd.bascule.lib.FileHandler>()
     private val mockBFH = mockk<BasculeFileHandler>()
 
-    private val yamlConfig = """
-        ---
-        theme: liamjd-theme
-        dateFormat: "dd/MM/yyyy"
-        dateTimeFormat: HH:mm:ss dd/MM/yyyy
-        postsPerPage: 10
-        ---
-        directories:
-          source: sources
-          output: site
-          assets: src/test/resources/assets-test
-          templates: liamjd-theme/templates
-        generators: [IndexPageGenerator]
-        ---
-        siteName: Liam John Davison
-        author: Liam Davison
-    """.trimIndent().replace("\t","  ")
+    private val yamlConfig = TestProjectYaml.load()
 
     private val project: Project = Project(yamlString = yamlConfig)
     val directories = Directories(

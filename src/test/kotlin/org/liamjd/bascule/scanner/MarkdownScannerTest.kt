@@ -1,6 +1,7 @@
 package org.liamjd.bascule.scanner
 
 import io.mockk.*
+import org.liamjd.bascule.TestProjectYaml
 import org.liamjd.bascule.cache.BasculeCache
 import org.liamjd.bascule.cache.CacheAndPost
 import org.liamjd.bascule.cache.MDCacheItem
@@ -18,23 +19,7 @@ import kotlin.test.assertEquals
  */
 class MarkdownScannerTest {
 
-    private val yamlConfig = """
-        ---
-        theme: liamjd-theme
-        dateFormat: "dd/MM/yyyy"
-        dateTimeFormat: HH:mm:ss dd/MM/yyyy
-        postsPerPage: 10
-        ---
-        directories:
-          source: sources
-          output: site
-          assets: src/test/resources/assets-test
-          templates: templates
-        generators: [IndexPageGenerator]
-        ---
-        siteName: Liam John Davison
-        author: Liam Davison
-    """.trimIndent().replace("\t","  ")
+    private val yamlConfig = TestProjectYaml.load("templates")
 
     private val project = Project(yamlString = yamlConfig).apply { clean = false }
 
