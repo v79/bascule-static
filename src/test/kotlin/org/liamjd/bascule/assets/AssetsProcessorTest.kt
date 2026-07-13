@@ -4,6 +4,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.liamjd.bascule.BasculeFileHandler
+import org.liamjd.bascule.TestProjectYaml
 import org.liamjd.bascule.lib.model.Project
 import java.io.File
 import kotlin.test.Test
@@ -23,22 +24,9 @@ import kotlin.test.Test
  */
 class AssetsProcessorTest {
 
-    private val yamlConfig = """
-        siteName: Liam John Davison
-        dateFormat: "dd/MM/yyyy"
-        dateTimeFormat: HH:mm:ss dd/MM/yyyy
-        author: Liam Davison
-        theme: liamjd-theme
-        postsPerPage: 10
-        directories:
-          source: sources
-          output: site
-          assets: src/test/resources/assets-test
-          templates: liamjd-theme/templates
-          generators: [IndexPageGenerator]
-    """.trimIndent()
+    private val yamlConfig = TestProjectYaml.load()
 
-    private val project = Project(yamlConfig = yamlConfig)
+    private val project = Project(yamlString = yamlConfig)
     private val mockFileHandler = mockk<BasculeFileHandler>()
     private val processor = AssetsProcessor(project, mockFileHandler)
 
@@ -94,8 +82,8 @@ class AssetsProcessorTest {
 
         processor.copyStatics()
 
-        // the destination root is <output>/assets, derived from project.dirs.output
-        val outputName = project.dirs.output.name // "site"
+        // the destination root is <output>/assets, derived from project.config.directories.output
+        val outputName = project.config.directories.output.name // "site"
         verify {
             mockFileHandler.copyFile(
                 any(),

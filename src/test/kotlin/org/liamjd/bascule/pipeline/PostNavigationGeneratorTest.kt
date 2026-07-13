@@ -5,6 +5,7 @@ import com.vladsch.flexmark.util.ast.Document
 import com.vladsch.flexmark.util.data.MutableDataSet
 import io.mockk.*
 import kotlinx.coroutines.runBlocking
+import org.liamjd.bascule.TestProjectYaml
 import org.liamjd.bascule.lib.FileHandler
 import org.liamjd.bascule.lib.model.Post
 import org.liamjd.bascule.lib.model.Project
@@ -18,22 +19,9 @@ import kotlin.test.assertTrue
 
 class PostNavigationGeneratorTest {
 
-    private val yamlConfig = """
-        siteName: Liam John Davison
-        dateFormat: "dd/MM/yyyy"
-        dateTimeFormat: HH:mm:ss dd/MM/yyyy
-        author: Liam Davison
-        theme: liamjd-theme
-        postsPerPage: 10
-        directories:
-          source: sources
-          output: site
-          assets: assets
-          templates: liamjd-theme/templates
-          generators: [IndexPageGenerator, PostNavigationGenerator, TaxonomyNavigationGenerator]
-    """.trimIndent()
+    private val yamlConfig = TestProjectYaml.load()
 
-    private val project: Project = Project(yamlConfig = yamlConfig)
+    private val project: Project = Project(yamlString = yamlConfig)
 
     private val mockRenderer = mockk<TemplatePageRenderer>()
     private val mockFileHandler = mockk<FileHandler>()
@@ -84,7 +72,7 @@ class PostNavigationGeneratorTest {
 
         runBlocking { generator.process(project, mockRenderer, mockFileHandler, clean = true) }
 
-        verify(exactly = 1) { mockFileHandler.createDirectory(project.dirs.output.absolutePath, "posts") }
+        verify(exactly = 1) { mockFileHandler.createDirectory(project.config.directories.output.absolutePath, "posts") }
     }
 
     @Test
@@ -214,7 +202,7 @@ class PostNavigationGeneratorTest {
 
     @Test
     fun `runs post generator for each layout defined in postLayouts`() {
-        project.postLayouts = setOf("post", "blog")
+        project.config.postLayouts = setOf("post", "blog")
         val posts: List<Post> = listOf(
             post("First", layout = "post"),
             post("Second", layout = "blog")

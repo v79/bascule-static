@@ -16,7 +16,7 @@ import java.io.File
  */
 class PostBuilder(val project: Project, private val fileHandler: FileHandler) {
 
-	val mdParser: Parser = Parser.builder(project.markdownOptions).build()
+	val mdParser: Parser = Parser.builder(project.config.markdownOptions).build()
 	private val cacheFileName: String = "${project.name.slug()}.cache.json"
 
 	/**

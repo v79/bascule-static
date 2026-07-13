@@ -39,7 +39,7 @@ class IndexPageGenerator(posts: List<Post>, numPosts: Int = 1, postsPerPage: Int
 				// I need the rendered HTML, not just the rawContent here
 				val basculePost = postBuilder.buildPost(File(p.sourceFileName))
 				if(basculePost is BasculePost) {
-					p.content = renderMarkdown(basculePost.document, project.markdownOptions)
+					p.content = renderMarkdown(basculePost.document, project.config.markdownOptions)
 				}
 			}
 		}
@@ -48,7 +48,7 @@ class IndexPageGenerator(posts: List<Post>, numPosts: Int = 1, postsPerPage: Int
 		model.put("\$thisPage","index")
 
 		val renderedContent = renderer.render(model, TEMPLATE)
-		fileHandler.writeFile(project.dirs.output, "$TEMPLATE.html", renderedContent)
+		fileHandler.writeFile(project.config.directories.output, "$TEMPLATE.html", renderedContent)
 	}
 
 	private fun renderMarkdown(document: Document, mdOptions: MutableDataSet): String {

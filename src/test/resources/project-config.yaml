@@ -1,0 +1,15 @@
+---
+theme: liamjd-theme
+dateFormat: "dd/MM/yyyy"
+dateTimeFormat: HH:mm:ss dd/MM/yyyy
+postsPerPage: 10
+---
+directories:
+  source: sources
+  output: site
+  assets: src/test/resources/assets-test
+  templates: __TEMPLATES_PATH__
+generators: [IndexPageGenerator]
+---
+siteName: Liam John Davison
+author: Liam Davison

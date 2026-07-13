@@ -6,6 +6,7 @@ import io.mockk.every
 import io.mockk.mockk
 import org.liamjd.bascule.BasculeFileHandler
 import org.liamjd.bascule.FakeFileScanner
+import org.liamjd.bascule.TestProjectYaml
 import org.liamjd.bascule.cache.HandlebarsTemplateCacheItem
 import org.liamjd.bascule.cache.MDCacheItem
 import org.liamjd.bascule.cache.DateConversions
@@ -29,23 +30,10 @@ import kotlin.test.assertTrue
  */
 class ChangeSetCalculatorTest {
 
-	private val yamlConfig = """
-        siteName: Test Site
-        dateFormat: "dd/MM/yyyy"
-        dateTimeFormat: HH:mm:ss dd/MM/yyyy
-        author: Tester
-        theme: liamjd-theme
-        postsPerPage: 10
-        directories:
-          source: sources
-          output: site
-          assets: assets
-          templates: liamjd-theme/templates
-          generators: [IndexPageGenerator, PostNavigationGenerator, TaxonomyNavigationGenerator]
-    """.trimIndent()
+	private val yamlConfig = TestProjectYaml.load()
 
-	private val project = Project(yamlConfig = yamlConfig)
-	private val sourcesDir: File = project.dirs.sources
+	private val project = Project(yamlString = yamlConfig)
+	private val sourcesDir: File = project.config.directories.sources
 
 	private val emptyDocument = Parser.builder(MutableDataSet()).build().parse("")
 
@@ -180,7 +168,7 @@ class ChangeSetCalculatorTest {
 
 		// the template is also unchanged: its cached mod-date must equal the file's lastModified (in seconds)
 		val templateFile = File("templates", "post.hbs")
-		every { fileHandler.getFile(project.dirs.templates, "post.hbs") } returns templateFile
+		every { fileHandler.getFile(project.config.directories.templates, "post.hbs") } returns templateFile
 		val templateLdt = LocalDateTime.of(2026, 1, 1, 12, 0, 0)
 		val templateEpochSeconds = DateConversions.localDateTimeToEpochSeconds(templateLdt)
 		fileScanner.addFile(templateFile, lastModified = templateEpochSeconds * 1000)

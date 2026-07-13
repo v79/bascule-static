@@ -22,7 +22,7 @@ class MarkdownToHTMLRenderer(
 
     private val logger = KotlinLogging.logger {}
 
-    val mdParser: Parser = Parser.builder(project.markdownOptions).build()
+    val mdParser: Parser = Parser.builder(project.config.markdownOptions).build()
 
     override fun renderHTML(post: BasculePost, itemCount: Int) {
         logger.info { "Rendering ${post.layout} ${post.sourceFileName}" }
@@ -48,12 +48,12 @@ class MarkdownToHTMLRenderer(
         basculePost.content = renderedMarkdown
 
         fileHandler.createDirectories(basculePost.destinationFolder!!)
-        fileHandler.writeFile(project.dirs.output.absoluteFile, basculePost.url, renderedContent)
+        fileHandler.writeFile(project.config.directories.output.absoluteFile, basculePost.url, renderedContent)
 
     }
 
     override fun renderMarkdown(document: Document): String {
-        val mdRender = HtmlRenderer.builder(project.markdownOptions).build()
+        val mdRender = HtmlRenderer.builder(project.config.markdownOptions).build()
         return mdRender.render(document)
     }
 }

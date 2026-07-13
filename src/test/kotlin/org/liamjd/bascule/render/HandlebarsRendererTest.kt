@@ -1,5 +1,6 @@
 package org.liamjd.bascule.render
 
+import org.liamjd.bascule.TestProjectYaml
 import org.liamjd.bascule.lib.model.Project
 import java.time.LocalDate
 import kotlin.test.Test
@@ -11,22 +12,9 @@ import kotlin.test.assertEquals
  */
 class HandlebarsRendererTest {
 
-    private val yamlConfig = """
-        siteName: Liam John Davison
-        dateFormat: "dd/MM/yyyy"
-        dateTimeFormat: HH:mm:ss dd/MM/yyyy
-        author: Liam Davison
-        theme: liamjd-theme
-        postsPerPage: 10
-        directories:
-          source: sources
-          output: site
-          assets: assets
-          templates: src/test/resources/handlebars/templates
-          generators: [IndexPageGenerator]
-    """.trimIndent()
+    private val yamlConfig = TestProjectYaml.load("src/test/resources/handlebars/templates")
 
-    private val project = Project(yamlConfig = yamlConfig)
+    private val project = Project(yamlString = yamlConfig)
     private val renderer = HandlebarsRenderer(project)
 
     @Test

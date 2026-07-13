@@ -29,7 +29,7 @@ class TaxonomyNavigationGenerator(posts: List<BasculePost>, numPosts: Int = 1, p
     ) {
         info("Building tag navigation pages")
 
-        val tagsFolder = fileHandler.createDirectory(project.dirs.output.absolutePath, FOLDER_NAME)
+        val tagsFolder = fileHandler.createDirectory(project.config.directories.output.absolutePath, FOLDER_NAME)
 
         // filter out unwanted items
         val filteredPosts = posts.filter { it.layout == "post" }.sortedByDescending { it.date }

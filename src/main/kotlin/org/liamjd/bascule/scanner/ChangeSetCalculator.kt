@@ -51,7 +51,7 @@ class ChangeSetCalculator(
         cachedSet: Set<MDCacheItem>,
         layoutSet: Set<HandlebarsTemplateCacheItem>
     ): Set<CacheAndPost> {
-        info("Scanning ${project.dirs.sources.absolutePath} for markdown files")
+        info("Scanning ${project.config.directories.sources.absolutePath} for markdown files")
         logger.debug { "ChangeSetCalculator.calculateUncachedSet" }
 
         val errorMap = mutableMapOf<String, Any>()
@@ -63,7 +63,7 @@ class ChangeSetCalculator(
              * allSources is updated when a source markdown file is found
              **/
             markdownSourceCount = walkFolder(
-                project.dirs.sources,
+                project.config.directories.sources,
                 markdownSourceCount,
                 errorMap,
                 allSources,
@@ -130,7 +130,7 @@ class ChangeSetCalculator(
         fileLoop@ for (mdFile in fileScanner.listFiles(folder)) {
             index++
             // walker starts with the current directory, which we don't need
-            if (mdFile.absolutePath.equals(project.dirs.sources.absolutePath)) {
+            if (mdFile.absolutePath.equals(project.config.directories.sources.absolutePath)) {
                 continue
             }
 
@@ -188,7 +188,7 @@ class ChangeSetCalculator(
                         if (!project.clean) {
                             if (cacheContainsItem(mdItem, cachedSet)) {
                                 // check the template. If it has been updated, the post must be re-rerendered regardless of the cache content
-                                val htTemplateFile: File = getTemplate(project.dirs.templates, post.layout)
+                                val htTemplateFile: File = getTemplate(project.config.directories.templates, post.layout)
                                 val templateCacheItem = layoutSet.find { it.layoutName == post.layout }
 
                                 if (templateCacheItem != null) {
@@ -203,13 +203,13 @@ class ChangeSetCalculator(
 
                                         // TODO:  all this duplication!
                                         val sourcePath = mdFile.parentFile.absolutePath.toString()
-                                            .removePrefix(project.dirs.sources.absolutePath.toString())
+                                            .removePrefix(project.config.directories.sources.absolutePath.toString())
                                         mdItem.layout = post.layout
                                         post.url = calculateUrl(post.slug, sourcePath)
                                         mdItem.link = PostLink(post.title, post.url, post.date)
 
                                         post.sourceFileName = mdFile.canonicalPath
-                                        post.destinationFolder = fileHandler.getFile(project.dirs.output, sourcePath)
+                                        post.destinationFolder = fileHandler.getFile(project.config.directories.output, sourcePath)
 
                                         allSources.add(CacheAndPost(mdItem, post))
                                         continue@fileLoop
@@ -224,13 +224,13 @@ class ChangeSetCalculator(
                         mdItem.rerender = true
 
                         val sourcePath = mdFile.parentFile.absolutePath.toString()
-                            .removePrefix(project.dirs.sources.absolutePath.toString())
+                            .removePrefix(project.config.directories.sources.absolutePath.toString())
                         mdItem.layout = post.layout
                         post.url = calculateUrl(post.slug, sourcePath)
                         mdItem.link = PostLink(post.title, post.url, post.date)
 
                         post.sourceFileName = mdFile.canonicalPath
-                        post.destinationFolder = fileHandler.getFile(project.dirs.output, sourcePath)
+                        post.destinationFolder = fileHandler.getFile(project.config.directories.output, sourcePath)
                         post.rawContent = fileHandler.readFileAsString(
                             mdFile.parentFile,
                             mdFile.name

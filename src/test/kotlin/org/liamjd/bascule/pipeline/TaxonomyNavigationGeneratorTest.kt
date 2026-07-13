@@ -10,6 +10,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.runBlocking
+import org.liamjd.bascule.TestProjectYaml
 import org.liamjd.bascule.lib.FileHandler
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.lib.model.Tag
@@ -22,22 +23,9 @@ import kotlin.test.assertEquals
 
 class TaxonomyNavigationGeneratorTest {
 
-    private val yamlConfig = """
-        siteName: Liam John Davison
-        dateFormat: "dd/MM/yyyy"
-        dateTimeFormat: HH:mm:ss dd/MM/yyyy
-        author: Liam Davison
-        theme: liamjd-theme
-        postsPerPage: 10
-        directories:
-          source: sources
-          output: site
-          assets: assets
-          templates: liamjd-theme/templates
-          generators: [IndexPageGenerator, PostNavigationGenerator, TaxonomyNavigationGenerator]
-    """.trimIndent()
+    private val yamlConfig = TestProjectYaml.load()
 
-    private val project: Project = Project(yamlConfig = yamlConfig)
+    private val project: Project = Project(yamlString = yamlConfig)
 
     private val mockRenderer = mockk<TemplatePageRenderer>()
     private val mockFileHandler = mockk<FileHandler>()
@@ -86,7 +74,7 @@ class TaxonomyNavigationGeneratorTest {
 
         runBlocking { generator.process(project, mockRenderer, mockFileHandler, clean = true) }
 
-        verify(exactly = 1) { mockFileHandler.createDirectory(project.dirs.output.absolutePath, "tags") }
+        verify(exactly = 1) { mockFileHandler.createDirectory(project.config.directories.output.absolutePath, "tags") }
     }
 
     @Test

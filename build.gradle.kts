@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 group = "org.liamjd"
-version = "0.5.5"
+version = "0.6.0"
 
 plugins {
     alias(libs.plugins.kotlin.jvm)

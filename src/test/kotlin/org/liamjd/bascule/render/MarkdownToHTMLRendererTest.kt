@@ -3,6 +3,7 @@ package org.liamjd.bascule.render
 import com.vladsch.flexmark.util.ast.Document
 import io.mockk.*
 import org.liamjd.bascule.BasculeFileHandler
+import org.liamjd.bascule.TestProjectYaml
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.lib.render.TemplatePageRenderer
 import org.liamjd.bascule.model.BasculePost
@@ -18,22 +19,9 @@ import kotlin.test.assertEquals
  */
 class MarkdownToHTMLRendererTest {
 
-    private val yamlConfig = """
-        siteName: Liam John Davison
-        dateFormat: "dd/MM/yyyy"
-        dateTimeFormat: HH:mm:ss dd/MM/yyyy
-        author: Liam Davison
-        theme: liamjd-theme
-        postsPerPage: 10
-        directories:
-          source: sources
-          output: site
-          assets: assets
-          templates: liamjd-theme/templates
-          generators: [IndexPageGenerator]
-    """.trimIndent()
+    private val yamlConfig = TestProjectYaml.load()
 
-    private val project = Project(yamlConfig = yamlConfig)
+    private val project = Project(yamlString = yamlConfig)
     private val mockFileHandler = mockk<BasculeFileHandler>()
     private val mockRenderer = mockk<TemplatePageRenderer>()
     private val renderer = MarkdownToHTMLRenderer(project, mockFileHandler, mockRenderer)
@@ -70,7 +58,7 @@ class MarkdownToHTMLRendererTest {
         // to the output directory under the post's url
         verify { mockRenderer.render(any(), "post") }
         verify { mockFileHandler.createDirectories(File("site/my-post")) }
-        verify { mockFileHandler.writeFile(project.dirs.output.absoluteFile, "my-post.html", "<html>FINAL</html>") }
+        verify { mockFileHandler.writeFile(project.config.directories.output.absoluteFile, "my-post.html", "<html>FINAL</html>") }
     }
 
     @Test
