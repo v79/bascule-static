@@ -91,7 +91,7 @@ class Generator : Runnable, KoinComponent {
         val configText = File(parentFolder.absolutePath, yamlConfig).readText()
         val project = Project(configText)
 
-        // configure the markdown processor
+        // configure the Markdown processor
         // TODO: load extensions from separate package as a plugin so that I don't need to include every possible markdown extension in this executable
 
         val handlebarExtensions = mutableListOf<Extension>()
@@ -137,20 +137,12 @@ class Generator : Runnable, KoinComponent {
             info("Cleaning the output directory before generation and deleting the cache")
         }
 
-        // TODO: be less aggressive with this, use some sort of caching :)
-        // if I don't delete, how do I keep track of deleted files?
-        // if I do delete, there is no cache
-        // unless I cache all content externally
-//		fileHandler.emptyFolder(project.config.directories.output, OUTPUT_SUFFIX)
-//		fileHandler.emptyFolder(File(project.config.directories.output, "tags"))
-//		val walker = FolderWalker(project)
-
         val walker = get<MarkdownScanner> { parametersOf(project) }
 
         val pageList = walker.calculateRenderSet(!clean)
         debug("walker.calculateRenderSet() has returned ${pageList.size} CacheAndPost items")
 
-        val markdownRenderer = MarkdownToHTMLRenderer(project, fileHandler, get { parametersOf(project) })
+        val markdownRenderer: MarkdownToHTMLRenderer by inject { parametersOf(project) }
 
         var generated = 0
         val renderMs = measureTimeMillis {

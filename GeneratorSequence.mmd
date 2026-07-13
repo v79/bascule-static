@@ -1,0 +1,27 @@
+sequenceDiagram
+    participant GeneratorKt
+    participant MarkdownScanner@{ "type": "control" }
+    participant MarkdownToHTMLRenderer@{ "type": "control" }
+    participant FileHandler@{ "type": "control" }
+    participant HandlebarsRenderer@{ "type": "control" }
+    participant AssetsProcessor@{ "type": "control" }
+    participant Plugins@{"type": "collections"}
+    Loop For each file
+        GeneratorKt->>MarkdownScanner: Walks
+        MarkdownScanner-->>GeneratorKt: Returns list of posts
+    end
+    Loop For each post
+        GeneratorKt->>MarkdownToHTMLRenderer: Converts MD to HTML
+        MarkdownToHTMLRenderer->>HandlebarsRenderer: Applies template
+        HandlebarsRenderer-->>MarkdownToHTMLRenderer: Returns complete HTML
+        MarkdownToHTMLRenderer->>FileHandler: Writes final HTML
+    end
+    GeneratorKt->>AssetsProcessor: Copy statics
+    GeneratorKt->>Plugins: Loads plugins
+    Plugins-->>GeneratorKt: Returns additional processors
+    Loop For each plugin
+        GeneratorKt->>Plugins: Calls process with renderer
+        Plugins->>HandlebarsRenderer: Applies templates
+        Plugins->>FileHandler: Writes files
+        Plugins-->>GeneratorKt: Complete
+    End
