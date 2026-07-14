@@ -158,17 +158,25 @@ class Generator : Runnable, KoinComponent {
         val markdownRenderer = MarkdownToHTMLRenderer(project, fileHandler, get { parametersOf(project) })
 
         var generated = 0
+
+        project.config.options.forEach { (key, value) ->
+            debug("Option: $key = $value")
+        }
+
+        val includeMarkdown =
+            project.config.options.containsKey("renderMarkdown") && project.config.options["renderMarkdown"] == true
+
         val renderMs = measureTimeMillis {
             if (clean) {
                 fileHandler.deleteFile(project.config.directories.sources, "${project.name.slug()}.cache.json")
                 pageList.forEachIndexed { index, cacheAndPost ->
-                    renderItem(cacheAndPost, index, project, markdownRenderer)
+                    renderItem(cacheAndPost, index, project, includeMarkdown, markdownRenderer)
                     generated++
                 }
             } else {
                 pageList.filter { item -> item.mdCacheItem.rerender }.forEachIndexed { index, cacheAndPost ->
                     cacheAndPost.post?.let {
-                        renderItem(cacheAndPost, index, project, markdownRenderer)
+                        renderItem(cacheAndPost, index, project, includeMarkdown, markdownRenderer)
                         generated++
                     }
                 }
@@ -219,20 +227,24 @@ class Generator : Runnable, KoinComponent {
 
     /**
      * Render the project, writing out the HTML files to the output directory
-     * If renderMarkdown is true, write out the raw Markdown files to the output directory
      * @param item the cached post or page to render
      * @param project the project configuration
+     * @param includeMarkdown if true, write out the raw Markdown files to the output directory
      * @param renderer the Markdown renderer to use
      */
     private fun renderItem(
-        item: CacheAndPost, index: Int, project: Project, renderer: MarkdownToHTMLRenderer
+        item: CacheAndPost,
+        index: Int,
+        project: Project,
+        includeMarkdown: Boolean = false,
+        renderer: MarkdownToHTMLRenderer
     ) {
         item.post?.let {
             it.rawContent =
                 fileHandler.readFileAsString(item.post.sourceFileName) // TODO: this still contains the yaml front matter :(
             renderer.renderHTML(item.post, index)
 
-            if (project.config.options.containsKey("renderMarkdown") && project.config.options["renderMarkdown"] == "true") {
+            if (includeMarkdown) {
                 writeMarkdown(project, it, fileHandler)
             }
         }
