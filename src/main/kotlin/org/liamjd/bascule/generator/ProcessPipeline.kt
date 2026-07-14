@@ -31,8 +31,8 @@ internal fun List<Post>.process(pipeline: ArrayList<KClass<GeneratorPipeline>>, 
 	for (p in pipeline) {
 		val processorFunc = p.declaredFunctions.find { it.name == "process" }
 		if (processorFunc != null) {
-			processors.put(p, processorFunc)
-		}
+            processors[p] = processorFunc
+        }
 	}
 
 	val progress = runBlocking {
@@ -70,14 +70,14 @@ private fun constructPipeline(pipelineClazz: KClass<out GeneratorPipeline>, proj
 	constructorKParams.forEach { kparam ->
 		when (kparam.name) {
 			"posts" -> {
-				constructorParams.put(kparam, posts)
-			}
+                constructorParams[kparam] = posts
+            }
 			"numPosts" -> {
-				constructorParams.put(kparam, posts.size)
-			}
+                constructorParams[kparam] = posts.size
+            }
 			"postsPerPage" -> {
-				constructorParams.put(kparam, project.postsPerPage)
-			}
+                constructorParams[kparam] = project.postsPerPage
+            }
 		}
 	}
 	return primaryConstructor.callBy(constructorParams)
