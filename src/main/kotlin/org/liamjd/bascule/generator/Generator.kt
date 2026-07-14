@@ -67,10 +67,15 @@ class Generator : Runnable, KoinComponent {
     var projectName: String? = null
 
     @CommandLine.Option(
-        names = ["-v", "--verbose"],
-        description = ["Enable verbose/debug output"]
+        names = ["-v", "--verbose"], description = ["Enable verbose/debug output"]
     )
     var verbose: Boolean = false
+
+    @CommandLine.Option(
+        names = ["-o", "--options"],
+        description = ["Additional parameters to pass to the generator, in the form of key=value. For example, '-o renderMarkdown=true'."]
+    )
+    var options: MutableMap<String, String> = mutableMapOf()
 
     private val fileHandler: BasculeFileHandler by inject { parametersOf() }
     private val currentDirectory = System.getProperty("user.dir")!!
@@ -120,6 +125,12 @@ class Generator : Runnable, KoinComponent {
         project.config.markdownOptions.set(HtmlRenderer.INDENT_SIZE, 2) // prettier HTML
         project.config.markdownOptions.set(HydeExtension.SOURCE_FOLDER, project.config.directories.sources.toString())
 
+        // additional options
+        if (options.isNotEmpty()) {
+            debug("Adding additional options to the project configuration: $options")
+            project.config.options += options
+        }
+
         val assetsProcessor = AssetsProcessor(project, fileHandler)
 
         // Redirect System.err to a project log file. slf4j-simple writes all logger.* output
@@ -151,29 +162,15 @@ class Generator : Runnable, KoinComponent {
             if (clean) {
                 fileHandler.deleteFile(project.config.directories.sources, "${project.name.slug()}.cache.json")
                 pageList.forEachIndexed { index, cacheAndPost ->
-                    cacheAndPost.post?.let {
-                        it.rawContent =
-                            fileHandler.readFileAsString(cacheAndPost.post.sourceFileName) // TODO: this still contains the yaml front matter :(
-                        markdownRenderer.renderHTML(cacheAndPost.post, index)
-
-                        // if(renderMarkdown) {
-                        writeMarkdown(project, it, fileHandler)
-                        // }
-                        generated++
-                    }
+                    renderItem(cacheAndPost, index, project, markdownRenderer)
+                    generated++
                 }
             } else {
                 pageList.filter { item -> item.mdCacheItem.rerender }.forEachIndexed { index, cacheAndPost ->
                     cacheAndPost.post?.let {
-                        it.rawContent =
-                            fileHandler.readFileAsString(cacheAndPost.post.sourceFileName) // TODO: this still contains the yaml front matter :(
-                        markdownRenderer.renderHTML(cacheAndPost.post, index)
-
-                        // if(renderMarkdown) {
-                        writeMarkdown(project, it, fileHandler)
-                        // }
+                        renderItem(cacheAndPost, index, project, markdownRenderer)
+                        generated++
                     }
-                    generated++
                 }
             }
         }
@@ -211,10 +208,34 @@ class Generator : Runnable, KoinComponent {
         info("Generation complete in ${totalMs}ms — site at ${project.config.directories.output}")
     }
 
+    /**
+     * Get a list of posts from the cache and the post list.
+     */
     private fun getPostsFromCacheAndPost(cacheSet: Set<CacheAndPost>): List<Post> {
         val postList = mutableListOf<Post>()
         cacheSet.forEach { if (it.post != null) postList.add(it.post) }
         return postList
+    }
+
+    /**
+     * Render the project, writing out the HTML files to the output directory
+     * If renderMarkdown is true, write out the raw Markdown files to the output directory
+     * @param item the cached post or page to render
+     * @param project the project configuration
+     * @param renderer the Markdown renderer to use
+     */
+    private fun renderItem(
+        item: CacheAndPost, index: Int, project: Project, renderer: MarkdownToHTMLRenderer
+    ) {
+        item.post?.let {
+            it.rawContent =
+                fileHandler.readFileAsString(item.post.sourceFileName) // TODO: this still contains the yaml front matter :(
+            renderer.renderHTML(item.post, index)
+
+            if (project.config.options.containsKey("renderMarkdown") && project.config.options["renderMarkdown"] == "true") {
+                writeMarkdown(project, it, fileHandler)
+            }
+        }
     }
 
     /**
@@ -227,7 +248,7 @@ class Generator : Runnable, KoinComponent {
     private fun writeMarkdown(project: Project, post: BasculePost, fileHandler: BasculeFileHandler) {
         // strip YAML first? The raw Markdown does not contain the title
         val stripped = post.rawContent.stripYamlFrontMatter()
-        val mdContent = "#${post.title}\n\n$stripped"
+        val mdContent = "# ${post.title}\n\n$stripped"
         // url ends in .html by default, switch it to .md
         val mdUrl = post.url.replace(".html", ".md", ignoreCase = true)
         fileHandler.writeFile(project.config.directories.output.absoluteFile, mdUrl, mdContent)

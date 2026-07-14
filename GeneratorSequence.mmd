@@ -15,6 +15,9 @@ sequenceDiagram
         PostBuilder-->>ChangeSetCalculator: Returns BasculePost for source file
         ChangeSetCalculator-->>MarkdownScanner: Returns BasculePosts to be processed
         MarkdownScanner-->>GeneratorKt: Returns list of BasculePosts to convert
+        opt If Markdown requested
+            GeneratorKt->>FileHandler:Write out Markdown
+        end
     end
     Loop For each BasculePost
         GeneratorKt->>MarkdownToHTMLRenderer: Converts MD to HTML
