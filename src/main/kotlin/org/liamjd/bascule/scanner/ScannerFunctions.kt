@@ -30,10 +30,13 @@ fun isMarkdownFile(file: File): Boolean =
  * sub-path arrives with a leading OS separator (`\2025` on Windows, `/2025` on Linux); a surviving leading
  * slash would combine with the template's own `/` prefix to produce a protocol-relative `//2025/...` URL,
  * where the year folder is wrongly parsed as the host.
+ * @param slug The post's slug (i.e. the filename without the extension)
+ * @param sourcePath The path to the source file, relative to the sources root
+ * @param extension The extension to append to the slug (defaults to `.html`)
  */
-fun calculateUrl(slug: String, sourcePath: String): String {
+fun calculateUrl(slug: String, sourcePath: String, extension: String = ".html"): String {
 	val normalised = sourcePath.replace("\\", "/").trim('/')
-	return if (normalised.isEmpty()) "$slug.html" else "$normalised/$slug.html"
+	return if (normalised.isEmpty()) "$slug$extension" else "$normalised/$slug$extension"
 }
 
 /**
@@ -78,3 +81,10 @@ fun sortAndLinkPosts(posts: Set<CacheAndPost>): Set<CacheAndPost> {
 
 	return sortedSet
 }
+
+/**
+ * Remove the YAML front matter from a string, if present.
+ * @return the string with the YAML front matter removed
+ */
+fun String.stripYamlFrontMatter(): String =
+	this.split("---").drop(2).joinToString("---")

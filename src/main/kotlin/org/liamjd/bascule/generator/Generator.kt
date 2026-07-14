@@ -21,11 +21,13 @@ import org.liamjd.bascule.lib.generators.GeneratorPipeline
 import org.liamjd.bascule.lib.model.Post
 import org.liamjd.bascule.lib.model.Project
 import org.liamjd.bascule.lib.render.TemplatePageRenderer
+import org.liamjd.bascule.model.BasculePost
 import org.liamjd.bascule.plugins.GeneratorPluginLoader
 import org.liamjd.bascule.plugins.HandlebarPluginLoader
 import org.liamjd.bascule.random
 import org.liamjd.bascule.render.MarkdownToHTMLRenderer
 import org.liamjd.bascule.scanner.MarkdownScanner
+import org.liamjd.bascule.scanner.stripYamlFrontMatter
 import org.liamjd.bascule.slug
 import picocli.CommandLine
 import println.debug
@@ -92,7 +94,7 @@ class Generator : Runnable, KoinComponent {
         val project = Project(configText)
 
         // configure the Markdown processor
-        // TODO: load extensions from separate package as a plugin so that I don't need to include every possible markdown extension in this executable
+        // TODO: load extensions from separate package as a plugin so that I don't need to include every possible Markdown extension in this executable
 
         val handlebarExtensions = mutableListOf<Extension>()
         handlebarExtensions.add(AttributesExtension.create())
@@ -142,7 +144,7 @@ class Generator : Runnable, KoinComponent {
         val pageList = walker.calculateRenderSet(!clean)
         debug("walker.calculateRenderSet() has returned ${pageList.size} CacheAndPost items")
 
-        val markdownRenderer: MarkdownToHTMLRenderer by inject { parametersOf(project) }
+        val markdownRenderer = MarkdownToHTMLRenderer(project, fileHandler, get { parametersOf(project) })
 
         var generated = 0
         val renderMs = measureTimeMillis {
@@ -153,6 +155,10 @@ class Generator : Runnable, KoinComponent {
                         it.rawContent =
                             fileHandler.readFileAsString(cacheAndPost.post.sourceFileName) // TODO: this still contains the yaml front matter :(
                         markdownRenderer.renderHTML(cacheAndPost.post, index)
+
+                        // if(renderMarkdown) {
+                        writeMarkdown(project, it, fileHandler)
+                        // }
                         generated++
                     }
                 }
@@ -162,6 +168,10 @@ class Generator : Runnable, KoinComponent {
                         it.rawContent =
                             fileHandler.readFileAsString(cacheAndPost.post.sourceFileName) // TODO: this still contains the yaml front matter :(
                         markdownRenderer.renderHTML(cacheAndPost.post, index)
+
+                        // if(renderMarkdown) {
+                        writeMarkdown(project, it, fileHandler)
+                        // }
                     }
                     generated++
                 }
@@ -205,6 +215,22 @@ class Generator : Runnable, KoinComponent {
         val postList = mutableListOf<Post>()
         cacheSet.forEach { if (it.post != null) postList.add(it.post) }
         return postList
+    }
+
+    /**
+     * Write the raw Markdown file to the output directory. This function strips the YAML frontmatter,
+     * and prepends the title to the Markdown content as a # block
+     * @param project the project configuration
+     * @param post the post to write out as Markdown
+     * @param fileHandler the file handler to use
+     * */
+    private fun writeMarkdown(project: Project, post: BasculePost, fileHandler: BasculeFileHandler) {
+        // strip YAML first? The raw Markdown does not contain the title
+        val stripped = post.rawContent.stripYamlFrontMatter()
+        val mdContent = "#${post.title}\n\n$stripped"
+        // url ends in .html by default, switch it to .md
+        val mdUrl = post.url.replace(".html", ".md", ignoreCase = true)
+        fileHandler.writeFile(project.config.directories.output.absoluteFile, mdUrl, mdContent)
     }
 }
 

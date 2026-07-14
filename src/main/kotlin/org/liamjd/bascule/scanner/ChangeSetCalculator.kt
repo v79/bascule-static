@@ -24,8 +24,8 @@ import java.util.*
 import kotlin.system.measureTimeMillis
 
 /**
- * Calculates which source files need to be regenerated in order to rebuild the project.
- * It compares each markdown file with its corresponding cache item (if it exists) and works out which files have changed.
+ * Calculates which source files need to be regenerated to rebuild the project.
+ * It compares each Markdown file with its corresponding cache item (if it exists) and works out which files have changed.
  *
  * Call [ChangeSetCalculator.calculateUncachedSet] to generate the set of items which need to be regenerated
  *
@@ -42,9 +42,9 @@ class ChangeSetCalculator(
     private val logger = KotlinLogging.logger {}
 
     /**
-     * Calculate which markdown source files have changed or are new relative to the cache set. Recursively walks the project sources directory to find markdown files
+     * Calculate which Markdown source files have changed or are new relative to the cache set. Recursively walks the project sources directory to find markdown files
      * @param cachedSet the known set of [MDCacheItem]s loaded from a cache file; may be empty but not null
-     * @param layoutSet the known set of [HandlebarsTemplateCacheItem] representing each of the handlebars templates
+     * @param layoutSet the known set of [HandlebarsTemplateCacheItem] representing each of the Handlebars templates
      * @return a set of [CacheAndPost]
      */
     fun calculateUncachedSet(
@@ -60,7 +60,7 @@ class ChangeSetCalculator(
 
         val timeTaken = measureTimeMillis {
             /** recursively walk the source folder for files
-             * allSources is updated when a source markdown file is found
+             * allSources is updated when a source Markdown file is found
              **/
             markdownSourceCount = walkFolder(
                 project.config.directories.sources,
@@ -108,7 +108,7 @@ class ChangeSetCalculator(
 
         if (errorMap.isNotEmpty()) {
             println.error("Errors found in calculations:")
-            errorMap.forEach { t, u ->
+            errorMap.forEach { (t, u) ->
                 logger.error { "$t -> $u" }
                 println.error("$t -> $u")
             }

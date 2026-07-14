@@ -24,6 +24,7 @@ sealed class PostStatus
 
 /**
  * Class representing an individual BasculePost. This significantly extends the [Post] base class, and its companion is a builder pattern
+ * TODO: This shoud be renamed as it's not just posts, it's any valid Markdown content
  */
 class BasculePost(val document: Document) : Post, PostStatus() {
 
@@ -57,7 +58,7 @@ class BasculePost(val document: Document) : Post, PostStatus() {
     }
 
     /**
-     * Not implemented yet. This function should group tags by their category, if they have one.
+     * Not implemented yet. This function should group tags by their category if they have one.
      */
     override fun groupTagsByCategory(): Map<out String, Set<Tag>?> {
         println("Grouping tags by category - NOT YET IMPLEMENTED")
@@ -179,7 +180,7 @@ class BasculePost(val document: Document) : Post, PostStatus() {
         }
 
         /**
-         * Attempt to construct a post without any Yaml metadata. Can only provide a title, layout (always "post"), a slug and a date.
+         * Attempt to construct a post without any YAML metadata. Can only provide a title, layout (always "post"), a slug and a date.
          * No author, tags or custom attributes
          */
         fun buildPostWithoutYaml(file: File, document: Document): PostStatus {
@@ -212,7 +213,7 @@ class BasculePost(val document: Document) : Post, PostStatus() {
 }
 
 /**
- * Enum representing all the key fields used to construct a BasculePost. Each field has it's own eligibility requirements,
+ * Enum representing all the key fields used to construct a BasculePost. Each field has its own eligibility requirements,
  * 'required' and 'multipleAllowed'. E.g. the _title_ is required, and there must only be a single title.
  */
 internal enum class PostMetaData(val required: Boolean, val multipleAllowed: Boolean) {

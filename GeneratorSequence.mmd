@@ -1,16 +1,22 @@
 sequenceDiagram
     participant GeneratorKt
     participant MarkdownScanner@{ "type": "control" }
+    participant ChangeSetCalculator@{ "type": "control"}
+    participant PostBuilder@{ "type": "control" }
     participant MarkdownToHTMLRenderer@{ "type": "control" }
     participant FileHandler@{ "type": "control" }
     participant HandlebarsRenderer@{ "type": "control" }
     participant AssetsProcessor@{ "type": "control" }
     participant Plugins@{"type": "collections"}
     Loop For each file
-        GeneratorKt->>MarkdownScanner: Walks
-        MarkdownScanner-->>GeneratorKt: Returns list of posts
+        GeneratorKt->>MarkdownScanner: Walks file tree
+        MarkdownScanner->>ChangeSetCalculator: Looks for changed source files
+        ChangeSetCalculator->>PostBuilder: Build BasculePost for source file
+        PostBuilder-->>ChangeSetCalculator: Returns BasculePost for source file
+        ChangeSetCalculator-->>MarkdownScanner: Returns BasculePosts to be processed
+        MarkdownScanner-->>GeneratorKt: Returns list of BasculePosts to convert
     end
-    Loop For each post
+    Loop For each BasculePost
         GeneratorKt->>MarkdownToHTMLRenderer: Converts MD to HTML
         MarkdownToHTMLRenderer->>HandlebarsRenderer: Applies template
         HandlebarsRenderer-->>MarkdownToHTMLRenderer: Returns complete HTML
